@@ -38,6 +38,12 @@
 # define DP_ER(msg, err) /**/
 #endif
 
+#if 0
+# define DP_STATE(state) printf("%s\n", state)
+#else
+# define DP_STATE(state) /**/
+#endif
+
 LOCAL W http_transferdecoderidentity_inputentitybody(http_transferdecoderidentity_t *decoder, UB *data, W data_len, http_transferdecoder_result **result, W *result_len)
 {
 	*result = decoder->result;
@@ -82,6 +88,7 @@ LOCAL HTTP_CHUNKEDBODYPARSER_RESULT http_chunkedbodyparser_inputchar(http_chunke
 {
 	switch (parser->state) {
 	case HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE:
+		DP_STATE("CHUNK_SIZE");
 		if (isdigit(ch)) {
 			parser->chunk_size = parser->chunk_size*16 + 0 + ch - '0';
 			break;
@@ -103,34 +110,53 @@ LOCAL HTTP_CHUNKEDBODYPARSER_RESULT http_chunkedbodyparser_inputchar(http_chunke
 			break;
 		}
 		if (ch == '\r') {
-			if (parser->chunk_size == 0) {
-				parser->state = HTTP_CHUNKEDBODYPARSER_STATE_AFTER_CHUNK;
-			} else {
-				parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE_CR;
-			}
+			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE_CR;
 			break;
 		}
 		return HTTP_CHUNKEDBODYPARSER_RESULT_ERROR;
 	case HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE_CR:
+		DP_STATE("CHUNK_SIZE_CR");
 		if (ch == '\n') {
-			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_DATA;
-			parser->chunk_pushed_len = 0;
+			if (parser->chunk_size == 0) {
+				parser->state = HTTP_CHUNKEDBODYPARSER_STATE_AFTER_CHUNK;
+			} else {
+				parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_DATA;
+				parser->chunk_pushed_len = 0;
+			}
 			break;
 		}
 		return HTTP_CHUNKEDBODYPARSER_RESULT_ERROR;
 	case HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_DATA:
+		DP_STATE("CHUNK_DATA");
 		parser->chunk_pushed_len++;
 		if (parser->chunk_size == parser->chunk_pushed_len) {
-			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE;
+			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_DATA_END;
 		}
 		return HTTP_CHUNKEDBODYPARSER_RESULT_DATA;
+	case HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_DATA_END:
+		DP_STATE("CHUNK_DATA_END");
+		if (ch == '\r') {
+			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_DATA_END_CR;
+			break;
+		}
+		return HTTP_CHUNKEDBODYPARSER_RESULT_ERROR;
+	case HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_DATA_END_CR:
+		DP_STATE("CHUNK_DATA_END_CR");
+		if (ch == '\n') {
+			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE;
+			parser->chunk_size = 0;
+			break;
+		}
+		return HTTP_CHUNKEDBODYPARSER_RESULT_ERROR;
 	case HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_EXTENTION:
+		DP_STATE("CHUNK_EXTENTION");
 		if (ch == '\r') {
 			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_EXTENTION_CR;
 			break;
 		}
 		break;
 	case HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_EXTENTION_CR:
+		DP_STATE("CHUNK_EXTENTION_CR");
 		if (ch == '\n') {
 			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_DATA;
 			parser->chunk_pushed_len = 0;
@@ -138,12 +164,14 @@ LOCAL HTTP_CHUNKEDBODYPARSER_RESULT http_chunkedbodyparser_inputchar(http_chunke
 		}
 		break;
 	case HTTP_CHUNKEDBODYPARSER_STATE_LAST_CHUNK_EXTENTION:
+		DP_STATE("LAST_CHUNK_EXTENTION");
 		if (ch == '\r') {
 			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_LAST_CHUNK_EXTENTION_CR;
 			break;
 		}
 		break;
 	case HTTP_CHUNKEDBODYPARSER_STATE_LAST_CHUNK_EXTENTION_CR:
+		DP_STATE("LAST_CHUNK_EXTENTION_CR");
 		if (ch == '\n') {
 			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_AFTER_CHUNK;
 			parser->chunk_pushed_len = 0;
@@ -151,6 +179,7 @@ LOCAL HTTP_CHUNKEDBODYPARSER_RESULT http_chunkedbodyparser_inputchar(http_chunke
 		}
 		return HTTP_CHUNKEDBODYPARSER_RESULT_ERROR;
 	case HTTP_CHUNKEDBODYPARSER_STATE_AFTER_CHUNK:
+		DP_STATE("AFTER_CHUNK");
 		if (ch == '\r') {
 			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_AFTER_CHUNK_CR;
 		} else {
@@ -158,6 +187,7 @@ LOCAL HTTP_CHUNKEDBODYPARSER_RESULT http_chunkedbodyparser_inputchar(http_chunke
 		}
 		break;
 	case HTTP_CHUNKEDBODYPARSER_STATE_AFTER_CHUNK_CR:
+		DP_STATE("AFTER_CHUNK_CR");
 		if (ch == '\n') {
 			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_END;
 			return HTTP_CHUNKEDBODYPARSER_RESULT_END;
@@ -165,11 +195,13 @@ LOCAL HTTP_CHUNKEDBODYPARSER_RESULT http_chunkedbodyparser_inputchar(http_chunke
 		}
 		return HTTP_CHUNKEDBODYPARSER_RESULT_ERROR;
 	case HTTP_CHUNKEDBODYPARSER_STATE_TRAILER:
+		DP_STATE("TRAILER");
 		if (ch == '\r') {
 			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_TRAILER_CR;
 		}
 		break;
 	case HTTP_CHUNKEDBODYPARSER_STATE_TRAILER_CR:
+		DP_STATE("TRAILER_CR");
 		if (ch == '\n') {
 			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_AFTER_CHUNK;
 			parser->chunk_pushed_len = 0;
@@ -177,6 +209,7 @@ LOCAL HTTP_CHUNKEDBODYPARSER_RESULT http_chunkedbodyparser_inputchar(http_chunke
 		}
 		return HTTP_CHUNKEDBODYPARSER_RESULT_END;
 	case HTTP_CHUNKEDBODYPARSER_STATE_END:
+		DP_STATE("END");
 	}
 
 	return HTTP_CHUNKEDBODYPARSER_RESULT_OTHER;
