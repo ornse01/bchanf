@@ -63,6 +63,7 @@ LOCAL W http_transferdecoderidentity_inputentitybody(http_transferdecoderidentit
 	decoder->result[0].type = HTTP_TRANSFERDECODER_RESULTTYPE_DATA;
 	decoder->result[0].data = data;
 	decoder->result[0].len = data_len;
+	decoder->pushed_len += data_len;
 	*result_len = 1;
 	return data_len;
 }
