@@ -46,7 +46,9 @@ LOCAL W http_transferdecoderidentity_inputentitybody(http_transferdecoderidentit
 		decoder->result[0].type = HTTP_TRANSFERDECODER_RESULTTYPE_DATA;
 		decoder->result[0].data = data;
 		decoder->result[0].len = decoder->content_length - decoder->pushed_len;
-		decoder->result[0].type = HTTP_TRANSFERDECODER_RESULTTYPE_END;
+		decoder->result[1].type = HTTP_TRANSFERDECODER_RESULTTYPE_END;
+		decoder->result[1].data = NULL;
+		decoder->result[1].len = 0;
 		decoder->pushed_len = decoder->content_length;
 		*result_len = 2;
 		return decoder->result[0].len;
