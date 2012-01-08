@@ -234,6 +234,7 @@ LOCAL W http_transferdecoderchunked_inputentitybody(http_transferdecoderchunked_
 		START,
 		READING_DATA,
 		READING_OTHER,
+		CHUNK_END,
 	} state = START;
 	HTTP_CHUNKEDBODYPARSER_RESULT result_parser;
 
@@ -266,6 +267,7 @@ LOCAL W http_transferdecoderchunked_inputentitybody(http_transferdecoderchunked_
 					break;
 				}
 			} else if (result_parser == HTTP_CHUNKEDBODYPARSER_RESULT_END) {
+				state = CHUNK_END;
 				decoder->result[i_result].len = data + i_data - decoder->result[i_result].data;
 				i_result++;
 				decoder->result[i_result].type = HTTP_TRANSFERDECODER_RESULTTYPE_END;
@@ -278,12 +280,24 @@ LOCAL W http_transferdecoderchunked_inputentitybody(http_transferdecoderchunked_
 				decoder->result[i_result].type = HTTP_TRANSFERDECODER_RESULTTYPE_DATA;
 				decoder->result[i_result].data = data + i_data;
 			} else if (result_parser == HTTP_CHUNKEDBODYPARSER_RESULT_END) {
+				state = CHUNK_END;
 				decoder->result[i_result].type = HTTP_TRANSFERDECODER_RESULTTYPE_END;
 				i_result++;
 				break;
 			}
 		}
 	}
+
+	switch (state) {
+	case READING_DATA:
+		decoder->result[i_result].len = data + i_data - decoder->result[i_result].data;
+		i_result++;
+		break;
+	case START:
+	case READING_OTHER:
+	case CHUNK_END:
+		break;
+	};
 
 	*result = decoder->result;
 	*result_len = i_result;	
