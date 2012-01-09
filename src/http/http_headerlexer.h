@@ -1,7 +1,7 @@
 /*
- * httpheaderlexer.h
+ * http_headerlexer.h
  *
- * Copyright (c) 2011 project bchan
+ * Copyright (c) 2011-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,39 +24,49 @@
  *
  */
 
-#include    <basic.h>
+/* Vendor name: */
+/* Functionality name: http */
+/* Detail name: headerlexer */
 
-#ifndef __HTTPHEADERLEXER_H__
-#define __HTTPHEADERLEXER_H__
+#include    <basic.h>
 
 /* see rfc2616 4.2 Message Headers. */
 
-struct httpheaderlexer_t_ {
+#ifndef __HTTP_HEADERLEXER_H__
+#define __HTTP_HEADERLEXER_H__
+
+/* Functionality name: http */
+/* Detail name: headerlexer */
+struct http_headerlexer_t_ {
 	enum {
-		HTTPHEADERLEXER_STATE_SEARCH_HEADER,
-		HTTPHEADERLEXER_STATE_SEARCH_HEADER_CR,
-		HTTPHEADERLEXER_STATE_READ_HEADER_FIELDNAME,
-		HTTPHEADERLEXER_STATE_READ_HEADER_FIELDVALUE,
-		HTTPHEADERLEXER_STATE_READ_HEADER_FIELDVALUE_LWS,
-		HTTPHEADERLEXER_STATE_HERDER_CR,
-		HTTPHEADERLEXER_STATE_READ_VALUE_MESSAGE,
+		HTTP_HEADERLEXER_STATE_SEARCH_HEADER,
+		HTTP_HEADERLEXER_STATE_SEARCH_HEADER_CR,
+		HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDNAME,
+		HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDVALUE,
+		HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDVALUE_LWS,
+		HTTP_HEADERLEXER_STATE_HERDER_CR,
+		HTTP_HEADERLEXER_STATE_READ_VALUE_MESSAGE,
 	} state;
 };
-typedef struct httpheaderlexer_t_ httpheaderlexer_t;
+typedef struct http_headerlexer_t_ http_headerlexer_t;
+
+/* Functionality name: http */
+/* Detail name: headerlexer */
+/* Data structure identifier: RESULT */
 
 /* should implement field-value? but difficult. */
-enum HTTPHEADERLEXER_RESULT_T_ {
-	HTTPHEADERLEXER_RESULT_NONE,
-	HTTPHEADERLEXER_RESULT_FIELDNAME,
-	HTTPHEADERLEXER_RESULT_FIELDNAME_END,
-	HTTPHEADERLEXER_RESULT_FIELDCONTENT,
-	HTTPHEADERLEXER_RESULT_LWS,
-	HTTPHEADERLEXER_RESULT_MESSAGEHEADER_END,
+enum HTTP_HEADERLEXER_RESULT_ {
+	HTTP_HEADERLEXER_RESULT_NONE,
+	HTTP_HEADERLEXER_RESULT_FIELDNAME,
+	HTTP_HEADERLEXER_RESULT_FIELDNAME_END,
+	HTTP_HEADERLEXER_RESULT_FIELDCONTENT,
+	HTTP_HEADERLEXER_RESULT_LWS,
+	HTTP_HEADERLEXER_RESULT_MESSAGEHEADER_END,
 };
-typedef enum HTTPHEADERLEXER_RESULT_T_ HTTPHEADERLEXER_RESULT_T;
+typedef enum HTTP_HEADERLEXER_RESULT_ HTTP_HEADERLEXER_RESULT;
 
-IMPORT W httpheaderlexer_initialize(httpheaderlexer_t *lexer);
-IMPORT VOID httpheaderlexer_finalize(httpheaderlexer_t *lexer);
-IMPORT VOID httpheaderlexer_inputchar(httpheaderlexer_t *lexer, UB ch, HTTPHEADERLEXER_RESULT_T *result);
+IMPORT W http_headerlexer_initialize(http_headerlexer_t *lexer);
+IMPORT VOID http_headerlexer_finalize(http_headerlexer_t *lexer);
+IMPORT VOID http_headerlexer_inputchar(http_headerlexer_t *lexer, UB ch, HTTP_HEADERLEXER_RESULT *result);
 
 #endif
