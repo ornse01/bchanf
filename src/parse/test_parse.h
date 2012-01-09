@@ -30,6 +30,7 @@
 #ifndef __TEST_PARSE_H__
 #define __TEST_PARSE_H__
 
+IMPORT VOID test_tokenchecker_main(unittest_driver_t *driver);
 IMPORT VOID test_charreferparser_main(unittest_driver_t *driver);
 
 #endif
