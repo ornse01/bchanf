@@ -32,5 +32,6 @@
 
 IMPORT VOID test_httptransferdecoder_main(unittest_driver_t *driver);
 IMPORT VOID test_httpcontentdecoder_main(unittest_driver_t *driver);
+IMPORT VOID test_httpheaderlexer_main(unittest_driver_t *driver);
 
 #endif

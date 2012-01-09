@@ -42,10 +42,12 @@ SRC_UNITTEST =	unittest_driver.c
 
 SRC_HTTP = 	http_connection.c \
 		http_transferdecoder.c \
-		http_contentdecoder.c
+		http_contentdecoder.c \
+		http_headerlexer.c
 
 SRC_HTTP_TEST =	test_http_transferdecoder.c \
-		test_http_contentdecoder.c
+		test_http_contentdecoder.c \
+		test_http_headerlexer.c
 
 SRC =	test_main.c $(SRC_UNITTEST) $(SRC_HTTP) $(SRC_HTTP_TEST)
 
