@@ -24,19 +24,26 @@
  *
  */
 
+/* Vendor name: */
+/* Functionality name: tokenchecker */
+/* Detail name: */
+
 #include	<basic.h>
 
-#ifndef __PARSELIB_H__
-#define __PARSELIB_H__
+#ifndef __TOKENCHECKER_H__
+#define __TOKENCHECKER_H__
 
-typedef struct tokenchecker_valuetuple_t_ tokenchecker_valuetuple_t;
+/* Functionality name: charreferparser */
+/* Detail name: valuetuple */
 struct tokenchecker_valuetuple_t_ {
 	B *name;
 	W val;
 };
+typedef struct tokenchecker_valuetuple_t_ tokenchecker_valuetuple_t;
 
-typedef struct  tokenchecker_t_ tokenchecker_t;
-struct  tokenchecker_t_ {
+/* Functionality name: charreferparser */
+/* Detail name: */
+struct tokenchecker_t_ {
 	tokenchecker_valuetuple_t *namelist;
 	W namelistnum;
 	B *endtokens;
@@ -45,20 +52,24 @@ struct  tokenchecker_t_ {
 	W listindex_end;
 	W flag;
 };
+typedef struct  tokenchecker_t_ tokenchecker_t;
 
-enum {
-	TOKENCHECKER_CONTINUE,
-	TOKENCHECKER_CONTINUE_NOMATCH,
-	TOKENCHECKER_DETERMINE,
-	TOKENCHECKER_NOMATCH,
-	TOKENCHECKER_AFTER_END
-};
+/* Functionality name: tokenchecker */
+/* Detail name: */
+/* Data structure identifier: result */
+typedef enum {
+	TOKENCHECKER_RESULT_CONTINUE,
+	TOKENCHECKER_RESULT_CONTINUE_NOMATCH,
+	TOKENCHECKER_RESULT_DETERMINE,
+	TOKENCHECKER_RESULT_NOMATCH,
+	TOKENCHECKER_RESULT_AFTER_END
+} TOKENCHECKER_RESULT;
 
 IMPORT VOID tokenchecker_initialize(tokenchecker_t *checker, tokenchecker_valuetuple_t *namelist, W namelistnum, B *endchars);
 IMPORT VOID tokenchecker_finalize(tokenchecker_t *checker);
 IMPORT VOID tokenchecker_clear(tokenchecker_t *checker);
-IMPORT W tokenchecker_inputchar(tokenchecker_t *checker, UB c, W *val);
-IMPORT W tokenchecker_endinput(tokenchecker_t *checker, W *val);
+IMPORT TOKENCHECKER_RESULT tokenchecker_inputchar(tokenchecker_t *checker, UB c, W *val);
+IMPORT TOKENCHECKER_RESULT tokenchecker_endinput(tokenchecker_t *checker, W *val);
 IMPORT VOID tokenchecker_getlastmatchedstring(tokenchecker_t *checker, UB **str, W *len);
 
 #endif

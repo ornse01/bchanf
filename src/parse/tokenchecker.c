@@ -66,13 +66,13 @@ EXPORT VOID tokenchecker_clear(tokenchecker_t *checker)
 	checker->flag = 0;
 }
 
-EXPORT W tokenchecker_inputchar(tokenchecker_t *checker, UB c, W *val)
+EXPORT TOKENCHECKER_RESULT tokenchecker_inputchar(tokenchecker_t *checker, UB c, W *val)
 {
 	W i;
 	tokenchecker_valuetuple_t *namelist = checker->namelist;
 
 	if ((checker->flag & TOKENCHECKER_FLAG_AFTERENDCHAR) != 0) {
-		return TOKENCHECKER_AFTER_END;
+		return TOKENCHECKER_RESULT_AFTER_END;
 	}
 
 	for (i = 0;; i++) {
@@ -82,20 +82,20 @@ EXPORT W tokenchecker_inputchar(tokenchecker_t *checker, UB c, W *val)
 		if (c == (checker->endtokens)[i]) {
 			checker->flag |= TOKENCHECKER_FLAG_AFTERENDCHAR;
 			if ((checker->flag & TOKENCHECKER_FLAG_NOTEXIST) != 0) {
-				return TOKENCHECKER_NOMATCH;
+				return TOKENCHECKER_RESULT_NOMATCH;
 			}
 			if ((namelist[checker->listindex_start]).name[checker->stringindex] == '\0') {
 				/*List's Name End and receive EndToken = found match string*/
 				*val = (namelist[checker->listindex_start]).val;
-				return TOKENCHECKER_DETERMINE;
+				return TOKENCHECKER_RESULT_DETERMINE;
 			}
 			/*List's Name continue but receive endtoken.*/
-			return TOKENCHECKER_NOMATCH;
+			return TOKENCHECKER_RESULT_NOMATCH;
 		}
 	}
 
 	if ((checker->flag & TOKENCHECKER_FLAG_NOTEXIST) != 0) {
-		return TOKENCHECKER_CONTINUE_NOMATCH;
+		return TOKENCHECKER_RESULT_CONTINUE_NOMATCH;
 	}
 
 	for (i = checker->listindex_start; i < checker->listindex_end; i++) {
@@ -105,7 +105,7 @@ EXPORT W tokenchecker_inputchar(tokenchecker_t *checker, UB c, W *val)
 	}
 	if (i == checker->listindex_end) { /*receive char is not matched.*/
 		checker->flag &= TOKENCHECKER_FLAG_NOTEXIST;
-		return TOKENCHECKER_CONTINUE_NOMATCH;
+		return TOKENCHECKER_RESULT_CONTINUE_NOMATCH;
 	}
 	checker->listindex_start = i;
 	for (i = i+1; i < checker->listindex_end; i++) {
@@ -118,14 +118,14 @@ EXPORT W tokenchecker_inputchar(tokenchecker_t *checker, UB c, W *val)
 	if ((namelist[checker->listindex_start]).name[checker->stringindex] == '\0') {
 		/*Don't recive endtoken but List's Name is end.*/
 		checker->flag |= TOKENCHECKER_FLAG_NOTEXIST;
-		return TOKENCHECKER_CONTINUE_NOMATCH;
+		return TOKENCHECKER_RESULT_CONTINUE_NOMATCH;
 	}
 	checker->stringindex++;
 
-	return TOKENCHECKER_CONTINUE;
+	return TOKENCHECKER_RESULT_CONTINUE;
 }
 
-EXPORT W tokenchecker_endinput(tokenchecker_t *checker, W *val)
+EXPORT TOKENCHECKER_RESULT tokenchecker_endinput(tokenchecker_t *checker, W *val)
 {
 	/* should be more efficient? */
 	return tokenchecker_inputchar(checker, checker->endtokens[0], val);
