@@ -61,34 +61,4 @@ IMPORT W tokenchecker_inputchar(tokenchecker_t *checker, UB c, W *val);
 IMPORT W tokenchecker_endinput(tokenchecker_t *checker, W *val);
 IMPORT VOID tokenchecker_getlastmatchedstring(tokenchecker_t *checker, UB **str, W *len);
 
-typedef struct charreferparser_t_ charreferparser_t;
-struct charreferparser_t_ {
-	enum {
-		START,
-		RECIEVE_AMP,
-		RECIEVE_NUMBER,
-		NUMERIC_DECIMAL,
-		NUMERIC_HEXADECIMAL,
-		NAMED,
-		INVALID,
-		DETERMINED
-	} state;
-	tokenchecker_t named;
-	W charnumber;
-};
-
-typedef enum {
-	CHARREFERPARSER_RESULT_CONTINUE,
-	CHARREFERPARSER_RESULT_DETERMINE,
-	CHARREFERPARSER_RESULT_INVALID
-} charreferparser_result_t;
-
-IMPORT W charreferparser_initialize(charreferparser_t *parser);
-IMPORT VOID charreferparser_finalize(charreferparser_t *parser);
-IMPORT charreferparser_result_t charreferparser_parsechar(charreferparser_t *parser, UB ch);
-IMPORT W charreferparser_getcharnumber(charreferparser_t *parser);
-IMPORT VOID charreferparser_getlastmatchedstring(charreferparser_t *parser, UB **str, W *len);
-IMPORT W charreferparser_parsestr(charreferparser_t *parser, UB *str, W len);
-IMPORT VOID charreferparser_resetstate(charreferparser_t *parser);
-
 #endif
