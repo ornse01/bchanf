@@ -26,7 +26,7 @@
 
 #include "test_parse.h"
 
-#include "parselib.h"
+#include "tokenchecker.h"
 
 #include    <btron/btron.h>
 #include    <bstdio.h>

@@ -30,7 +30,7 @@
 
 #include	<basic.h>
 
-#include    "parselib.h"
+#include    "tokenchecker.h"
 
 #ifndef __CHARREFERPARSER_H__
 #define __CHARREFERPARSER_H__

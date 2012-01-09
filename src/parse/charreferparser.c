@@ -32,7 +32,7 @@
 #include	<bstring.h>
 #include	<bctype.h>
 
-#include    "parselib.h"
+#include    "tokenchecker.h"
 
 #ifdef BCHAN_CONFIG_DEBUG
 # define DP(arg) printf arg
