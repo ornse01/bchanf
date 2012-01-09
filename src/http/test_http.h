@@ -31,5 +31,6 @@
 #define __TEST_HTTP_H__
 
 IMPORT VOID test_httptransferdecoder_main(unittest_driver_t *driver);
+IMPORT VOID test_httpcontentdecoder_main(unittest_driver_t *driver);
 
 #endif
