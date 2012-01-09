@@ -215,7 +215,7 @@ LOCAL UNITTEST_RESULT test_http_headerlexer_2()
 	return result;
 }
 
-EXPORT VOID test_httpheaderlexer_main(unittest_driver_t *driver)
+EXPORT VOID test_http_headerlexer_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_http_headerlexer_1);
 	UNITTEST_DRIVER_REGIST(driver, test_http_headerlexer_2);

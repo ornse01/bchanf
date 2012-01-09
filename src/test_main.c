@@ -44,9 +44,9 @@ EXPORT	W	MAIN(MESSAGE *msg)
 		return 0;
 	}
 
-	test_httptransferdecoder_main(driver);
-	test_httpcontentdecoder_main(driver);
-	test_httpheaderlexer_main(driver);
+	test_http_transferdecoder_main(driver);
+	test_http_contentdecoder_main(driver);
+	test_http_headerlexer_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);

@@ -1335,7 +1335,7 @@ LOCAL UNITTEST_RESULT test_http_contentdecoder_gzip_5()
 
 /* */
 
-EXPORT VOID test_httpcontentdecoder_main(unittest_driver_t *driver)
+EXPORT VOID test_http_contentdecoder_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_http_contentdecoder_identity_1);
 	UNITTEST_DRIVER_REGIST(driver, test_http_contentdecoder_gzip_1);

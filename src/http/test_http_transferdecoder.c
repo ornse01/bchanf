@@ -300,7 +300,7 @@ LOCAL UNITTEST_RESULT test_http_transferdecoder_chunked_8()
 	return test_http_transferdecoder_common(HTTP_TRANSFERCODING_TYPE_CHUNKED, testdata, testdata_len, expected, expected_len);
 }
 
-EXPORT VOID test_httptransferdecoder_main(unittest_driver_t *driver)
+EXPORT VOID test_http_transferdecoder_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_http_transferdecoder_identity_1);
 	UNITTEST_DRIVER_REGIST(driver, test_http_transferdecoder_chunked_1);

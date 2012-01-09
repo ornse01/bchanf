@@ -30,8 +30,8 @@
 #ifndef __TEST_HTTP_H__
 #define __TEST_HTTP_H__
 
-IMPORT VOID test_httptransferdecoder_main(unittest_driver_t *driver);
-IMPORT VOID test_httpcontentdecoder_main(unittest_driver_t *driver);
-IMPORT VOID test_httpheaderlexer_main(unittest_driver_t *driver);
+IMPORT VOID test_http_transferdecoder_main(unittest_driver_t *driver);
+IMPORT VOID test_http_contentdecoder_main(unittest_driver_t *driver);
+IMPORT VOID test_http_headerlexer_main(unittest_driver_t *driver);
 
 #endif
