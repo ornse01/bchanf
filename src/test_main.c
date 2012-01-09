@@ -33,6 +33,7 @@
 #include    <unittest_driver.h>
 
 #include    <test_http.h>
+#include    <test_parse.h>
 
 
 EXPORT	W	MAIN(MESSAGE *msg)
@@ -47,6 +48,9 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_http_transferdecoder_main(driver);
 	test_http_contentdecoder_main(driver);
 	test_http_headerlexer_main(driver);
+
+	test_tokenchecker_main(driver);
+	test_charreferparser_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);
