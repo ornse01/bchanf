@@ -40,7 +40,7 @@ HEADER := $(S) $(HEADER)
 # ソースファイル
 SRC_UNITTEST =	unittest_driver.c
 
-SRC_HTTP = 	http_connection.c \
+SRC_HTTP = 	http_connector.c \
 		http_transferdecoder.c \
 		http_contentdecoder.c \
 		http_headerlexer.c

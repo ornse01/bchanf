@@ -1,5 +1,5 @@
 /*
- * http_connection.h
+ * http_connector.h
  *
  * Copyright (c) 2012 project bchan
  *
