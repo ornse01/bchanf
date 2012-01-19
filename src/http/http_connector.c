@@ -512,23 +512,27 @@ EXPORT http_connector_t* http_connector_new()
 
 	connector = (http_connector_t*)malloc(sizeof(http_connector_t));
 	if (connector == NULL) {
+		DP_ER("malloc", 0);
 		return NULL;
 	}
 	connector->dict = http_reqdict_new(10/*tmp*/);
 	if (connector->dict == NULL) {
+		DP_ER("http_recdict_new", 0);
 		goto error_http_reqdict;
-		return NULL;
 	}
 	err = http_ctxbuf_initialize(&connector->ctxbuf, 10/*tmp*/);
 	if (err < 0) {
+		DP_ER("http_ctxbuf_initialize", err);
 		goto error_http_ctxbuf;
 	}
-	connector->reqmbf = cre_mbf(0, 0, DELEXIT);
+	connector->reqmbf = cre_mbf(0, 1, DELEXIT);
 	if (connector->reqmbf < 0) {
+		DP_ER("cre_mbf: reqmbf", connector->reqmbf);
 		goto error_reqmbf;
 	}
 	connector->evtmbf = cre_mbf(sizeof(http_connector_event)*10, sizeof(http_connector_event), DELEXIT);
 	if (connector->evtmbf < 0) {
+		DP_ER("cre_mbf: evtmbf", connector->evtmbf);
 		goto error_evtmbf;
 	}
 
