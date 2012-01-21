@@ -256,9 +256,14 @@ LOCAL VOID http_reqdictiterator_finalize(http_recdictiterator_t *iter)
 
 struct http_connector_t_ {
 	http_reqdict_t *dict;
-	ID reqmbf;
-	ID evtmbf;
+	ID flg;
 };
+
+#define HTTP_CONNECTOR_FLAG_CREARMASK(flag) (~(flag))
+#define HTTP_CONNECTOR_FLAG_REQUEST 0x00000001
+#define HTTP_CONNECTOR_FLAG_EVENT   0x00000002
+#define HTTP_CONNECTOR_FLAG_CLEARMASK_REQUEST HTTP_CONNECTOR_FLAG_CREARMASK(HTTP_CONNECTOR_FLAG_REQUEST)
+#define HTTP_CONNECTOR_FLAG_CLEARMASK_EVENT HTTP_CONNECTOR_FLAG_CREARMASK(HTTP_CONNECTOR_FLAG_EVENT)
 
 EXPORT ID http_connector_createendpoint(http_connector_t *connector, UB *host, W host_len, UH port)
 {
@@ -271,9 +276,9 @@ EXPORT ID http_connector_createendpoint(http_connector_t *connector, UB *host, W
 		return id; /* TODO */
 	}
 
-	err = snd_mbf(connector->reqmbf, NULL, 0, T_FOREVER/* tmp */);
+	err = set_flg(connector->flg, HTTP_CONNECTOR_FLAG_REQUEST);
 	if (err < 0) {
-		DP_ER("snd_mbf", err);
+		DP_ER("set_flg", err);
 		http_reqdict_free(connector->dict, id);
 		return err;
 	}
@@ -355,6 +360,7 @@ LOCAL W http_connector_waitreceiving(http_connector_t *connector)
 		if (entry->status == WAITING_RESPONSE) {
 			/* TODO: end point status change: readinging */
 			/* TODO: select() for end point */
+			entry->status = RECEIVING_RESPONSE;
 			ret++;
 		}
 	}
@@ -388,7 +394,10 @@ EXPORT W http_connector_waitconnection(http_connector_t *connector, TMOUT tmout)
 	}
 
 	if (evt != False) {
-		snd_mbf(connector->evtmbf, NULL, 0, T_FOREVER);
+		err = set_flg(connector->flg, HTTP_CONNECTOR_FLAG_EVENT);
+		if (err < 0) {
+			DP_ER("set_flg", err);
+		}
 	}
 
 	return 0;
@@ -415,6 +424,7 @@ EXPORT Bool http_connector_searcheventtarget(http_connector_t *connector, http_c
 		if (entry->status == RECEIVING_RESPONSE) {
 			event->type = HTTP_CONNECTOR_EVENTTYPE_RECEIVE_MESSAGEBODY_END;
 			event->endpoint = entry->id;
+			entry->status = COMPLETED;
 			found = True;
 			break;
 		}
@@ -429,15 +439,24 @@ EXPORT W http_connector_getevent(http_connector_t *connector, http_connector_eve
 	W err;
 	Bool found;
 
-	err = rcv_mbf(connector->evtmbf, event, T_NOWAIT);
-	if ((err & 0xFF) == ER_NONE) {
-		found = http_connector_searcheventtarget(connector, event);
-		if (found != False) {
-			return 0;
-		}
+	err = wai_flg(connector->flg, HTTP_CONNECTOR_FLAG_EVENT, WF_AND, T_NOWAIT);
+	if ((err & 0xFFFF0000) == ER_NONE) {
 		return err;
 	}
-	return err;
+	if (err < 0) {
+		DP_ER("wai_flg", err);
+		return err;
+	}
+	found = http_connector_searcheventtarget(connector, event);
+	if (found == False) {
+		err = clr_flg(connector->flg, HTTP_CONNECTOR_FLAG_CLEARMASK_EVENT);
+		if (err < 0) {
+			DP_ER("clr_flg", err);
+			return err;
+		}
+		return ER_NONE; /* TODO: detail error code */
+	}
+	return 0;
 }
 
 #define HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, state, entry) \
@@ -519,9 +538,9 @@ EXPORT W http_connector_sendmessagebodyend(http_connector_t *connector, ID endpo
 {
 	http_reqentry_t *entry;
 
-	HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, SEND_REQUEST_LINE, entry);	
+	HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, SEND_MESSAGE_BODY, entry);
 
-	entry->status = COMPLETED;
+	entry->status = WAITING_RESPONSE;
 
 	return 0;
 }
@@ -540,23 +559,16 @@ EXPORT http_connector_t* http_connector_new()
 		DP_ER("http_recdict_new", 0);
 		goto error_http_reqdict;
 	}
-	connector->reqmbf = cre_mbf(0, 1, DELEXIT);
-	if (connector->reqmbf < 0) {
-		DP_ER("cre_mbf: reqmbf", connector->reqmbf);
-		goto error_reqmbf;
-	}
-	connector->evtmbf = cre_mbf(0, 1, DELEXIT);
-	if (connector->evtmbf < 0) {
-		DP_ER("cre_mbf: evtmbf", connector->evtmbf);
-		goto error_evtmbf;
+	connector->flg = cre_flg(0, DELEXIT);
+	if (connector->flg < 0) {
+		DP_ER("cre_flg", connector->flg);
+		goto error_flg;
 	}
 
 	return connector;
 
-	del_mbf(connector->evtmbf);
-error_evtmbf:
-	del_mbf(connector->reqmbf);
-error_reqmbf:
+	del_flg(connector->flg);
+error_flg:
 	http_reqdict_delete(connector->dict);
 error_http_reqdict:
 	free(connector);
@@ -565,8 +577,7 @@ error_http_reqdict:
 
 EXPORT VOID http_connector_delete(http_connector_t *connector)
 {
-	del_mbf(connector->evtmbf);
-	del_mbf(connector->reqmbf);
+	del_flg(connector->flg);
 	http_reqdict_delete(connector->dict);
 	free(connector);
 }
