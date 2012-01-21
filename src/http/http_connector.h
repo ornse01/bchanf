@@ -77,6 +77,6 @@ IMPORT W http_connector_sendrequestline(http_connector_t *connector, ID endpoint
 IMPORT W http_connector_sendheader(http_connector_t *connector, ID endpoint, UB *p, W len);
 IMPORT W http_connector_sendheaderend(http_connector_t *connector, ID endpoint);
 IMPORT W http_connector_sendmessagebody(http_connector_t *connector, ID endpoint, UB *p, W len);
-IMPORT W http_connector_sendmessagebodyend(http_connector_t *connector, ID endpoint, UB *p, W len);
+IMPORT W http_connector_sendmessagebodyend(http_connector_t *connector, ID endpoint);
 
 #endif

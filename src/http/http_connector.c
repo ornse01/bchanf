@@ -513,7 +513,7 @@ EXPORT W http_connector_sendmessagebody(http_connector_t *connector, ID endpoint
 	return 0;
 }
 
-EXPORT W http_connector_sendmessagebodyend(http_connector_t *connector, ID endpoint, UB *p, W len)
+EXPORT W http_connector_sendmessagebodyend(http_connector_t *connector, ID endpoint)
 {
 	http_reqentry_t *entry;
 
