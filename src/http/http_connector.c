@@ -267,11 +267,13 @@ EXPORT ID http_connector_createendpoint(http_connector_t *connector, UB *host, W
 
 	id = http_reqdict_allocate(connector->dict, host, host_len, port);
 	if (id < 0) {
+		DP_ER("http_reqdict_allocate", id);
 		return id; /* TODO */
 	}
 
 	err = snd_mbf(connector->reqmbf, NULL, 0, T_FOREVER/* tmp */);
 	if (err < 0) {
+		DP_ER("snd_mbf", err);
 		http_reqdict_free(connector->dict, id);
 		return err;
 	}
