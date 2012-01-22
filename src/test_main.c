@@ -49,6 +49,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_http_contentdecoder_main(driver);
 	test_http_headerlexer_main(driver);
 	test_http_statuslineparser_main(driver);
+	test_http_requestlinestream_main(driver);
 
 	test_tokenchecker_main(driver);
 	test_charreferparser_main(driver);
