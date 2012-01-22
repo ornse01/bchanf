@@ -44,9 +44,11 @@
 #define DP_STATE(arg) /**/
 #endif
 
-EXPORT VOID http_headerlexer_inputchar(http_headerlexer_t *lexer, UB ch, HTTP_HEADERLEXER_RESULT *result)
+EXPORT VOID http_headerlexer_inputchar(http_headerlexer_t *lexer, UB ch, http_headerlexer_result **result, W *result_len)
 {
-	*result = HTTP_HEADERLEXER_RESULT_NONE;
+	*result = lexer->buf;
+	lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_NONE;
+	*result_len = 0;
 
 	switch (lexer->state) {
 	case HTTP_HEADERLEXER_STATE_SEARCH_HEADER:
@@ -57,29 +59,36 @@ EXPORT VOID http_headerlexer_inputchar(http_headerlexer_t *lexer, UB ch, HTTP_HE
 		}
 		if ((ch == ' ')&&(ch = '\t')) {
 			lexer->state = HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDVALUE_LWS;
-			*result = HTTP_HEADERLEXER_RESULT_LWS;
+			lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_LWS;
+			*result_len = 1;
 			/* TODO: return value in "LWS CRLF LWS". */
 			break;
 		}
 		/* TODO: handling error charactors for "token" */
 		lexer->state = HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDNAME;
-		*result = HTTP_HEADERLEXER_RESULT_FIELDNAME;
+		lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_FIELDNAME;
+		lexer->buf[0].ch = ch;
+		*result_len = 1;
 		break;
 	case HTTP_HEADERLEXER_STATE_SEARCH_HEADER_CR:
 		DP_STATE(("state = SEARCH_HEADER_CR: %c[%02x]\n", ch, ch));
 		if (ch == '\n') {
 			lexer->state = HTTP_HEADERLEXER_STATE_READ_VALUE_MESSAGE;
-			*result = HTTP_HEADERLEXER_RESULT_MESSAGEHEADER_END;
+			lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_MESSAGEHEADER_END;
+			*result_len = 1;
 			break;
 		}
 		/* TODO: below error case. */
 		if ((ch == ' ')&&(ch = '\t')) {
 			lexer->state = HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDVALUE_LWS;
-			*result = HTTP_HEADERLEXER_RESULT_LWS;
+			lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_LWS;
+			*result_len = 1;
 			break;
 		}
 		lexer->state = HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDNAME;
-		*result = HTTP_HEADERLEXER_RESULT_FIELDNAME;
+		lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_FIELDNAME;
+		lexer->buf[0].ch = ch;
+		*result_len = 1;
 		break;
 	case HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDNAME:
 		DP_STATE(("state = READ_HEADER_FIELDNAME: %c[%02x]\n", ch, ch));
@@ -89,11 +98,14 @@ EXPORT VOID http_headerlexer_inputchar(http_headerlexer_t *lexer, UB ch, HTTP_HE
 		}
 		if (ch == ':') {
 			lexer->state = HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDVALUE;
-			*result = HTTP_HEADERLEXER_RESULT_FIELDNAME_END;
+			lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_FIELDNAME_END;
+			*result_len = 1;
 			break;
 		}
 		/* TODO: handling error charactors for "token" */
-		*result = HTTP_HEADERLEXER_RESULT_FIELDNAME;
+		lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_FIELDNAME;
+		lexer->buf[0].ch = ch;
+		*result_len = 1;
 		break;
 	case HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDVALUE:
 		DP_STATE(("state = READ_HEADER_FIELDVALUE: %c[%02x]\n", ch, ch));
@@ -103,10 +115,13 @@ EXPORT VOID http_headerlexer_inputchar(http_headerlexer_t *lexer, UB ch, HTTP_HE
 		}
 		if ((ch == ' ')&&(ch = '\t')) {
 			lexer->state = HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDVALUE_LWS;
-			*result = HTTP_HEADERLEXER_RESULT_LWS;
+			lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_LWS;
+			*result_len = 1;
 			break;
 		}
-		*result = HTTP_HEADERLEXER_RESULT_FIELDCONTENT;
+		lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_FIELDCONTENT;
+		lexer->buf[0].ch = ch;
+		*result_len = 1;
 		break;
 	case HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDVALUE_LWS:
 		DP_STATE(("state = READ_HEADER_FIELDVALUE_LWS: %c[%02x]\n", ch, ch));
@@ -116,7 +131,9 @@ EXPORT VOID http_headerlexer_inputchar(http_headerlexer_t *lexer, UB ch, HTTP_HE
 		}
 		if ((ch != ' ')&&(ch != '\t')) {
 			lexer->state = HTTP_HEADERLEXER_STATE_READ_HEADER_FIELDVALUE;
-			*result = HTTP_HEADERLEXER_RESULT_FIELDCONTENT;
+			lexer->buf[0].type = HTTP_HEADERLEXER_RESULT_FIELDCONTENT;
+			lexer->buf[0].ch = ch;
+			*result_len = 1;
 			break;
 		}
 		break;

@@ -48,8 +48,8 @@ DDDEEEFFF"
 LOCAL UNITTEST_RESULT test_http_headerlexer_1()
 {
 	http_headerlexer_t lexer;
-	W i,err,len;
-	HTTP_HEADERLEXER_RESULT hr;
+	W i,j,err,len,hr_len;
+	http_headerlexer_result *hr;
 
 	len = strlen(test_http_headerlexer_testdata_01);
 
@@ -59,26 +59,28 @@ LOCAL UNITTEST_RESULT test_http_headerlexer_1()
 	}
 
 	for (i = 0; i < len; i++) {
-		http_headerlexer_inputchar(&lexer, test_http_headerlexer_testdata_01[i], &hr);
-		switch (hr) {
-		case HTTP_HEADERLEXER_RESULT_NONE:
-			printf("NONE\n");
-			break;
-		case HTTP_HEADERLEXER_RESULT_FIELDNAME:
-			printf("FIELDNAME\n");
-			break;
-		case HTTP_HEADERLEXER_RESULT_FIELDNAME_END:
-			printf("FIELDNAME_END\n");
-			break;
-		case HTTP_HEADERLEXER_RESULT_FIELDCONTENT:
-			printf("FIELDCONTENT\n");
-			break;
-		case HTTP_HEADERLEXER_RESULT_LWS:
-			printf("LWS\n");
-			break;
-		case HTTP_HEADERLEXER_RESULT_MESSAGEHEADER_END:
-			printf("MESSAGEHEADER_END\n");
-			break;
+		http_headerlexer_inputchar(&lexer, test_http_headerlexer_testdata_01[i], &hr, &hr_len);
+		for (j = 0; j < hr_len; j++) {
+			switch (hr[j].type) {
+			case HTTP_HEADERLEXER_RESULT_NONE:
+				printf("NONE\n");
+				break;
+			case HTTP_HEADERLEXER_RESULT_FIELDNAME:
+				printf("FIELDNAME\n");
+				break;
+			case HTTP_HEADERLEXER_RESULT_FIELDNAME_END:
+				printf("FIELDNAME_END\n");
+				break;
+			case HTTP_HEADERLEXER_RESULT_FIELDCONTENT:
+				printf("FIELDCONTENT\n");
+				break;
+			case HTTP_HEADERLEXER_RESULT_LWS:
+				printf("LWS\n");
+				break;
+			case HTTP_HEADERLEXER_RESULT_MESSAGEHEADER_END:
+				printf("MESSAGEHEADER_END\n");
+				break;
+			}
 		}
 	}
 
@@ -87,132 +89,133 @@ LOCAL UNITTEST_RESULT test_http_headerlexer_1()
 	return UNITTEST_RESULT_PASS;
 }
 
-LOCAL UNITTEST_RESULT test_http_headerlexer_2()
+typedef struct {
+	W type;
+	UB ch;
+} test_http_headerlexer_expected_t;
+
+LOCAL UNITTEST_RESULT test_http_headerlexer_common(UB *testdata, W testdata_len, test_http_headerlexer_expected_t *expected, W expected_len)
 {
 	http_headerlexer_t lexer;
-	W err;
-	HTTP_HEADERLEXER_RESULT hr;
+	W err, hr_len, i, j, k = 0;
+	UB ch;
+	http_headerlexer_result *hr;
 	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
-
-#define check_result_2(info, e, r) \
-	if (e != r) { \
-		result = UNITTEST_RESULT_FAIL; \
-		printf("test expected = %d, result = %d, fail = %s", e, r, info); \
-	}
 
 	err = http_headerlexer_initialize(&lexer);
 	if (err < 0) {
 		return UNITTEST_RESULT_FAIL;
 	}
 
-	http_headerlexer_inputchar(&lexer, 'A', &hr);
-	check_result_2("A", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, 'B', &hr);
-	check_result_2("B", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, 'C', &hr);
-	check_result_2("C", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, ':', &hr);
-	check_result_2(":", HTTP_HEADERLEXER_RESULT_FIELDNAME_END, hr);
-	http_headerlexer_inputchar(&lexer, ' ', &hr);
-	check_result_2("[SP]", HTTP_HEADERLEXER_RESULT_LWS, hr);
-	http_headerlexer_inputchar(&lexer, 'a', &hr);
-	check_result_2("a", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, 'b', &hr);
-	check_result_2("b", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, 'c', &hr);
-	check_result_2("c", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, '\r', &hr);
-	check_result_2("[CR]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, '\n', &hr);
-	check_result_2("[LF]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, 'D', &hr);
-	check_result_2("D", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, 'E', &hr);
-	check_result_2("E", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, 'F', &hr);
-	check_result_2("F", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, ':', &hr);
-	check_result_2(":", HTTP_HEADERLEXER_RESULT_FIELDNAME_END, hr);
-	http_headerlexer_inputchar(&lexer, ' ', &hr);
-	check_result_2("[SP]", HTTP_HEADERLEXER_RESULT_LWS, hr);
-	http_headerlexer_inputchar(&lexer, ' ', &hr);
-	check_result_2("[SP]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, ' ', &hr);
-	check_result_2("[SP]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, 'a', &hr);
-	check_result_2("a", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, ' ', &hr);
-	check_result_2("[SP]", HTTP_HEADERLEXER_RESULT_LWS, hr);
-	http_headerlexer_inputchar(&lexer, 'b', &hr);
-	check_result_2("b", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, 'b', &hr);
-	check_result_2("b", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, ' ', &hr);
-	check_result_2("[SP]", HTTP_HEADERLEXER_RESULT_LWS, hr);
-	http_headerlexer_inputchar(&lexer, '\r', &hr);
-	check_result_2("[CR]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, '\n', &hr);
-	check_result_2("[LF]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, 'X', &hr);
-	check_result_2("X", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, 'Y', &hr);
-	check_result_2("Y", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, 'Z', &hr);
-	check_result_2("Z", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, ':', &hr);
-	check_result_2(":", HTTP_HEADERLEXER_RESULT_FIELDNAME_END, hr);
-	http_headerlexer_inputchar(&lexer, 'x', &hr);
-	check_result_2("x", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, 'y', &hr);
-	check_result_2("y", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, 'z', &hr);
-	check_result_2("z", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, '\r', &hr);
-	check_result_2("[CR]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, '\n', &hr);
-	check_result_2("[LF]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, ' ', &hr);
-	check_result_2("[SP]", HTTP_HEADERLEXER_RESULT_LWS, hr);
-	http_headerlexer_inputchar(&lexer, ' ', &hr);
-	check_result_2("[SP]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, 'A', &hr);
-	check_result_2("A", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, 'A', &hr);
-	check_result_2("A", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, 'A', &hr);
-	check_result_2("A", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, '\r', &hr);
-	check_result_2("[CR]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, '\n', &hr);
-	check_result_2("[LF]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, 'L', &hr);
-	check_result_2("L", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, 'M', &hr);
-	check_result_2("M", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, 'N', &hr);
-	check_result_2("N", HTTP_HEADERLEXER_RESULT_FIELDNAME, hr);
-	http_headerlexer_inputchar(&lexer, ':', &hr);
-	check_result_2(":", HTTP_HEADERLEXER_RESULT_FIELDNAME_END, hr);
-	http_headerlexer_inputchar(&lexer, ' ', &hr);
-	check_result_2("[SP]", HTTP_HEADERLEXER_RESULT_LWS, hr);
-	http_headerlexer_inputchar(&lexer, 'l', &hr);
-	check_result_2("l", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, 'm', &hr);
-	check_result_2("m", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, 'n', &hr);
-	check_result_2("n", HTTP_HEADERLEXER_RESULT_FIELDCONTENT, hr);
-	http_headerlexer_inputchar(&lexer, '\r', &hr);
-	check_result_2("[CR]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, '\n', &hr);
-	check_result_2("[LF]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, '\r', &hr);
-	check_result_2("[CR]", HTTP_HEADERLEXER_RESULT_NONE, hr);
-	http_headerlexer_inputchar(&lexer, '\n', &hr);
-	check_result_2("[LF]", HTTP_HEADERLEXER_RESULT_MESSAGEHEADER_END, hr);
+	for (i = 0; i < testdata_len ; i++) {
+		ch = testdata[i];
+		http_headerlexer_inputchar(&lexer, ch, &hr, &hr_len);
+		for (j = 0; j < hr_len; j++) {
+			if (k >= expected_len) {
+				result = UNITTEST_RESULT_FAIL;
+				continue;
+			}
+			if (hr[j].type != expected[k].type) {
+				result = UNITTEST_RESULT_FAIL;
+				printf("test %d: expected = %d, result = %d, fail = ", k, expected[k].type, hr[j].type);
+				if (ch == ' ') {
+					printf("[SP]\n");
+				} else if (ch == '\t') {
+					printf("[HT]\n");
+				} else if (ch == '\r') {
+					printf("[CR]\n");
+				} else if (ch == '\n') {
+					printf("[LF]\n");
+				} else {
+					printf("%c\n", ch);
+				}
+			}
+			if ((hr[j].type == HTTP_HEADERLEXER_RESULT_FIELDNAME)&&(hr[j].type == HTTP_HEADERLEXER_RESULT_FIELDCONTENT)) {
+				if (hr[j].ch != expected[k].ch) {
+					printf("charactor is not expected: %c, %c\n", expected[k].ch, hr[j].ch);
+				}
+			}
+			k++;
+		}
+	}
+	if (k != expected_len) {
+		result = UNITTEST_RESULT_FAIL;
+		printf("result number is not expected: %d, %d\n", expected_len, k);
+	}
 
 	http_headerlexer_finalize(&lexer);
 
 	return result;
+}
+
+LOCAL W test_http_headerlexer_expected__count(test_http_headerlexer_expected_t *expected)
+{
+	W i;
+
+	for (i = 0; ;i++) {
+		if (expected[i].type < 0) {
+			break;
+		}
+	}
+
+	return i;
+}
+
+LOCAL UNITTEST_RESULT test_http_headerlexer_2()
+{
+	UB testdata[] = {
+		"ABC: abc\r\n"
+		"DEF:   a bb \r\n"
+		"XYZ:xyz\r\n"
+		"  AAA\r\n"
+		"LMN: lmn\r\n"
+		"\r\n"
+	};
+	W testdata_len = strlen(testdata);
+	test_http_headerlexer_expected_t expected[] = {
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'A'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'B'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'C'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME_END, '\0'},
+		{HTTP_HEADERLEXER_RESULT_LWS, ' '},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'a'},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'b'},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'c'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'D'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'E'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'F'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME_END, '\0'},
+		{HTTP_HEADERLEXER_RESULT_LWS, ' '},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'a'},
+		{HTTP_HEADERLEXER_RESULT_LWS, ' '},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'b'},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'b'},
+		{HTTP_HEADERLEXER_RESULT_LWS, ' '},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'X'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'Y'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'Z'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME_END, '\0'},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'x'},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'y'},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'z'},
+		{HTTP_HEADERLEXER_RESULT_LWS, ' '},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'A'},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'A'},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'A'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'L'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'M'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME, 'N'},
+		{HTTP_HEADERLEXER_RESULT_FIELDNAME_END, '\0'},
+		{HTTP_HEADERLEXER_RESULT_LWS, ' '},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'l'},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'm'},
+		{HTTP_HEADERLEXER_RESULT_FIELDCONTENT, 'n'},
+		{HTTP_HEADERLEXER_RESULT_MESSAGEHEADER_END, '\0'},
+		{-1, '\0'}
+	};
+	W expected_len = test_http_headerlexer_expected__count(expected);
+
+	return test_http_headerlexer_common(testdata, testdata_len, expected, expected_len);
 }
 
 EXPORT VOID test_http_headerlexer_main(unittest_driver_t *driver)
