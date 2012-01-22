@@ -35,6 +35,8 @@
 
 #include    <unittest_driver.h>
 
+#include    "http_typedef.h"
+
 LOCAL UB testdata_identity_01[] = {
 	"abcfefghijklmnopqrstuvwxyz"
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"

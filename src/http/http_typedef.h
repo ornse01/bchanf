@@ -48,4 +48,24 @@ typedef enum {
 	HTTP_METHOD_CONNECT,
 } HTTP_METHOD;
 
+/* Functionality name: http */
+/* Detail name: transfercoding */
+/* Data structure identifier: type */
+/*  rfc2616 3.6 Transfer Codings */
+typedef enum {
+	HTTP_TRANSFERCODING_TYPE_IDENTITY,
+	HTTP_TRANSFERCODING_TYPE_CHUNKED,
+} HTTP_TRANSFERCODING_TYPE;
+
+/* Functionality name: http */
+/* Detail name: contentcoding */
+/* Data structure identifier: value */
+/*  rfc2616 3.5 Content Codings */
+typedef enum {
+	HTTP_CONTENTCODING_VALUE_IDENTITY,
+	HTTP_CONTENTCODING_VALUE_GZIP,
+	HTTP_CONTENTCODING_VALUE_COMPRESS, /* unsupported yet */
+	HTTP_CONTENTCODING_VALUE_DEFLATE, /* unsupported yet */
+} HTTP_CONTENTCODING_VALUE;
+
 #endif

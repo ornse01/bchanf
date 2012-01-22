@@ -30,18 +30,12 @@
 
 #include    <basic.h>
 
+#include    "http_typedef.h"
+
 /* rfc2616 3.6 Transfer Codings */
 
 #ifndef __HTTP_TRANSFERDECODER_H__
 #define __HTTP_TRANSFERDECODER_H__
-
-/* Functionality name: http */
-/* Detail name: transfercoding */
-/* Data structure identifier: type */
-typedef enum {
-	HTTP_TRANSFERCODING_TYPE_IDENTITY,
-	HTTP_TRANSFERCODING_TYPE_CHUNKED,
-} HTTP_TRANSFERCODING_TYPE;
 
 /* Functionality name: http */
 /* Detail name: transferdecoder */

@@ -30,6 +30,8 @@
 #include	<bstdio.h>
 #include	<util/zlib.h>
 
+#include    "http_typedef.h"
+
 #ifdef BCHAN_CONFIG_DEBUG
 # define DP(arg) printf arg
 # define DP_ER(msg, err) printf("%s (%d/%x)\n", msg, err>>16, err)

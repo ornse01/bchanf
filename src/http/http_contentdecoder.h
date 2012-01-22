@@ -31,20 +31,12 @@
 #include    <basic.h>
 #include	<util/zlib.h>
 
+#include    "http_typedef.h"
+
 /* rfc2616 3.5 Content Codings */
 
 #ifndef __HTTP_CONTENTDECODER_H__
 #define __HTTP_CONTENTDECODER_H__
-
-/* Functionality name: http */
-/* Detail name: contentcoding */
-/* Data structure identifier: value */
-typedef enum {
-	HTTP_CONTENTCODING_VALUE_IDENTITY,
-	HTTP_CONTENTCODING_VALUE_GZIP,
-	HTTP_CONTENTCODING_VALUE_COMPRESS, /* unsupported yet */
-	HTTP_CONTENTCODING_VALUE_DEFLATE, /* unsupported yet */
-} HTTP_CONTENTCODING_VALUE;
 
 /* Functionality name: http */
 /* Detail name: contentdecoder */
