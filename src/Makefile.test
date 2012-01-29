@@ -46,14 +46,16 @@ SRC_HTTP = 	http_connector.c \
 		http_headerlexer.c \
 		http_statuslineparser.c \
 		http_requestlinestream.c \
-		http_defaultheaderstream.c
+		http_defaultheaderstream.c \
+		http_defaultheaderparser.c
 
 SRC_HTTP_TEST =	test_http_transferdecoder.c \
 		test_http_contentdecoder.c \
 		test_http_headerlexer.c \
 		test_http_statuslineparser.c \
 		test_http_requestlinestream.c \
-		test_http_defaultheaderstream.c
+		test_http_defaultheaderstream.c \
+		test_http_defaultheaderparser.c
 
 SRC_PARSE =	tokenchecker.c \
 		charreferparser.c 
