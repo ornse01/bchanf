@@ -33,6 +33,8 @@
 #include	<btron/btron.h>
 #include	<btron/bsocket.h>
 
+#include    <coll/idtocb.h>
+
 #ifdef BCHAN_CONFIG_DEBUG
 # define DP(arg) printf arg
 # define DP_ER(msg, err) printf("%s (%d/%x)\n", msg, err>>16, err)
@@ -42,6 +44,7 @@
 #endif
 
 struct http_reqentry_t_ {
+	idtocb_entry_t base;
 	enum {
 		NON_EXISTENT,
 		WAITING_TRANSPORT,
@@ -68,7 +71,6 @@ struct http_reqentry_t_ {
 	UB *host;
 	W host_len;
 	SOCKADDR addr;
-	ID id;
 };
 typedef struct http_reqentry_t_ http_reqentry_t;
 
@@ -86,7 +88,7 @@ LOCAL VOID http_reqentry_detachendpoint(http_reqentry_t *entry)
 	return;
 }
 
-LOCAL W http_reqentry_allocate(http_reqentry_t *entry, UB *host, W host_len, UH port, ID id)
+LOCAL W http_reqentry_initialize(http_reqentry_t *entry, UB *host, W host_len, UH port)
 {
 	W err;
 	B buf[HBUFLEN];
@@ -115,7 +117,6 @@ LOCAL W http_reqentry_allocate(http_reqentry_t *entry, UB *host, W host_len, UH 
 	entry->status = WAITING_TRANSPORT;
 	entry->snd_state = SEND_REQUEST_LINE;
 	entry->rcv_state = RECEIVE_STATUS_LINE;
-	entry->id = id;
 
 	return 0;
 
@@ -126,24 +127,6 @@ error_host:
 	return err;
 }
 
-LOCAL VOID http_reqentry_free(http_reqentry_t *entry)
-{
-	entry->id = -1;
-	entry->host_len = 0;
-	if (entry->host != NULL) {
-		free(entry->host);
-	}
-	entry->status = NON_EXISTENT;
-}
-
-LOCAL VOID http_reqentry_initialize(http_reqentry_t *entry)
-{
-	entry->status = NON_EXISTENT;
-	entry->host = NULL;
-	entry->host_len = 0;
-	entry->id = -1;
-}
-
 LOCAL VOID http_reqentry_finalize(http_reqentry_t *entry)
 {
 	if (entry->host != NULL) {
@@ -152,37 +135,63 @@ LOCAL VOID http_reqentry_finalize(http_reqentry_t *entry)
 }
 
 struct http_reqdict_t_ {
+	idtocb_t *base;
 	W entries;
 	http_reqentry_t entry[1];
 };
 typedef struct http_reqdict_t_ http_reqdict_t;
 
+typedef struct {
+	idtocb_iterator_t base;
+} http_recdictiterator_t;
+
+LOCAL Bool http_reqdictiterator_next(http_recdictiterator_t *iter, http_reqentry_t **entry)
+{
+	return idtocb_iterator_next(&iter->base, (idtocb_entry_t**)entry);
+}
+
+LOCAL VOID http_reqdictiterator_initialize(http_recdictiterator_t *iter, http_reqdict_t *dict)
+{
+	idtocb_iterator_initialize(&iter->base, dict->base);
+}
+
+LOCAL VOID http_reqdictiterator_finalize(http_recdictiterator_t *iter)
+{
+	idtocb_iterator_finalize(&iter->base);
+}
+
 LOCAL ID http_reqdict_allocate(http_reqdict_t *dict, UB *host, W host_len, UH port)
 {
-	W i, err;
+	ID id;
+	http_reqentry_t *cb;
+	W err;
 
-	for (i = 0; i < dict->entries; i++) {
-		if (dict->entry[i].status == NON_EXISTENT) {
-			break;
-		}
+	id = idtocb_allocate(dict->base);
+	if (id < 0) {
+		return id;
 	}
-	if (i == dict->entries) {
-		return ER_NOMEM; /* TODO: detail error code */
-	}
-
-	err = http_reqentry_allocate(dict->entry + i, host, host_len, port, i);
+	err = idtocb_getcontrolblock(dict->base, id, (idtocb_entry_t**)&cb);
 	if (err < 0) {
+		idtocb_free(dict->base, id);
 		return err;
 	}
 
-	return i;
+	err = http_reqentry_initialize(cb, host, host_len, port);
+	if (err < 0) {
+		idtocb_free(dict->base, id);
+		return err;
+	}
+
+	return id;
 }
 
 LOCAL http_reqentry_t* http_reqdict_getentrybyID(http_reqdict_t *dict, ID id)
 {
 	http_reqentry_t *entry;
-	entry = dict->entry + id;
-	if (entry->status == NON_EXISTENT) {
+	W err;
+
+	err = idtocb_getcontrolblock(dict->base, id, (idtocb_entry_t**)&entry);
+	if (err < 0) {
 		return NULL;
 	}
 	return entry;
@@ -191,67 +200,50 @@ LOCAL http_reqentry_t* http_reqdict_getentrybyID(http_reqdict_t *dict, ID id)
 LOCAL VOID http_reqdict_free(http_reqdict_t *dict, ID id)
 {
 	http_reqentry_t *entry;
-	entry = http_reqdict_getentrybyID(dict, id);
-	if (entry == NULL) {
+	W err;
+
+	err = idtocb_getcontrolblock(dict->base, id, (idtocb_entry_t**)&entry);
+	if (err < 0) {
 		return;
 	}
-	http_reqentry_free(entry);
+	http_reqentry_finalize(entry);
+	idtocb_free(dict->base, id);
 }
 
 LOCAL http_reqdict_t* http_reqdict_new(W max_entries)
 {
 	http_reqdict_t *dict;
-	W i;
 
-	dict = (http_reqdict_t*)malloc(sizeof(W)*sizeof(http_reqdict_t)*max_entries);
+	dict = (http_reqdict_t*)malloc(sizeof(http_reqdict_t));
 	if (dict == NULL) {
 		return NULL;
 	}
-	dict->entries = max_entries;
-	for (i = 0; i < max_entries; i++) {
-		http_reqentry_initialize(dict->entry+i);
+	dict->base = idtocb_new(sizeof(http_reqentry_t), max_entries);
+	if (dict->base == NULL) {
+		free(dict);
+		return NULL;
 	}
 	return dict;
 }
 
 LOCAL VOID http_reqdict_delete(http_reqdict_t *dict)
 {
-	W i;
-	for (i = 0; i < dict->entries; i++) {
-		http_reqentry_finalize(dict->entry+i);
-	}
-	free(dict);
-}
+	http_recdictiterator_t iter;
+	http_reqentry_t *entry;
+	Bool cont;
 
-typedef struct {
-	http_reqdict_t *dict;
-	W i;
-} http_recdictiterator_t;
-
-LOCAL Bool http_reqdictiterator_next(http_recdictiterator_t *iter, http_reqentry_t **entry)
-{
-	http_reqentry_t *e0;
-
-	for (; iter->i < iter->dict->entries;) {
-		e0 = iter->dict->entry + iter->i;
-		iter->i++;
-		if (e0->status != NON_EXISTENT) {
-			*entry = e0;
-			return True;
+	http_reqdictiterator_initialize(&iter, dict);
+	for (;;) {
+		cont = http_reqdictiterator_next(&iter, &entry);
+		if (cont == False) {
+			break;
 		}
+		http_reqentry_finalize(entry);
 	}
+	http_reqdictiterator_finalize(&iter);
 
-	return False;
-}
-
-LOCAL VOID http_reqdictiterator_initialize(http_recdictiterator_t *iter, http_reqdict_t *dict)
-{
-	iter->dict = dict;
-	iter->i = 0;
-}
-
-LOCAL VOID http_reqdictiterator_finalize(http_recdictiterator_t *iter)
-{
+	idtocb_delete(dict->base);
+	free(dict);
 }
 
 struct http_connector_t_ {
@@ -310,10 +302,10 @@ LOCAL VOID http_connector_collect(http_connector_t *connector)
 			break;
 		}
 		if (entry->status == ABORTED_BY_TRANSPORT) {
-			http_reqdict_free(connector->dict, entry->id);
+			http_reqdict_free(connector->dict, entry->base.id);
 		} else if (entry->status == COMPLETED) {
 			/* TODO: release transport endpoint */
-			http_reqdict_free(connector->dict, entry->id);
+			http_reqdict_free(connector->dict, entry->base.id);
 		}
 	}
 	http_reqdictiterator_finalize(&iter);
@@ -417,13 +409,13 @@ EXPORT Bool http_connector_searcheventtarget(http_connector_t *connector, http_c
 		}
 		if (entry->status == SENDING_REQUEST) {
 			event->type = HTTP_CONNECTOR_EVENTTYPE_SEND;
-			event->endpoint = entry->id;
+			event->endpoint = entry->base.id;
 			found = True;
 			break;
 		}
 		if (entry->status == RECEIVING_RESPONSE) {
 			event->type = HTTP_CONNECTOR_EVENTTYPE_RECEIVE_MESSAGEBODY_END;
-			event->endpoint = entry->id;
+			event->endpoint = entry->base.id;
 			entry->status = COMPLETED;
 			found = True;
 			break;
@@ -485,7 +477,6 @@ EXPORT W http_connector_getevent(http_connector_t *connector, http_connector_eve
 
 EXPORT W http_connector_sendrequestline(http_connector_t *connector, ID endpoint, UB *path, W path_len)
 {
-	W err;
 	http_reqentry_t *entry;
 
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, SEND_REQUEST_LINE, entry);
@@ -497,7 +488,6 @@ EXPORT W http_connector_sendrequestline(http_connector_t *connector, ID endpoint
 
 EXPORT W http_connector_sendheader(http_connector_t *connector, ID endpoint, UB *p, W len)
 {
-	W err;
 	http_reqentry_t *entry;
 
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK_2(connector, endpoint, SEND_HEADER_MINE, SEND_HEADER_USER, entry);
@@ -511,7 +501,6 @@ EXPORT W http_connector_sendheader(http_connector_t *connector, ID endpoint, UB 
 
 EXPORT W http_connector_sendheaderend(http_connector_t *connector, ID endpoint)
 {
-	W err;
 	http_reqentry_t *entry;
 
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK_2(connector, endpoint, SEND_HEADER_MINE, SEND_HEADER_USER, entry);
@@ -526,7 +515,6 @@ EXPORT W http_connector_sendheaderend(http_connector_t *connector, ID endpoint)
 
 EXPORT W http_connector_sendmessagebody(http_connector_t *connector, ID endpoint, UB *p, W len)
 {
-	W err;
 	http_reqentry_t *entry;
 
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, SEND_MESSAGE_BODY, entry);
