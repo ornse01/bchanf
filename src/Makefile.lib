@@ -33,7 +33,7 @@ TARGET = libbchanf
 
 # ソースファイルのサーチパス
 TOPDIR = ../../src/bchanf
-S = $(TOPDIR)/src $(TOPDIR)/src/http $(TOPDIR)/src/parse
+S = $(TOPDIR)/src $(TOPDIR)/src/http $(TOPDIR)/src/parse $(TOPDIR)/src/coll
 VPATH = $(S)
 
 # ヘッダファイルのディレクトリ追加
@@ -45,12 +45,18 @@ SRC_HTTP = 	http_connector.c \
 		http_transferdecoder.c \
 		http_contentdecoder.c \
 		http_headerlexer.c \
-		http_statuslineparser.c
+		http_statuslineparser.c \
+		http_requestlinestream.c \
+		http_defaultheaderstream.c \
+		http_defaultheaderparser.c \
+		http_transport.c
 
 SRC_PARSE =	tokenchecker.c \
 		charreferparser.c 
 
-SRC =	$(SRC_HTTP) $(SRC_PARSE)
+SRC_COLL =	idtocb.c
+
+SRC =	$(SRC_HTTP) $(SRC_PARSE) $(SRC_COLL)
 
 # データボックスソースファイル
 DBSRC =
