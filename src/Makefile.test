@@ -47,7 +47,8 @@ SRC_HTTP = 	http_connector.c \
 		http_statuslineparser.c \
 		http_requestlinestream.c \
 		http_defaultheaderstream.c \
-		http_defaultheaderparser.c
+		http_defaultheaderparser.c \
+		http_transport.c
 
 SRC_HTTP_TEST =	test_http_transferdecoder.c \
 		test_http_contentdecoder.c \
