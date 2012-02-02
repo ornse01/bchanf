@@ -446,6 +446,21 @@ EXPORT http_transport_t* http_transport_new(W max_endpoints)
 
 EXPORT VOID http_transport_delete(http_transport_t *transport)
 {
+	http_transport_iterator_t iter;
+	http_transport_cb_t *cb;
+	Bool cont;
+
+	http_transport_iterator_initialize(&iter, transport);
+	for (;;) {
+		cont = http_transport_iterator_next(&iter, &cb);
+		if (cont == False) {
+			break;
+		}
+		so_close(cb->s);
+		http_transport_freecb(transport, cb->base.id);
+	}
+	http_transport_iterator_finalize(&iter);
+
 	idtocb_delete(transport->base);
 	free(transport);
 }
