@@ -35,6 +35,8 @@
 
 #include    <unittest_driver.h>
 
+#include    "http_typedef.h"
+
 LOCAL UNITTEST_RESULT test_http_statuslineparser_common(UB *testdata, W testdata_len, http_statuslineparser_result *expected)
 {
 	http_statuslineparser_t parser;
