@@ -46,11 +46,12 @@ IMPORT ID http_transport_prepairendpoint(http_transport_t *transport, SOCKADDR *
 IMPORT ID http_transport_searchendpoint(http_transport_t *transport, SOCKADDR *addr);
 IMPORT VOID http_transport_releaseunusedendpoint(http_transport_t *transport);
 IMPORT W http_transport_holdendpoint(http_transport_t *transport, ID endpoint);
+IMPORT W http_transport_isholdedendpoint(http_transport_t *transport, ID endpoint, Bool *is_holded);
 IMPORT VOID http_transport_releaseendpoint(http_transport_t *transport, ID endpoint);
 IMPORT W http_transport_setwaitingreceive(http_transport_t *transort, ID endpoint);
 IMPORT W http_transport_waitreceive(http_transport_t *transport, TMOUT tmout);
 IMPORT W http_transport_isreadready(http_transport_t *transport, ID endpoint, Bool *is_ready);
-IMPORT W http_transport_write(http_transport_t *transport, ID endpoint, UB *bin, W len);
+IMPORT W http_transport_write(http_transport_t *transport, ID endpoint, CONST UB *bin, W len);
 IMPORT W http_transport_read(http_transport_t *transport, ID endpoint, UB **bin, W *len);
 IMPORT W http_transport_consumereadbuffer(http_transport_t *transport, ID endpoint, W consumed_len);
 

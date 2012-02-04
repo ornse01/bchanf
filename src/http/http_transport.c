@@ -232,6 +232,28 @@ EXPORT W http_transport_holdendpoint(http_transport_t *transport, ID endpoint)
 	return ER_OK;
 }
 
+EXPORT W http_transport_isholdedendpoint(http_transport_t *transport, ID endpoint, Bool *is_holded)
+{
+	http_transport_cb_t *cb;
+	W err;
+
+	err = http_transport_getcontrolblock(transport, endpoint, &cb);
+	if (err < 0) {
+		DP_ER("http_transport_getcontrolblock", err);
+		return err;
+	}
+	if (cb->status != DORMANT) {
+		return ER_BUSY; /* TODO: sub error code */
+	}
+	if (cb->status == HOLDED) {
+		*is_holded = True;
+	} else {
+		*is_holded = False;
+	}
+
+	return ER_OK;
+}
+
 EXPORT VOID http_transport_releaseendpoint(http_transport_t *transport, ID endpoint)
 {
 	http_transport_cb_t *cb;
@@ -348,7 +370,7 @@ EXPORT W http_transport_isreadready(http_transport_t *transport, ID endpoint, Bo
 	return ER_OK;
 }
 
-EXPORT W http_transport_write(http_transport_t *transport, ID endpoint, UB *bin, W len)
+EXPORT W http_transport_write(http_transport_t *transport, ID endpoint, CONST UB *bin, W len)
 {
 	http_transport_cb_t *cb;
 	W err;
@@ -361,7 +383,7 @@ EXPORT W http_transport_write(http_transport_t *transport, ID endpoint, UB *bin,
 	if (cb->status != HOLDED) {
 		return ER_BUSY; /* TODO: sub error code */
 	}
-	err = so_write(cb->s, bin, len);
+	err = so_write(cb->s, (UB*)bin, len);
 	if ((err & 0xFFFF0000) == EX_CONNABORTED) {
 		cb->status = CLOSED;
 	}

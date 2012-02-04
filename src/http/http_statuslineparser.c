@@ -30,6 +30,7 @@
 #include	<bstdio.h>
 
 #include    <parse/tokenchecker.h>
+#include    "http_typedef.h"
 
 EXPORT Bool http_statuslineparser_inputchar(http_statuslineparser_t *parser, UB ch, http_statuslineparser_result *result)
 {

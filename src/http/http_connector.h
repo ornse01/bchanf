@@ -31,6 +31,8 @@
 #include    <basic.h>
 #include    <btron/taskcomm.h>
 
+#include    "http_typedef.h"
+
 #ifndef __HTTP_CONNECTOR_H__
 #define __HTTP_CONNECTOR_H__
 
@@ -39,6 +41,7 @@
 /* Data structure identifier: event */
 struct http_connector_event_ {
 	enum {
+		HTTP_CONNECTOR_EVENTTYPE_NONE,
 		HTTP_CONNECTOR_EVENTTYPE_SEND,
 		HTTP_CONNECTOR_EVENTTYPE_RECEIVE_STATUSLINE,
 		HTTP_CONNECTOR_EVENTTYPE_RECEIVE_HEADER,
@@ -50,6 +53,8 @@ struct http_connector_event_ {
 	ID endpoint;
 	union {
 		struct {
+			HTTP_HTTPVERSION version;
+			HTTP_STATUSCODE statuscode;
 		} receive_statusline;
 		struct {
 			UB *bin;
@@ -69,7 +74,7 @@ typedef struct http_connector_t_ http_connector_t;
 
 IMPORT http_connector_t* http_connector_new();
 IMPORT VOID http_connector_delete(http_connector_t *connector);
-IMPORT ID http_connector_createendpoint(http_connector_t *connector, UB *host, W host_len, UH port);
+IMPORT ID http_connector_createendpoint(http_connector_t *connector, UB *host, W host_len, UH port, HTTP_METHOD method);
 IMPORT VOID http_connector_deleteendpoint(http_connector_t *connector, ID endpoint);
 IMPORT W http_connector_waitconnection(http_connector_t *connector, TMOUT tmout);
 IMPORT W http_connector_getevent(http_connector_t *connector, http_connector_event *event);
