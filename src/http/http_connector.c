@@ -581,18 +581,13 @@ LOCAL W http_connector_rcv_header_end(http_connector_t *connector, http_reqentry
 LOCAL W http_connector_rcv_message_body_contentdecode(http_connector_t *connector, http_reqentry_t *entry, http_connector_event *event)
 {
 	W err;
-	Bool need_input;
 	http_contentdecoder_result *result;
 
 	if (entry->rcv_reader.body.content_result_consumed == entry->rcv_reader.body.content_result_len) {
-		err = http_contentdecoder_outputdata(&entry->rcv_reader.cc, &entry->rcv_reader.body.content_result, &entry->rcv_reader.body.content_result_len, &need_input);
+		err = http_contentdecoder_outputdata(&entry->rcv_reader.cc, &entry->rcv_reader.body.content_result, &entry->rcv_reader.body.content_result_len);
 		if (err < 0) {
 			DP_ER("http_contentdecoder_outputdata", err);
 			return err;
-		}
-		if (need_input != False) {
-			entry->rcv_state = RECEIVE_MESSAGE_BODY_TRANSFERDECODE;
-			return 0;
 		}
 	}
 	result = entry->rcv_reader.body.content_result + entry->rcv_reader.body.content_result_consumed;
@@ -604,8 +599,12 @@ LOCAL W http_connector_rcv_message_body_contentdecode(http_connector_t *connecto
 		event->data.receive_messagebody.bin = result->data;
 		event->data.receive_messagebody.len = result->len;
 		return 1;
+	case HTTP_CONTENTDECODER_RESULTTYPE_NEED_INPUT:
+		entry->rcv_state = RECEIVE_MESSAGE_BODY_TRANSFERDECODE;
+		break;
 	case HTTP_CONTENTDECODER_RESULTTYPE_END:
 		entry->rcv_state = RECEIVE_MESSAGE_END;
+		break;
 	}
 
 	return 0;

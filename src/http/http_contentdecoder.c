@@ -60,24 +60,25 @@ LOCAL W http_contentdecoderidentity_inputendofdata(http_contentdecoderidentity_t
 	return 0;
 }
 
-LOCAL W http_contentdecoderidentity_outputdata(http_contentdecoderidentity_t *decoder, http_contentdecoder_result **result, W *result_len, Bool *need_next)
+LOCAL W http_contentdecoderidentity_outputdata(http_contentdecoderidentity_t *decoder, http_contentdecoder_result **result, W *result_len)
 {
 	switch (decoder->state) {
 	case HTTP_CONTENTDECODERIDENTITY_STATE_DATA:
-		decoder->result.type = HTTP_CONTENTDECODER_RESULTTYPE_DATA;
-		decoder->result.data = decoder->data;
-		decoder->result.len = decoder->data_len;
-		*result = &decoder->result;
-		*result_len = 1;
-		*need_next = True;
+		decoder->result[0].type = HTTP_CONTENTDECODER_RESULTTYPE_DATA;
+		decoder->result[0].data = decoder->data;
+		decoder->result[0].len = decoder->data_len;
+		decoder->result[1].type = HTTP_CONTENTDECODER_RESULTTYPE_NEED_INPUT;
+		decoder->result[1].data = NULL;
+		decoder->result[1].len = 0;
+		*result = decoder->result;
+		*result_len = 2;
 		break;
 	case HTTP_CONTENTDECODERIDENTITY_STATE_END:
-		decoder->result.type = HTTP_CONTENTDECODER_RESULTTYPE_END;
-		decoder->result.data = NULL;
-		decoder->result.len = 0;
-		*result = &decoder->result;
+		decoder->result[0].type = HTTP_CONTENTDECODER_RESULTTYPE_END;
+		decoder->result[0].data = NULL;
+		decoder->result[0].len = 0;
+		*result = decoder->result;
 		*result_len = 1;
-		*need_next = False;
 		break;
 	}
 
@@ -251,24 +252,27 @@ LOCAL W http_contentdecodergzip_inputendofdata(http_contentdecodergzip_t *decode
 	return 0;
 }
 
-LOCAL W http_contentdecodergzip_outputdata(http_contentdecodergzip_t *decoder, http_contentdecoder_result **result, W *result_len, Bool *need_input)
+LOCAL W http_contentdecodergzip_outputdata(http_contentdecodergzip_t *decoder, http_contentdecoder_result **result, W *result_len)
 {
 	W err;
 
 	switch (decoder->state) {
 	case HTTP_CONTENTDECODERGZIP_STATE_SKIP_HEADER:
-		*need_input = True;
-		*result = NULL;
-		*result_len = 0;
+		decoder->result[0].type = HTTP_CONTENTDECODER_RESULTTYPE_NEED_INPUT;
+		decoder->result[0].data = NULL;
+		decoder->result[0].len = 0;
+		*result = decoder->result;
+		*result_len = 1;
 		break;
 	case HTTP_CONTENTDECODERGZIP_STATE_DECODE:
 		if (decoder->z.avail_in == 0) {
-			*need_input = True;
-			*result = NULL;
-			*result_len = 0;
+			decoder->result[0].type = HTTP_CONTENTDECODER_RESULTTYPE_NEED_INPUT;
+			decoder->result[0].data = NULL;
+			decoder->result[0].len = 0;
+			*result = decoder->result;
+			*result_len = 1;
 			break;
 		}
-		*need_input = False;
 
 		*result = decoder->result;
 
@@ -303,7 +307,6 @@ LOCAL W http_contentdecodergzip_outputdata(http_contentdecodergzip_t *decoder, h
 		decoder->result[0].data = NULL;
 		decoder->result[0].len = 0;
 		*result_len = 1;
-		*need_input = False;
 		break;
 	}
 
@@ -367,13 +370,13 @@ EXPORT W http_contentdecoder_inputendofdata(http_contentdecoder_t *decoder)
 	return -1;
 }
 
-EXPORT W http_contentdecoder_outputdata(http_contentdecoder_t *decoder, http_contentdecoder_result **result, W *result_len, Bool *need_input)
+EXPORT W http_contentdecoder_outputdata(http_contentdecoder_t *decoder, http_contentdecoder_result **result, W *result_len)
 {
 	switch (decoder->type) {
 	case HTTP_CONTENTCODING_VALUE_IDENTITY:
-		return http_contentdecoderidentity_outputdata(&decoder->d.identity, result, result_len, need_input);
+		return http_contentdecoderidentity_outputdata(&decoder->d.identity, result, result_len);
 	case HTTP_CONTENTCODING_VALUE_GZIP:
-		return http_contentdecodergzip_outputdata(&decoder->d.gzip, result, result_len, need_input);
+		return http_contentdecodergzip_outputdata(&decoder->d.gzip, result, result_len);
 	case HTTP_CONTENTCODING_VALUE_COMPRESS: /* unsupported yet */
 	case HTTP_CONTENTCODING_VALUE_DEFLATE: /* unsupported yet */
 	}

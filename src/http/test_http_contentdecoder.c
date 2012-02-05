@@ -1146,7 +1146,7 @@ LOCAL UNITTEST_RESULT test_http_contentdecoder_common_perone(HTTP_CONTENTCODING_
 	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 	W i, j, len, ret_len, str_len = 0, cmp, err;
 	UB *str = NULL;
-	Bool end = False, need_input = False, eod = False;
+	Bool end = False, need_input, eod = False;
 
 	err = http_contentdecoder_initialize(&decoder, type);
 	if (err < 0) {
@@ -1177,13 +1177,14 @@ LOCAL UNITTEST_RESULT test_http_contentdecoder_common_perone(HTTP_CONTENTCODING_
 			eod = True;
 		}
 		for (;;) {
-			err = http_contentdecoder_outputdata(&decoder, &ret, &ret_len, &need_input);
+			err = http_contentdecoder_outputdata(&decoder, &ret, &ret_len);
 			if (err < 0) {
 				printf("http_contentdecoder_outputdata return value\n");
 				result = UNITTEST_RESULT_FAIL;
 				end = True;
 				break;
 			}
+			need_input = False;
 			for (j = 0; j < ret_len; j++) {
 				if (ret[j].type == HTTP_CONTENTDECODER_RESULTTYPE_DATA) {
 					str = realloc(str, str_len+ret[j].len);
@@ -1194,6 +1195,9 @@ LOCAL UNITTEST_RESULT test_http_contentdecoder_common_perone(HTTP_CONTENTCODING_
 					}
 					memcpy(str + str_len, ret[j].data, ret[j].len);
 					str_len += ret[j].len;
+				} else if (ret[j].type == HTTP_CONTENTDECODER_RESULTTYPE_NEED_INPUT) {
+					need_input = True;
+					break;
 				} else if (ret[j].type == HTTP_CONTENTDECODER_RESULTTYPE_END) {
 					end = True;
 					break;

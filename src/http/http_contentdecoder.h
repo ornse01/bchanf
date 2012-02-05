@@ -44,6 +44,7 @@
 struct http_contentdecoder_result_ {
 	enum {
 		HTTP_CONTENTDECODER_RESULTTYPE_DATA,
+		HTTP_CONTENTDECODER_RESULTTYPE_NEED_INPUT,
 		HTTP_CONTENTDECODER_RESULTTYPE_END,
 	} type;
 	UB *data;
@@ -54,7 +55,7 @@ typedef struct http_contentdecoder_result_ http_contentdecoder_result;
 /* Functionality name: http */
 /* Detail name: contentdecoderidentity */
 struct http_contentdecoderidentity_t_ {
-	http_contentdecoder_result result;
+	http_contentdecoder_result result[2];
 	enum {
 		HTTP_CONTENTDECODERIDENTITY_STATE_DATA,
 		HTTP_CONTENTDECODERIDENTITY_STATE_END,
@@ -118,6 +119,6 @@ IMPORT W http_contentdecoder_initialize(http_contentdecoder_t *decoder, HTTP_CON
 IMPORT VOID http_contentdecoder_finalize(http_contentdecoder_t *decoder);
 IMPORT W http_contentdecoder_inputentitybody(http_contentdecoder_t *decoder, UB *data, W data_len);
 IMPORT W http_contentdecoder_inputendofdata(http_contentdecoder_t *decoder);
-IMPORT W http_contentdecoder_outputdata(http_contentdecoder_t *decoder, http_contentdecoder_result **result, W *result_len, Bool *need_input);
+IMPORT W http_contentdecoder_outputdata(http_contentdecoder_t *decoder, http_contentdecoder_result **result, W *result_len);
 
 #endif
