@@ -167,7 +167,7 @@ EXPORT ID http_transport_searchendpoint(http_transport_t *transport, SOCKADDR *a
 		if (cont == False) {
 			break;
 		}
-		if (cb->status != DORMANT) {
+		if (cb->status == CLOSED) {
 			continue;
 		}
 
@@ -242,9 +242,6 @@ EXPORT W http_transport_isholdedendpoint(http_transport_t *transport, ID endpoin
 		DP_ER("http_transport_getcontrolblock", err);
 		return err;
 	}
-	if (cb->status != DORMANT) {
-		return ER_BUSY; /* TODO: sub error code */
-	}
 	if (cb->status == HOLDED) {
 		*is_holded = True;
 	} else {
@@ -254,7 +251,7 @@ EXPORT W http_transport_isholdedendpoint(http_transport_t *transport, ID endpoin
 	return ER_OK;
 }
 
-EXPORT VOID http_transport_releaseendpoint(http_transport_t *transport, ID endpoint)
+EXPORT VOID http_transport_releaseendpoint(http_transport_t *transport, ID endpoint, Bool close)
 {
 	http_transport_cb_t *cb;
 	W err;
@@ -267,7 +264,11 @@ EXPORT VOID http_transport_releaseendpoint(http_transport_t *transport, ID endpo
 	if (cb->status != HOLDED) {
 		return;
 	}
-	cb->status = DORMANT;
+	if (close != False) {
+		cb->status = CLOSED;
+	} else {
+		cb->status = DORMANT;
+	}
 }
 
 EXPORT W http_transport_setwaitingreceive(http_transport_t *transport, ID endpoint)

@@ -115,10 +115,9 @@ LOCAL VOID http_reqentry_attachendpoint(http_reqentry_t *entry, http_transport_t
 	return;
 }
 
-LOCAL VOID http_reqentry_detachendpoint(http_reqentry_t *entry, http_transport_t *transport)
+LOCAL VOID http_reqentry_detachendpoint(http_reqentry_t *entry, http_transport_t *transport, Bool transport_close)
 {
-	entry->status = WAITING_TRANSPORT;
-	http_transport_releaseendpoint(transport, entry->transport);
+	http_transport_releaseendpoint(transport, entry->transport, transport_close);
 	entry->transport = -1;
 	return;
 }
@@ -361,7 +360,6 @@ LOCAL VOID http_connector_collect(http_connector_t *connector)
 		if (entry->status == ABORTED_BY_TRANSPORT) {
 			http_reqdict_free(connector->dict, entry->base.id);
 		} else if (entry->status == COMPLETED) {
-			http_reqentry_detachendpoint(entry, connector->transport);
 			http_reqdict_free(connector->dict, entry->base.id);
 		}
 	}
@@ -670,15 +668,19 @@ LOCAL W http_connector_rcv_message_body(http_connector_t *connector, http_reqent
 
 LOCAL W http_connector_rcv_message_end(http_connector_t *connector, http_reqentry_t *entry, http_connector_event *event)
 {
+	Bool connection_closed;
+
 	http_contentdecoder_finalize(&entry->rcv_reader.cc);
 	http_transferdecoder_finalize(&entry->rcv_reader.tc);
+	connection_closed = http_defaultheaderparser_connectionclosed(&entry->rcv_reader.dh);
 
+	entry->status = COMPLETED;
 	entry->rcv_state = RECEIVE_COMPLETED;
 	event->endpoint = entry->base.id;
 	event->type = HTTP_CONNECTOR_EVENTTYPE_RECEIVE_MESSAGEBODY_END;
 
 	/* TODO: Connection: close */
-	http_reqentry_detachendpoint(entry, connector->transport);
+	http_reqentry_detachendpoint(entry, connector->transport, connection_closed);
 
 	return 1;
 }
