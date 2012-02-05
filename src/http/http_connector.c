@@ -589,6 +589,7 @@ LOCAL W http_connector_rcv_message_body_contentdecode(http_connector_t *connecto
 			DP_ER("http_contentdecoder_outputdata", err);
 			return err;
 		}
+		entry->rcv_reader.body.content_result_consumed = 0;
 	}
 	result = entry->rcv_reader.body.content_result + entry->rcv_reader.body.content_result_consumed;
 	entry->rcv_reader.body.content_result_consumed++;
