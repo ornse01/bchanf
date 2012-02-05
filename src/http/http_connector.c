@@ -679,7 +679,6 @@ LOCAL W http_connector_rcv_message_end(http_connector_t *connector, http_reqentr
 	event->endpoint = entry->base.id;
 	event->type = HTTP_CONNECTOR_EVENTTYPE_RECEIVE_MESSAGEBODY_END;
 
-	/* TODO: Connection: close */
 	http_reqentry_detachendpoint(entry, connector->transport, connection_closed);
 
 	return 1;
