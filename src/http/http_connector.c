@@ -574,6 +574,12 @@ LOCAL W http_connector_rcv_header_end(http_connector_t *connector, http_reqentry
 	if (err < 0) {
 		return err;
 	}
+	entry->rcv_reader.body.transfer_result = NULL;
+	entry->rcv_reader.body.transfer_result_len = 0;
+	entry->rcv_reader.body.transfer_result_consumed = 0;
+	entry->rcv_reader.body.content_result = NULL;
+	entry->rcv_reader.body.content_result_len = 0;
+	entry->rcv_reader.body.content_result_consumed = 0;
 
 	return 1;
 }
