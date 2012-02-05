@@ -750,8 +750,11 @@ EXPORT Bool http_connector_searcheventtarget(http_connector_t *connector, http_c
 		}
 		if (entry->status == RECEIVING_RESPONSE) {
 			err = http_connector_handleevent_receiving_response(connector, entry, event);
-			if (err < 0) {
-				/* TODO */
+			if ((err < 0)&&((err & 0xFFFF0000) != EX_WOULDBLOCK)) {
+				event->type = HTTP_CONNECTOR_EVENTTYPE_ERROR;
+				event->endpoint = entry->base.id;
+				entry->status = ABORTED_BY_TRANSPORT;
+				http_reqentry_detachendpoint(entry, connector->transport, True);
 				break;
 			}
 			found = True;
