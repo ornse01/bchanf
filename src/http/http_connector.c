@@ -337,33 +337,31 @@ EXPORT ID http_connector_createendpoint(http_connector_t *connector, UB *host, W
 EXPORT VOID http_connector_deleteendpoint(http_connector_t *connector, ID endpoint)
 {
 	http_reqentry_t *entry;
+	Bool transport_close = True;
 
 	entry = http_reqdict_getentrybyID(connector->dict, endpoint);
 	if (entry == NULL) {
 		return;
 	}
-	entry->aborted_by_user = True;
-}
 
-LOCAL VOID http_connector_collect(http_connector_t *connector)
-{
-	http_reqentry_t *entry;
-	http_recdictiterator_t iter;
-	Bool cont;
-
-	http_reqdictiterator_initialize(&iter, connector->dict);
-	for (;;) {
-		cont = http_reqdictiterator_next(&iter, &entry);
-		if (cont == False) {
+	switch (entry->status) {
+	case SENDING_REQUEST:
+		if (entry->snd_state == SEND_REQUEST_LINE) {
+			transport_close = False;
 			break;
 		}
-		if (entry->status == ABORTED_BY_TRANSPORT) {
-			http_reqdict_free(connector->dict, entry->base.id);
-		} else if (entry->status == COMPLETED) {
-			http_reqdict_free(connector->dict, entry->base.id);
-		}
+		/* intentional */
+	case WAITING_RESPONSE:
+	case RECEIVING_RESPONSE:
+		http_reqentry_detachendpoint(entry, connector->transport, transport_close);
+		break;
+	case NON_EXISTENT:
+	case WAITING_TRANSPORT:
+	case ABORTED_BY_TRANSPORT:
+	case COMPLETED:
 	}
-	http_reqdictiterator_finalize(&iter);
+
+	http_reqdict_free(connector->dict, endpoint);
 }
 
 LOCAL W http_connector_searchwaiting(http_connector_t *connector)
@@ -447,9 +445,6 @@ EXPORT W http_connector_waitconnection(http_connector_t *connector, TMOUT tmout)
 {
 	W err;
 	Bool evt = False;
-
-	/**/
-	http_connector_collect(connector);
 
 	err = http_connector_searchwaiting(connector);
 	if (err < 0) {
