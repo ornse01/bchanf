@@ -24,11 +24,19 @@
  *
  */
 
+/* Vendor name: */
+/* Functionality name: base64encoder */
+/* Detail name: */
+
 #include    <basic.h>
+
+/* rfc3548 3 Base 64 Encoding */
 
 #ifndef __BASE64ENCODER_H__
 #define __BASE64ENCODER_H__
 
+/* Functionality name: base64encoder */
+/* Detail name: */
 struct base64encoder_t_ {
 	enum {
 		BASE64ENCODER_STATE_FIRSTBYTE,
