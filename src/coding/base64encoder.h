@@ -1,7 +1,7 @@
 /*
- * base64encode.h
+ * base64encoder.h
  *
- * Copyright (c) 2011 project bchan
+ * Copyright (c) 2011-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -26,24 +26,24 @@
 
 #include    <basic.h>
 
-#ifndef __BASE64ENCODE_H__
-#define __BASE64ENCODE_H__
+#ifndef __BASE64ENCODER_H__
+#define __BASE64ENCODER_H__
 
-struct base64encode_t_ {
+struct base64encoder_t_ {
 	enum {
-		BASE64ENCODE_STATE_FIRSTBYTE,
-		BASE64ENCODE_STATE_SECONDBYTE,
-		BASE64ENCODE_STATE_THIRDBYTE,
+		BASE64ENCODER_STATE_FIRSTBYTE,
+		BASE64ENCODER_STATE_SECONDBYTE,
+		BASE64ENCODER_STATE_THIRDBYTE,
 	} state;
 	UB buffer[3];
 	UB save;
 };
-typedef struct base64encode_t_ base64encode_t;
+typedef struct base64encoder_t_ base64encoder_t;
 
-IMPORT W base64encode_initialize(base64encode_t *encode);
-IMPORT VOID base64encode_finalize(base64encode_t *encode);
-IMPORT VOID base64encode_inputchar(base64encode_t *encode, UB ch, UB **result, W *result_len);
-IMPORT VOID base64encode_endinput(base64encode_t *encode, UB **result, W *result_len);
-IMPORT VOID base64encode_clear(base64encode_t *encode);
+IMPORT W base64encoder_initialize(base64encoder_t *encoder);
+IMPORT VOID base64encoder_finalize(base64encoder_t *encoder);
+IMPORT VOID base64encoder_inputchar(base64encoder_t *encoder, UB ch, UB **result, W *result_len);
+IMPORT VOID base64encoder_endinput(base64encoder_t *encoder, UB **result, W *result_len);
+IMPORT VOID base64encoder_clear(base64encoder_t *encoder);
 
 #endif

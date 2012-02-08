@@ -1,7 +1,7 @@
 /*
- * test_base64encode.c
+ * test_base64encoder.c
  *
- * Copyright (c) 2011 project bchan
+ * Copyright (c) 2011-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,6 +24,10 @@
  *
  */
 
+#include    "test_coding.h"
+
+#include    "base64encoder.h"
+
 #include    <btron/btron.h>
 #include	<tcode.h>
 #include    <bstdio.h>
@@ -31,17 +35,15 @@
 #include    <bstring.h>
 #include    <errcode.h>
 
-#include    "test.h"
+#include    <unittest_driver.h>
 
-#include    "base64encode.h"
-
-struct testbase64encode_result_t_ {
+struct testbase64encoder_result_t_ {
 	UB *str;
 	W len;
 };
-typedef struct testbase64encode_result_t_ testbase64encode_result_t;
+typedef struct testbase64encoder_result_t_ testbase64encoder_result_t;
 
-LOCAL W testbase64encode_result_append(testbase64encode_result_t *testresult, UB *apd, W apd_len)
+LOCAL W testbase64encoder_result_append(testbase64encoder_result_t *testresult, UB *apd, W apd_len)
 {
 	UB *str;
 
@@ -58,12 +60,12 @@ LOCAL W testbase64encode_result_append(testbase64encode_result_t *testresult, UB
 	return 0;
 }
 
-LOCAL W testbase64encode_result_inputresult(testbase64encode_result_t *testresult, UB *apd, W apd_len)
+LOCAL W testbase64encoder_result_inputresult(testbase64encoder_result_t *testresult, UB *apd, W apd_len)
 {
-	return testbase64encode_result_append(testresult, apd, apd_len);
+	return testbase64encoder_result_append(testresult, apd, apd_len);
 }
 
-LOCAL VOID testbase64encode_result_removeNL(UB *str, W len, UB **nstr, W *nlen)
+LOCAL VOID testbase64encoder_result_removeNL(UB *str, W len, UB **nstr, W *nlen)
 {
 	W i,j;
 	UB *buf;
@@ -90,7 +92,7 @@ LOCAL VOID testbase64encode_result_removeNL(UB *str, W len, UB **nstr, W *nlen)
 	*nlen = j;
 }
 
-LOCAL Bool testbase64encode_result_compaire(testbase64encode_result_t *testresult, UB *expected, W expected_len)
+LOCAL Bool testbase64encoder_result_compaire(testbase64encoder_result_t *testresult, UB *expected, W expected_len)
 {
 	W i,len;
 	UB *str;
@@ -100,7 +102,7 @@ LOCAL Bool testbase64encode_result_compaire(testbase64encode_result_t *testresul
 	printf("expected = %s\n", expected);
 */
 
-	testbase64encode_result_removeNL(expected, expected_len, &str, &len);
+	testbase64encoder_result_removeNL(expected, expected_len, &str, &len);
 	if (str == NULL) {
 		printf("alloc failure\n");
 		return False;
@@ -122,7 +124,7 @@ LOCAL Bool testbase64encode_result_compaire(testbase64encode_result_t *testresul
 	return True;
 }
 
-LOCAL W testbase64encode_result_initialize(testbase64encode_result_t *testresult)
+LOCAL W testbase64encoder_result_initialize(testbase64encoder_result_t *testresult)
 {
 	testresult->str = malloc(sizeof(UB));
 	if (testresult->str == NULL) {
@@ -133,71 +135,71 @@ LOCAL W testbase64encode_result_initialize(testbase64encode_result_t *testresult
 	return 0;
 }
 
-LOCAL VOID testbase64encode_result_finalize(testbase64encode_result_t *testresult)
+LOCAL VOID testbase64encoder_result_finalize(testbase64encoder_result_t *testresult)
 {
 	free(testresult->str);
 }
 
-LOCAL TEST_RESULT test_base64encode_common(UB *test, W test_len, UB *expected, W expected_len)
+LOCAL UNITTEST_RESULT test_base64encoder_common(UB *test, W test_len, UB *expected, W expected_len)
 {
-	testbase64encode_result_t testresult;
-	base64encode_t encoder;
+	testbase64encoder_result_t testresult;
+	base64encoder_t encoder;
 	W i, err, result_len;
 	UB *result;
-	TEST_RESULT ret = TEST_RESULT_PASS;
+	UNITTEST_RESULT ret = UNITTEST_RESULT_PASS;
 	Bool ok;
 
-	err = base64encode_initialize(&encoder);
+	err = base64encoder_initialize(&encoder);
 	if (err < 0) {
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
-	err = testbase64encode_result_initialize(&testresult);
+	err = testbase64encoder_result_initialize(&testresult);
 	if (err < 0) {
-		base64encode_finalize(&encoder);
-		return TEST_RESULT_FAIL;
+		base64encoder_finalize(&encoder);
+		return UNITTEST_RESULT_FAIL;
 	}
 
 	for (i = 0; i < test_len; i++) {
-		base64encode_inputchar(&encoder, test[i], &result, &result_len);
-		err = testbase64encode_result_inputresult(&testresult, result, result_len);
+		base64encoder_inputchar(&encoder, test[i], &result, &result_len);
+		err = testbase64encoder_result_inputresult(&testresult, result, result_len);
 		if (err < 0) {
-			ret = TEST_RESULT_FAIL;
+			ret = UNITTEST_RESULT_FAIL;
 		}
 	}
-	base64encode_endinput(&encoder, &result, &result_len);
-	err = testbase64encode_result_inputresult(&testresult, result, result_len);
+	base64encoder_endinput(&encoder, &result, &result_len);
+	err = testbase64encoder_result_inputresult(&testresult, result, result_len);
 	if (err < 0) {
-		ret = TEST_RESULT_FAIL;
+		ret = UNITTEST_RESULT_FAIL;
 	}
 
-	ok = testbase64encode_result_compaire(&testresult, expected, expected_len);
+	ok = testbase64encoder_result_compaire(&testresult, expected, expected_len);
 	if (ok == False) {
-		ret = TEST_RESULT_FAIL;
+		ret = UNITTEST_RESULT_FAIL;
 	}
 
-	testbase64encode_result_finalize(&testresult);
-	base64encode_finalize(&encoder);
+	testbase64encoder_result_finalize(&testresult);
+	base64encoder_finalize(&encoder);
 
 	return ret;
 }
 
-LOCAL UB test_base64encode_testdata01_raw[] = {
+LOCAL UB test_base64encoder_testdata01_raw[] = {
 	0x61, 0x62, 0x63, 0x64, 0x65, 0x67, 0x68, 0x0a, 
 	0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
 };
-LOCAL UB test_base64encode_testdata01_encoded[] = {"YWJjZGVnaAppamtsbW5v"};
-LOCAL UB test_base64encode_testdata02_raw[] = {
+LOCAL UB test_base64encoder_testdata01_encoded[] = {"YWJjZGVnaAppamtsbW5v"};
+LOCAL UB test_base64encoder_testdata02_raw[] = {
 	0x61, 0x62, 0x63, 0x64, 0x65, 0x67, 0x68, 0x0a, 
 	0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, 0x70, 
 };
-LOCAL UB test_base64encode_testdata02_encoded[] = {"YWJjZGVnaAppamtsbW5vcA=="};
-LOCAL UB test_base64encode_testdata03_raw[] = {
+LOCAL UB test_base64encoder_testdata02_encoded[] = {"YWJjZGVnaAppamtsbW5vcA=="};
+LOCAL UB test_base64encoder_testdata03_raw[] = {
 	0x61, 0x62, 0x63, 0x64, 0x65, 0x67, 0x68, 0x0a, 
 	0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, 0x70, 
 	0x71,
 };
-LOCAL UB test_base64encode_testdata03_encoded[] = {"YWJjZGVnaAppamtsbW5vcHE="};
-LOCAL UB test_base64encode_testdata04_raw[] = {
+LOCAL UB test_base64encoder_testdata03_encoded[] = {"YWJjZGVnaAppamtsbW5vcHE="};
+LOCAL UB test_base64encoder_testdata04_raw[] = {
 	0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x1f, 0x00, 
 	0x1f, 0x00, 0xf7, 0xff, 0x00, 0x2d, 0x32, 0x35, 
 	0x31, 0x2d, 0x2d, 0x3e, 0x3a, 0x39, 0x27, 0x37, 
@@ -409,7 +411,7 @@ LOCAL UB test_base64encode_testdata04_raw[] = {
 	0x73, 0xcf, 0x3b, 0x86, 0x86, 0x13, 0xba, 0x40, 
 	0x01, 0x01, 0x00, 0x3b,
 };
-LOCAL UB test_base64encode_testdata04_encoded[] = {"R0lGODlhHwAfAPf/AC0yNTEtLT46OSc3QBxDOB5rNyhHOxxTbxtQbB95QS1P
+LOCAL UB test_base64encoder_testdata04_encoded[] = {"R0lGODlhHwAfAPf/AC0yNTEtLT46OSc3QBxDOB5rNyhHOxxTbxtQbB95QS1P
 RTlGRTBPXz1QWiZ9Rjx+UTduUUE/P1tPIlJMN19RJEpFP2NaOX1qJEhISEtW
 VFBMS1VTU19cW1ZXT1FbYEZdaEBtX1xxfGhoaHh3dWJxenVrSy5qhnJ7gB2F
 Rh+HSCeBSSKRTyeUUyWZViuaWTGATjqDVTeIVTOZXDafYiSiWiuiXTKkYzun
@@ -448,45 +450,30 @@ Czi7KASOGGLMMkYaa5yhxhqtoFGGGGG0QsYuYdzChhhsmDFLGLYolMsutLTy
 iiuv0OKKK8KssUstZdxyiziQq0FGK7yQE0a1A3HNjz7A77MP8GcL7849xutz
 zzuGhhO6QAEBADs="};
 
-LOCAL TEST_RESULT test_base64encode_1()
+LOCAL UNITTEST_RESULT test_base64encoder_1()
 {
-	return test_base64encode_common(test_base64encode_testdata01_raw, sizeof(test_base64encode_testdata01_raw), test_base64encode_testdata01_encoded, strlen(test_base64encode_testdata01_encoded));
+	return test_base64encoder_common(test_base64encoder_testdata01_raw, sizeof(test_base64encoder_testdata01_raw), test_base64encoder_testdata01_encoded, strlen(test_base64encoder_testdata01_encoded));
 }
 
-LOCAL TEST_RESULT test_base64encode_2()
+LOCAL UNITTEST_RESULT test_base64encoder_2()
 {
-	return test_base64encode_common(test_base64encode_testdata02_raw, sizeof(test_base64encode_testdata02_raw), test_base64encode_testdata02_encoded, strlen(test_base64encode_testdata02_encoded));
+	return test_base64encoder_common(test_base64encoder_testdata02_raw, sizeof(test_base64encoder_testdata02_raw), test_base64encoder_testdata02_encoded, strlen(test_base64encoder_testdata02_encoded));
 }
 
-LOCAL TEST_RESULT test_base64encode_3()
+LOCAL UNITTEST_RESULT test_base64encoder_3()
 {
-	return test_base64encode_common(test_base64encode_testdata03_raw, sizeof(test_base64encode_testdata03_raw), test_base64encode_testdata03_encoded, strlen(test_base64encode_testdata03_encoded));
+	return test_base64encoder_common(test_base64encoder_testdata03_raw, sizeof(test_base64encoder_testdata03_raw), test_base64encoder_testdata03_encoded, strlen(test_base64encoder_testdata03_encoded));
 }
 
-LOCAL TEST_RESULT test_base64encode_4()
+LOCAL UNITTEST_RESULT test_base64encoder_4()
 {
-	return test_base64encode_common(test_base64encode_testdata04_raw, sizeof(test_base64encode_testdata04_raw), test_base64encode_testdata04_encoded, strlen(test_base64encode_testdata04_encoded));
+	return test_base64encoder_common(test_base64encoder_testdata04_raw, sizeof(test_base64encoder_testdata04_raw), test_base64encoder_testdata04_encoded, strlen(test_base64encoder_testdata04_encoded));
 }
 
-LOCAL VOID test_base64encode_printresult(TEST_RESULT (*proc)(), B *test_name)
+EXPORT VOID test_base64encoder_main(unittest_driver_t *driver)
 {
-	TEST_RESULT result;
-
-	printf("test_base64encode: %s\n", test_name);
-	printf("---------------------------------------------\n");
-	result = proc();
-	if (result == TEST_RESULT_PASS) {
-		printf("--pass---------------------------------------\n");
-	} else {
-		printf("--fail---------------------------------------\n");
-	}
-	printf("---------------------------------------------\n");
-}
-
-EXPORT VOID test_base64encode_main()
-{
-	test_base64encode_printresult(test_base64encode_1, "test_base64encode_1");
-	test_base64encode_printresult(test_base64encode_2, "test_base64encode_2");
-	test_base64encode_printresult(test_base64encode_3, "test_base64encode_3");
-	test_base64encode_printresult(test_base64encode_4, "test_base64encode_4");
+	UNITTEST_DRIVER_REGIST(driver, test_base64encoder_1);
+	UNITTEST_DRIVER_REGIST(driver, test_base64encoder_2);
+	UNITTEST_DRIVER_REGIST(driver, test_base64encoder_3);
+	UNITTEST_DRIVER_REGIST(driver, test_base64encoder_4);
 }

@@ -1,7 +1,7 @@
 /*
- * base64encode.c
+ * base64encoder.c
  *
- * Copyright (c) 2011 project bchan
+ * Copyright (c) 2011-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,7 +24,7 @@
  *
  */
 
-#include    "base64encode.h"
+#include    "base64encoder.h"
 
 #include	<basic.h>
 #include	<bstdio.h>
@@ -39,67 +39,67 @@
 
 LOCAL UB encode_table[] = {"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"};
 
-EXPORT VOID base64encode_inputchar(base64encode_t *encode, UB ch, UB **result, W *result_len)
+EXPORT VOID base64encoder_inputchar(base64encoder_t *encoder, UB ch, UB **result, W *result_len)
 {
-	switch (encode->state) {
-	case BASE64ENCODE_STATE_FIRSTBYTE:
-		encode->buffer[0] = encode_table[ch>>2];
-		encode->save = (ch & 0x3) << 4;
-		*result = encode->buffer;
+	switch (encoder->state) {
+	case BASE64ENCODER_STATE_FIRSTBYTE:
+		encoder->buffer[0] = encode_table[ch>>2];
+		encoder->save = (ch & 0x3) << 4;
+		*result = encoder->buffer;
 		*result_len = 1;
-		encode->state = BASE64ENCODE_STATE_SECONDBYTE;
+		encoder->state = BASE64ENCODER_STATE_SECONDBYTE;
 		break;
-	case BASE64ENCODE_STATE_SECONDBYTE:
-		encode->buffer[0] = encode_table[encode->save | (ch>>4)];
-		encode->save = (ch & 0xF) << 2;
-		*result = encode->buffer;
+	case BASE64ENCODER_STATE_SECONDBYTE:
+		encoder->buffer[0] = encode_table[encoder->save | (ch>>4)];
+		encoder->save = (ch & 0xF) << 2;
+		*result = encoder->buffer;
 		*result_len = 1;
-		encode->state = BASE64ENCODE_STATE_THIRDBYTE;
+		encoder->state = BASE64ENCODER_STATE_THIRDBYTE;
 		break;
-	case BASE64ENCODE_STATE_THIRDBYTE:
-		encode->buffer[0] = encode_table[encode->save | (ch>>6)];
-		encode->buffer[1] = encode_table[ch & 0x3F];
-		*result = encode->buffer;
+	case BASE64ENCODER_STATE_THIRDBYTE:
+		encoder->buffer[0] = encode_table[encoder->save | (ch>>6)];
+		encoder->buffer[1] = encode_table[ch & 0x3F];
+		*result = encoder->buffer;
 		*result_len = 2;
-		encode->state = BASE64ENCODE_STATE_FIRSTBYTE;
+		encoder->state = BASE64ENCODER_STATE_FIRSTBYTE;
 		break;
 	}
 }
 
-EXPORT VOID base64encode_endinput(base64encode_t *encode, UB **result, W *result_len)
+EXPORT VOID base64encoder_endinput(base64encoder_t *encoder, UB **result, W *result_len)
 {
-	switch (encode->state) {
-	case BASE64ENCODE_STATE_FIRSTBYTE:
+	switch (encoder->state) {
+	case BASE64ENCODER_STATE_FIRSTBYTE:
 		*result = NULL;
 		*result_len = 0;
 		break;
-	case BASE64ENCODE_STATE_SECONDBYTE:
-		encode->buffer[0] = encode_table[encode->save];
-		encode->buffer[1] = '=';
-		encode->buffer[2] = '=';
-		*result = encode->buffer;
+	case BASE64ENCODER_STATE_SECONDBYTE:
+		encoder->buffer[0] = encode_table[encoder->save];
+		encoder->buffer[1] = '=';
+		encoder->buffer[2] = '=';
+		*result = encoder->buffer;
 		*result_len = 3;
 		break;
-	case BASE64ENCODE_STATE_THIRDBYTE:
-		encode->buffer[0] = encode_table[encode->save];
-		encode->buffer[1] = '=';
-		*result = encode->buffer;
+	case BASE64ENCODER_STATE_THIRDBYTE:
+		encoder->buffer[0] = encode_table[encoder->save];
+		encoder->buffer[1] = '=';
+		*result = encoder->buffer;
 		*result_len = 2;
 		break;
 	}
 }
 
-EXPORT VOID base64encode_clear(base64encode_t *encode)
+EXPORT VOID base64encoder_clear(base64encoder_t *encoder)
 {
-	encode->state = BASE64ENCODE_STATE_FIRSTBYTE;
+	encoder->state = BASE64ENCODER_STATE_FIRSTBYTE;
 }
 
-EXPORT W base64encode_initialize(base64encode_t *encode)
+EXPORT W base64encoder_initialize(base64encoder_t *encoder)
 {
-	encode->state = BASE64ENCODE_STATE_FIRSTBYTE;
+	encoder->state = BASE64ENCODER_STATE_FIRSTBYTE;
 	return 0;
 }
 
-EXPORT VOID base64encode_finalize(base64encode_t *encode)
+EXPORT VOID base64encoder_finalize(base64encoder_t *encoder)
 {
 }
