@@ -35,6 +35,7 @@
 #include    <test_http.h>
 #include    <test_parse.h>
 #include    <test_coll.h>
+#include    <test_coding.h>
 
 
 EXPORT	W	MAIN(MESSAGE *msg)
@@ -58,6 +59,8 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_charreferparser_main(driver);
 
 	test_idtocb_main(driver);
+
+	test_base64encoder_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);
