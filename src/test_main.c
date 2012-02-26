@@ -61,6 +61,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_idtocb_main(driver);
 
 	test_base64encoder_main(driver);
+	test_base64decoder_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);

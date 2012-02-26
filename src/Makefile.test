@@ -68,9 +68,11 @@ SRC_COLL =	idtocb.c
 
 SRC_COLL_TEST =	test_idtocb.c
 
-SRC_CODING = 	base64encoder.c
+SRC_CODING = 	base64encoder.c \
+		base64decoder.c
 
-SRC_CODING_TEST =	test_base64encoder.c
+SRC_CODING_TEST =	test_base64encoder.c \
+			test_base64decoder.c
 
 SRC =	test_main.c $(SRC_UNITTEST) $(SRC_HTTP) $(SRC_HTTP_TEST) $(SRC_PARSE) $(SRC_PARSE_TEST) $(SRC_COLL) $(SRC_COLL_TEST) $(SRC_CODING) $(SRC_CODING_TEST)
 

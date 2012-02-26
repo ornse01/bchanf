@@ -31,5 +31,6 @@
 #define __TEST_CODING_H__
 
 IMPORT VOID test_base64encoder_main(unittest_driver_t *driver);
+IMPORT VOID test_base64decoder_main(unittest_driver_t *driver);
 
 #endif
