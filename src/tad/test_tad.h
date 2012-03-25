@@ -30,4 +30,6 @@
 #ifndef __TEST_TAD_H__
 #define __TEST_TAD_H__
 
+IMPORT VOID test_taditerator_main(unittest_driver_t *driver);
+
 #endif

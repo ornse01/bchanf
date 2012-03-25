@@ -31,7 +31,7 @@ include ../../etc/makerules
 TARGET = bchanf_test
 
 # ソースファイルのサーチパス
-S = ../src ../src/unittest ../src/http ../src/parse ../src/coll ../src/coding
+S = ../src ../src/unittest ../src/http ../src/parse ../src/coll ../src/coding ../src/tad
 VPATH = $(S)
 
 # ヘッダファイルのディレクトリ追加
@@ -74,7 +74,11 @@ SRC_CODING = 	base64encoder.c \
 SRC_CODING_TEST =	test_base64encoder.c \
 			test_base64decoder.c
 
-SRC =	test_main.c $(SRC_UNITTEST) $(SRC_HTTP) $(SRC_HTTP_TEST) $(SRC_PARSE) $(SRC_PARSE_TEST) $(SRC_COLL) $(SRC_COLL_TEST) $(SRC_CODING) $(SRC_CODING_TEST)
+SRC_TAD =	taditerator.c
+
+SRC_TAD_TEST = 	test_taditerator.c
+
+SRC =	test_main.c $(SRC_UNITTEST) $(SRC_HTTP) $(SRC_HTTP_TEST) $(SRC_PARSE) $(SRC_PARSE_TEST) $(SRC_COLL) $(SRC_COLL_TEST) $(SRC_CODING) $(SRC_CODING_TEST) $(SRC_TAD) $(SRC_TAD_TEST)
 
 # データボックスソースファイル
 DBSRC =

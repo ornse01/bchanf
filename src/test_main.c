@@ -36,6 +36,7 @@
 #include    <test_parse.h>
 #include    <test_coll.h>
 #include    <test_coding.h>
+#include    <test_tad.h>
 
 
 EXPORT	W	MAIN(MESSAGE *msg)
@@ -62,6 +63,8 @@ EXPORT	W	MAIN(MESSAGE *msg)
 
 	test_base64encoder_main(driver);
 	test_base64decoder_main(driver);
+
+	test_taditerator_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);
