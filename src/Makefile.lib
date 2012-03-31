@@ -33,7 +33,7 @@ TARGET = libbchanf
 
 # ソースファイルのサーチパス
 TOPDIR = ../../src/bchanf
-S = $(TOPDIR)/src $(TOPDIR)/src/http $(TOPDIR)/src/parse $(TOPDIR)/src/coll
+S = $(TOPDIR)/src $(TOPDIR)/src/http $(TOPDIR)/src/parse $(TOPDIR)/src/coll $(TOPDIR)/src/coding $(TOPDIR)/src/tad
 VPATH = $(S)
 
 # ヘッダファイルのディレクトリ追加
@@ -56,7 +56,12 @@ SRC_PARSE =	tokenchecker.c \
 
 SRC_COLL =	idtocb.c
 
-SRC =	$(SRC_HTTP) $(SRC_PARSE) $(SRC_COLL)
+SRC_CODING = 	base64encoder.c \
+		base64decoder.c
+
+SRC_TAD =	taditerator.c
+
+SRC =	$(SRC_HTTP) $(SRC_PARSE) $(SRC_COLL) $(SRC_CODING) $(SRC_TAD)
 
 # データボックスソースファイル
 DBSRC =
