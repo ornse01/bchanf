@@ -65,6 +65,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_base64decoder_main(driver);
 
 	test_taditerator_main(driver);
+	test_tadstack_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);
