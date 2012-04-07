@@ -96,7 +96,7 @@ LOCAL UNITTEST_RESULT test_tadstack_1()
 		if (result.type == TADITERATOR_RESULTTYPE_CHARCTOR) {
 			
 			stk_result = tadstack_inputcharactor(&stack, result.segment);
-		} else if (result.type == TADITERATOR_RESULTTYPE_CHARCTOR) {
+		} else if (result.type == TADITERATOR_RESULTTYPE_SEGMENT) {
 			stk_result = tadstack_inputvsegment(&stack, result.segment, result.data, result.segsize);
 		}
 		if (stk_result == TADSTACK_RESULT_FORMAT_ERROR) {

@@ -37,7 +37,7 @@ EXPORT W tadstack_nestlevel(tadstack_t *stack)
 
 EXPORT VOID tadstack_currentlang(tadstack_t *stack, TC **lang, W *len)
 {
-	if (stack->data[stack->nestlevel].type != TADSTACK_DATATYPE_FIG) {
+	if (stack->data[stack->nestlevel].type != TADSTACK_DATATYPE_TEXT) {
 		*lang = NULL;
 		*len = 0;
 		return;
