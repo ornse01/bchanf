@@ -100,6 +100,7 @@ LOCAL UNITTEST_RESULT test_tadstack_1()
 			stk_result = tadstack_inputvsegment(&stack, result.segment, result.data, result.segsize);
 		}
 		if (stk_result == TADSTACK_RESULT_FORMAT_ERROR) {
+			printf("format error\n");
 			ok = UNITTEST_RESULT_FAIL;
 		}
 	}
