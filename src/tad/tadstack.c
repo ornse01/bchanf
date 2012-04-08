@@ -148,7 +148,7 @@ EXPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *b
 	switch (stack->state) {
 	  case TADSTACK_STATE_START:
 		if (segid == TS_TEXT) {
-			if (len < 32) {
+			if (len < 24) {
 				ret = TADSTACK_RESULT_FORMAT_ERROR;
 				break;
 			}
@@ -156,7 +156,7 @@ EXPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *b
 			tadstack_pushTEXTstack(stack, textseg->view, textseg->draw, textseg->h_unit, textseg->v_unit, textseg->lang, textseg->bgpat);
 			ret = TADSTACK_RESULT_PUSH_STACK;
 		} else if (segid == TS_FIG) {
-			if (len < 32) {
+			if (len < 24) {
 				ret = TADSTACK_RESULT_FORMAT_ERROR;
 				break;
 			}
