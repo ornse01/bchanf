@@ -60,7 +60,8 @@ SRC_CODING = 	base64encoder.c \
 		base64decoder.c
 
 SRC_TAD =	taditerator.c \
-		tadstack.c
+		tadstack.c \
+		tadtsvparser.c
 
 SRC =	$(SRC_HTTP) $(SRC_PARSE) $(SRC_COLL) $(SRC_CODING) $(SRC_TAD)
 

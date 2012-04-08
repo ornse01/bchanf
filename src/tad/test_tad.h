@@ -32,5 +32,6 @@
 
 IMPORT VOID test_taditerator_main(unittest_driver_t *driver);
 IMPORT VOID test_tadstack_main(unittest_driver_t *driver);
+IMPORT VOID test_tadtsvparser_main(unittest_driver_t *driver);
 
 #endif
