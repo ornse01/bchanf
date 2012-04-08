@@ -126,6 +126,7 @@ EXPORT TADSTACK_RESULT tadstack_inputcharactor(tadstack_t *stack, TC ch)
 	case TADSTACK_STATE_TEXT_LANGCODE:
 		if ((ch & 0xFE00) != 0xFE00) {
 			ret = TADSTACK_RESULT_FORMAT_ERROR;
+			break;
 		}
 		if (ch != 0xFEFE) {
 			stack->state = TADSTACK_STATE_TEXT;
@@ -139,32 +140,47 @@ EXPORT TADSTACK_RESULT tadstack_inputcharactor(tadstack_t *stack, TC ch)
 	return ret;
 }
 
+LOCAL TADSTACK_RESULT tadstack_handle_textsegment(tadstack_t *stack, UB *bin, W len)
+{
+	TEXTSEG *textseg;
+
+	if (len < 24) {
+		return TADSTACK_RESULT_FORMAT_ERROR;
+	}
+	textseg = (TEXTSEG*)bin;
+	tadstack_pushTEXTstack(stack, textseg->view, textseg->draw, textseg->h_unit, textseg->v_unit, textseg->lang, textseg->bgpat);
+	stack->state = TADSTACK_STATE_TEXT;
+
+	return TADSTACK_RESULT_PUSH_STACK;
+}
+
+LOCAL TADSTACK_RESULT tadstack_handle_figsegment(tadstack_t *stack, UB *bin, W len)
+{
+	FIGSEG *figseg;
+
+	if (len < 24) {
+		return TADSTACK_RESULT_FORMAT_ERROR;
+	}
+	figseg = (FIGSEG*)bin;
+	tadstack_pushFIGstack(stack, figseg->view, figseg->draw, figseg->h_unit, figseg->v_unit, figseg->ratio);
+	stack->state = TADSTACK_STATE_FIG;
+
+	return TADSTACK_RESULT_PUSH_STACK;
+}
+
 EXPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *bin, W len)
 {
 	TADSTACK_RESULT ret = TADSTACK_RESULT_OK;
-	TEXTSEG *textseg;
-	FIGSEG *figseg;
 
 	switch (stack->state) {
 	  case TADSTACK_STATE_START:
 		if (segid == TS_TEXT) {
-			if (len < 24) {
-				ret = TADSTACK_RESULT_FORMAT_ERROR;
-				break;
-			}
-			textseg = (TEXTSEG*)bin;
-			tadstack_pushTEXTstack(stack, textseg->view, textseg->draw, textseg->h_unit, textseg->v_unit, textseg->lang, textseg->bgpat);
-			ret = TADSTACK_RESULT_PUSH_STACK;
+			ret = tadstack_handle_textsegment(stack, bin, len);
 		} else if (segid == TS_FIG) {
-			if (len < 24) {
-				ret = TADSTACK_RESULT_FORMAT_ERROR;
-				break;
-			}
-			figseg = (FIGSEG*)bin;
-			tadstack_pushFIGstack(stack, figseg->view, figseg->draw, figseg->h_unit, figseg->v_unit, figseg->ratio);
-			ret = TADSTACK_RESULT_PUSH_STACK;
+			ret = tadstack_handle_figsegment(stack, bin, len);
 		} else if ((TS_FPRIM <= segid)&&(segid <= TS_FAPPL)) {
 			tadstack_pushFIGstack(stack, (RECT){{0, 0, 0, 0}}, (RECT){{0, 0, 0, 0}}, 0, 0, 0);
+			stack->state = TADSTACK_STATE_FIG;
 			ret = TADSTACK_RESULT_PUSH_STACK;
 		} else {
 			ret = TADSTACK_RESULT_OK;
@@ -173,6 +189,14 @@ EXPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *b
 	  case TADSTACK_STATE_TEXT:
 		if ((TS_FPRIM <= segid)&&(segid <= TS_FAPPL)) {
 			ret = TADSTACK_RESULT_FORMAT_ERROR;
+			break;
+		}
+		if (segid == TS_TEXT) {
+			ret = tadstack_handle_textsegment(stack, bin, len);
+			break;
+		}
+		if (segid == TS_FIG) {
+			ret = tadstack_handle_figsegment(stack, bin, len);
 			break;
 		}
 		if (segid == TS_FIGEND) {
@@ -192,6 +216,14 @@ EXPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *b
 	  case TADSTACK_STATE_FIG:
 		if ((0xA0 <= segid)&&(segid <= 0xAF)) {
 			ret = TADSTACK_RESULT_FORMAT_ERROR;
+			break;
+		}
+		if (segid == TS_TEXT) {
+			ret = tadstack_handle_textsegment(stack, bin, len);
+			break;
+		}
+		if (segid == TS_FIG) {
+			ret = tadstack_handle_figsegment(stack, bin, len);
 			break;
 		}
 		if (segid == TS_TEXTEND) {
