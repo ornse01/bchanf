@@ -54,7 +54,8 @@ SRC_HTTP = 	http_connector.c \
 SRC_PARSE =	tokenchecker.c \
 		charreferparser.c 
 
-SRC_COLL =	idtocb.c
+SRC_COLL =	idtocb.c \
+		arraybase.c
 
 SRC_CODING = 	base64encoder.c \
 		base64decoder.c

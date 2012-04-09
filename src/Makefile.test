@@ -64,9 +64,11 @@ SRC_PARSE =	tokenchecker.c \
 SRC_PARSE_TEST =	test_tokenchecker.c \
 			test_charreferparser.c
 
-SRC_COLL =	idtocb.c
+SRC_COLL =	idtocb.c \
+		arraybase.c
 
-SRC_COLL_TEST =	test_idtocb.c
+SRC_COLL_TEST =	test_idtocb.c \
+		test_arraybase.c
 
 SRC_CODING = 	base64encoder.c \
 		base64decoder.c

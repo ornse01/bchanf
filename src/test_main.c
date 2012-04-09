@@ -60,6 +60,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_charreferparser_main(driver);
 
 	test_idtocb_main(driver);
+	test_arraybase_main(driver);
 
 	test_base64encoder_main(driver);
 	test_base64decoder_main(driver);
