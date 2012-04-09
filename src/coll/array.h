@@ -1,7 +1,7 @@
 /*
  * array.h
  *
- * Copyright (c) 2010 project bchan
+ * Copyright (c) 2010-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,25 +24,35 @@
  *
  */
 
+/* Vendor name: */
+/* Functionality name: array */
+/* Detail name: */
+
 #include	<basic.h>
 #include	<bsys/queue.h>
 
 #ifndef __ARRAY_H__
 #define __ARRAY_H__
 
-typedef struct arraybase_datanode_t_ arraybase_datanode_t;
+/* Vendor name: */
+/* Functionality name: arraybase */
+/* Detail name: datanode */
 struct arraybase_datanode_t_ {
 	QUEUE queue;
 	UB *data;
 };
+typedef struct arraybase_datanode_t_ arraybase_datanode_t;
 
-typedef struct arraybase_t_ arraybase_t;
+/* Vendor name: */
+/* Functionality name: arraybase */
+/* Detail name: */
 struct arraybase_t_ {
 	W unitsize;
 	W denom;
 	W datanum;
 	arraybase_datanode_t datalist;
 };
+typedef struct arraybase_t_ arraybase_t;
 
 IMPORT W arraybase_initialize(arraybase_t *arraybase, W unitsize, W denom);
 IMPORT VOID arraybase_finalize(arraybase_t *arraybase);
