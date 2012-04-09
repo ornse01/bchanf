@@ -1,7 +1,7 @@
 /*
- * array.c
+ * arraybase.c
  *
- * Copyright (c) 2010 project bchan
+ * Copyright (c) 2010-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -29,7 +29,7 @@
 #include	<bstdio.h>
 #include	<bsys/queue.h>
 
-#include    "array.h"
+#include    "arraybase.h"
 
 #ifdef BCHAN_CONFIG_DEBUG
 # define DP(arg) printf arg

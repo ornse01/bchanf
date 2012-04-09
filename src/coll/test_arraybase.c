@@ -1,5 +1,5 @@
 /*
- * test_array.c
+ * test_arraybase.c
  *
  * Copyright (c) 2010-2012 project bchan
  *
@@ -26,7 +26,7 @@
 
 #include "test_coll.h"
 
-#include "array.h"
+#include "arraybase.h"
 
 #include    <btron/btron.h>
 #include    <bstdio.h>

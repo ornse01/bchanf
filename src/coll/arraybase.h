@@ -1,5 +1,5 @@
 /*
- * array.h
+ * arraybase.h
  *
  * Copyright (c) 2010-2012 project bchan
  *
@@ -31,8 +31,8 @@
 #include	<basic.h>
 #include	<bsys/queue.h>
 
-#ifndef __ARRAY_H__
-#define __ARRAY_H__
+#ifndef __ARRAYBASE_H__
+#define __ARRAYBASE_H__
 
 /* Vendor name: */
 /* Functionality name: arraybase */
