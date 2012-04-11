@@ -38,7 +38,7 @@
 # define DP_ER(msg, err) /**/
 #endif
 
-EXPORT W windowscroll_updaterbar(windowscroll_t *wscr)
+EXPORT W hmi_windowscroll_updaterbar(hmi_windowscroll_t *wscr)
 {
 	W sbarval[4],err;
 
@@ -50,7 +50,7 @@ EXPORT W windowscroll_updaterbar(windowscroll_t *wscr)
 		sbarval[1] = sbarval[3];
 	}
 	if((err = cset_val(wscr->rbar, 4, sbarval)) < 0){
-		DP(("windowscroll_updaterbar:cset_val rbar\n"));
+		DP(("hmi_windowscroll_updaterbar:cset_val rbar\n"));
 		DP(("                       :%d %d %d %d\n", sbarval[0], sbarval[1], sbarval[2], sbarval[3]));
 		return err;
 	}
@@ -58,7 +58,7 @@ EXPORT W windowscroll_updaterbar(windowscroll_t *wscr)
 	return 0;
 }
 
-LOCAL W windowscroll_updatebbar(windowscroll_t *wscr)
+LOCAL W hmi_windowscroll_updatebbar(hmi_windowscroll_t *wscr)
 {
 	W sbarval[4],err;
 
@@ -70,7 +70,7 @@ LOCAL W windowscroll_updatebbar(windowscroll_t *wscr)
 		sbarval[0] = sbarval[2];
 	}
 	if((err = cset_val(wscr->bbar, 4, sbarval)) < 0){
-		DP(("windowscroll_updatebbar:cset_val bbar\n"));
+		DP(("hmi_windowscroll_updatebbar:cset_val bbar\n"));
 		DP(("                       :%d %d %d %d\n", sbarval[0], sbarval[1], sbarval[2], sbarval[3]));
 		return err;
     }
@@ -78,16 +78,16 @@ LOCAL W windowscroll_updatebbar(windowscroll_t *wscr)
 	return 0;
 }
 
-EXPORT W windowscroll_updatebar(windowscroll_t *wscr)
+EXPORT W hmi_windowscroll_updatebar(hmi_windowscroll_t *wscr)
 {
 	W err;
 
-	err = windowscroll_updaterbar(wscr);
+	err = hmi_windowscroll_updaterbar(wscr);
 	if (err < 0) {
 		return err;
 	}
 
-	err = windowscroll_updatebbar(wscr);
+	err = hmi_windowscroll_updatebbar(wscr);
 	if (err < 0) {
 		return err;
 	}
@@ -101,7 +101,7 @@ EXPORT W windowscroll_updatebar(windowscroll_t *wscr)
     =0 : finish
     =1 : continue
  */
-LOCAL W windowscroll_scrollbar(windowscroll_t *wscr, WEVENT *wev, PAID scrbarPAID, W *dh_ret, W *dv_ret)
+LOCAL W hmi_windowscroll_scrollbar(hmi_windowscroll_t *wscr, WEVENT *wev, PAID scrbarPAID, W *dh_ret, W *dv_ret)
 {
 	W i,err,barval[4];
 	W *clo = barval,*chi = barval+1,*lo = barval+2,*hi = barval+3;
@@ -177,7 +177,7 @@ LOCAL W windowscroll_scrollbar(windowscroll_t *wscr, WEVENT *wev, PAID scrbarPAI
 			wscr->work_b -= dv;
 			*dh_ret = -dh;
 			*dv_ret = -dv;
-			windowscroll_updaterbar(wscr);
+			hmi_windowscroll_updaterbar(wscr);
 			return 1;
 		case 0x6002:	/*左へのスムーススクロールで中断*/
 		case 0x6003:	/*右へのスムーススクロールで中断*/
@@ -210,7 +210,7 @@ LOCAL W windowscroll_scrollbar(windowscroll_t *wscr, WEVENT *wev, PAID scrbarPAI
 			wscr->work_r -= dh;
 			*dh_ret = -dh;
 			*dv_ret = -dv;
-			windowscroll_updatebbar(wscr);
+			hmi_windowscroll_updatebbar(wscr);
 			return 1;
 		case 0x5004:	/*上へのエリアスクロールで終了*/
 			if ((wscr->work_t - (*chi-*clo)) < *lo) {
@@ -224,7 +224,7 @@ LOCAL W windowscroll_scrollbar(windowscroll_t *wscr, WEVENT *wev, PAID scrbarPAI
 			wscr->work_b -= dv;
 			*dh_ret = -dh;
 			*dv_ret = -dv;
-			windowscroll_updaterbar(wscr);
+			hmi_windowscroll_updaterbar(wscr);
 			break;
 		case 0x5005:	/*下へのエリアスクロールで終了*/
 			if((wscr->work_b + (*chi-*clo)) > *hi){
@@ -238,7 +238,7 @@ LOCAL W windowscroll_scrollbar(windowscroll_t *wscr, WEVENT *wev, PAID scrbarPAI
 			wscr->work_b -= dv;
 			*dh_ret = -dh;
 			*dv_ret = -dv;
-			windowscroll_updaterbar(wscr);
+			hmi_windowscroll_updaterbar(wscr);
 			break;
 		case 0x5006:	/*左へのエリアスクロールで終了*/
 			if((wscr->work_l - (*clo-*chi)) < *hi){
@@ -252,7 +252,7 @@ LOCAL W windowscroll_scrollbar(windowscroll_t *wscr, WEVENT *wev, PAID scrbarPAI
 			wscr->work_r -= dh;
 			*dh_ret = -dh;
 			*dv_ret = -dv;
-			windowscroll_updatebbar(wscr);
+			hmi_windowscroll_updatebbar(wscr);
 			break;
 		case 0x5007:	/*右へのエリアスクロールで終了*/
 			if((wscr->work_r + (*clo-*chi)) > *lo){
@@ -266,7 +266,7 @@ LOCAL W windowscroll_scrollbar(windowscroll_t *wscr, WEVENT *wev, PAID scrbarPAI
 			wscr->work_r -= dh;
 			*dh_ret = -dh;
 			*dv_ret = -dv;
-			windowscroll_updatebbar(wscr);
+			hmi_windowscroll_updatebbar(wscr);
 			break;
 		}
 		return 0;
@@ -275,44 +275,44 @@ LOCAL W windowscroll_scrollbar(windowscroll_t *wscr, WEVENT *wev, PAID scrbarPAI
 	return 0;
 }
 
-EXPORT W windowscroll_weventrbar(windowscroll_t *wscr, WEVENT *wev, W *dh, W *dv)
+EXPORT W hmi_windowscroll_weventrbar(hmi_windowscroll_t *wscr, WEVENT *wev, W *dh, W *dv)
 {
-	return windowscroll_scrollbar(wscr, wev, wscr->rbar, dh, dv);
+	return hmi_windowscroll_scrollbar(wscr, wev, wscr->rbar, dh, dv);
 }
 
-EXPORT W windowscroll_weventbbar(windowscroll_t *wscr, WEVENT *wev, W *dh, W *dv)
+EXPORT W hmi_windowscroll_weventbbar(hmi_windowscroll_t *wscr, WEVENT *wev, W *dh, W *dv)
 {
-	return windowscroll_scrollbar(wscr, wev, wscr->bbar, dh, dv);
+	return hmi_windowscroll_scrollbar(wscr, wev, wscr->bbar, dh, dv);
 }
 
-EXPORT W windowscroll_scrollworkrect(windowscroll_t *wscr, W dh, W dv)
+EXPORT W hmi_windowscroll_scrollworkrect(hmi_windowscroll_t *wscr, W dh, W dv)
 {
 	wscr->work_l += dh;
 	wscr->work_t += dv;
 	wscr->work_r += dh;
 	wscr->work_b += dv;
-	return windowscroll_updatebar(wscr);
+	return hmi_windowscroll_updatebar(wscr);
 }
 
-EXPORT W windowscroll_setworkrect(windowscroll_t *wscr, W l, W t, W r, W b)
+EXPORT W hmi_windowscroll_setworkrect(hmi_windowscroll_t *wscr, W l, W t, W r, W b)
 {
 	wscr->work_l = l;
 	wscr->work_t = t;
 	wscr->work_r = r;
 	wscr->work_b = b;
-	return windowscroll_updatebar(wscr);
+	return hmi_windowscroll_updatebar(wscr);
 }
 
-EXPORT W windowscroll_setdrawrect(windowscroll_t *wscr, W l, W t, W r, W b)
+EXPORT W hmi_windowscroll_setdrawrect(hmi_windowscroll_t *wscr, W l, W t, W r, W b)
 {
 	wscr->draw_l = l;
 	wscr->draw_t = t;
 	wscr->draw_r = r;
 	wscr->draw_b = b;
-	return windowscroll_updatebar(wscr);
+	return hmi_windowscroll_updatebar(wscr);
 }
 
-EXPORT VOID windowscroll_settarget(windowscroll_t *wscr, WID target)
+EXPORT VOID hmi_windowscroll_settarget(hmi_windowscroll_t *wscr, WID target)
 {
 	if (target < 0) {
 		wscr->rbar = -1;
@@ -324,9 +324,9 @@ EXPORT VOID windowscroll_settarget(windowscroll_t *wscr, WID target)
 	}
 }
 
-EXPORT W windowscroll_initialize(windowscroll_t *wscr, WID target)
+EXPORT W hmi_windowscroll_initialize(hmi_windowscroll_t *wscr, WID target)
 {
-	windowscroll_settarget(wscr, target);
+	hmi_windowscroll_settarget(wscr, target);
 	wscr->work_l = 0;
 	wscr->work_t = 0;
 	wscr->work_r = 0;
@@ -339,6 +339,6 @@ EXPORT W windowscroll_initialize(windowscroll_t *wscr, WID target)
 	return 0;
 }
 
-EXPORT VOID windowscroll_finalize(windowscroll_t *wscr)
+EXPORT VOID hmi_windowscroll_finalize(hmi_windowscroll_t *wscr)
 {
 }

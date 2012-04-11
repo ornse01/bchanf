@@ -1,7 +1,7 @@
 #
 # hmi_generator.rb
 #
-# Copyright (c) 2011-2012 project bchan
+# Copyright (c) 2012 project bchan
 #
 # This software is provided 'as-is', without any express or implied
 # warranty. In no event will the authors be held liable for any damages
@@ -117,6 +117,18 @@ class HMIParts
   def is_need_eventbreak()
     return false
   end
+  def get_databox_specify()
+    return @yaml["databox"]["specify"]
+  end
+  def get_databox_number()
+    return @yaml["databox"]["number"]
+  end
+  def is_databox_specify_argument()
+    @yaml["databox"] != nil && @yaml["databox"]["specify"] == "argument"
+  end
+  def is_databox_use()
+    @yaml["databox"] != nil && (@yaml["databox"]["specify"] != "direct" || @yaml["databox"]["specify"] != "argument")
+  end
 
   def generate_header_eventtype_enumulate(main_name, window_name)
     script = <<-EOS
@@ -169,14 +181,52 @@ class HMIParts
   def generate_initialize_in_new()
     script = <<-EOS
 	window-><%= self.name() %>.id = -1;
+	<%- if self.is_databox_specify_argument() -%>
+	window-><%= self.name() %>.dnum = dnum_<%= self.name() %>;
+	<%- end -%>
     EOS
 
     erb = ERB.new(script, nil, '-');
     erb.result(binding)
   end
 
+  def generate_create_systemcall_databox()
+    case self.get_databox_specify()
+    when "argument"
+      script = "copn_par(wid, window-><%= self.name() %>.dnum, NULL)"
+    when "specify"
+      script = "copn_par(wid, <%= self.get_databox_number() %>, NULL)"
+    end
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_create_systemcall_direct()
+    script = <<-EOS
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_create_systemcall()
+    if self.is_databox_use()
+      return self.generate_create_systemcall_databox()
+    else
+      return self.generate_create_systemcall_direct()
+    end
+  end
+
   def generate_create_in_open()
     script = <<-EOS
+	<%- if !self.is_databox_use() -%>
+	r = (RECT)<%= self.rect_string() %>;
+	<%- end -%>
+	window-><%= self.name() %>.id = <%= self.generate_create_systemcall()%>;
+	if (window-><%= self.name() %>.id < 0) {
+		DP_ER("ccre_xxx <%= self.name() %> error:", window-><%= self.name() %>.id);
+	}
     EOS
 
     erb = ERB.new(script, nil, '-');
@@ -282,6 +332,7 @@ IMPORT W <%= window_name %>_end<%= self.name() %>action(<%= window_name %>_t *wi
     script = <<-EOS
 	struct {
 		PAID id;
+		<% if self.is_databox_specify_argument() %>W dnum;<% end %>
 		TC buf[<%= self.text_length() %>+<%= self.get_attr_offset() %>+1];
 		W buf_written;
 		Bool appended;
@@ -400,6 +451,9 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
   def generate_initialize_in_new()
     script = <<-EOS
 	window-><%= self.name() %>.id = -1;
+	<%- if self.is_databox_specify_argument() -%>
+	window-><%= self.name() %>.dnum = dnum_<%= self.name() %>;
+	<%- end -%>
 	memset(window-><%= self.name() %>.buf, 0, sizeof(TC)*<%= self.text_length() %>);
 	<%- if self.is_attr_specified() -%>
 	window-><%= self.name() %>.buf[0] = MC_ATTR;
@@ -420,14 +474,8 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
     erb.result(binding)
   end
 
-  def generate_create_in_open()
-    script = <<-EOS
-	r = (RECT)<%= self.rect_string() %>;
-	window-><%= self.name() %>.id = ccre_tbx(wid, TB_PARTS|P_DISP, &r, <%= self.text_length() %>, window-><%= self.name() %>.buf, NULL);
-	if (window-><%= self.name() %>.id < 0) {
-		DP_ER("ccre_tbx <%= self.name() %> error:", window-><%= self.name() %>.id);
-	}
-    EOS
+  def generate_create_systemcall_direct()
+    script = "ccre_tbx(wid, TB_PARTS|P_DISP, &r, <%= self.text_length() %>, window-><%= self.name() %>.buf, NULL)"
 
     erb = ERB.new(script, nil, '-');
     erb.result(binding)
@@ -460,14 +508,8 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
 end
 
 class HMISecretTextBoxParts < HMITextBoxParts
-  def generate_create_in_open()
-    script = <<-EOS
-	r = (RECT)<%= self.rect_string() %>;
-	window-><%= self.name() %>.id = ccre_xbx(wid, XB_PARTS|P_DISP, &r, <%= self.text_length() %>, window-><%= self.name() %>.buf, NULL);
-	if (window-><%= self.name() %>.id < 0) {
-		DP_ER("ccre_xbx <%= self.name() %> error:", window-><%= self.name() %>.id);
-	}
-    EOS
+  def generate_create_systemcall_direct()
+    script = "ccre_xbx(wid, XB_PARTS|P_DISP, &r, <%= self.text_length() %>, window-><%= self.name() %>.buf, NULL);";
 
     erb = ERB.new(script, nil, '-');
     erb.result(binding)
@@ -600,6 +642,7 @@ IMPORT W <%= window_name %>_get<%= self.name() %>value(<%= window_name %>_t *win
     script = <<-EOS
 	struct {
 		PAID id;
+		<% if self.is_databox_specify_argument() %>W dnum;<% end %>
 		UW format;
 		<% if self.is_double() %>DOUBLE<% else %>W<% end %> cv;
 		Bool nextaction;
@@ -697,6 +740,9 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
   def generate_initialize_in_new()
     script = <<-EOS
 	window-><%= self.name() %>.id = -1;
+	<%- if self.is_databox_specify_argument() -%>
+	window-><%= self.name() %>.dnum = dnum_<%= self.name() %>;
+	<%- end -%>
 	window-><%= self.name() %>.format = (<%= self.get_fontsize() %> << 8)|<% if self.is_double() %>0xF0<% else %>0<% end %>|<% if self.is_hankaku() %>0x40<% else %>0<% end %>|<% if self.is_pointdisplay() %>0x10<% else %>0<% end %>|<%=  self.get_decimalplace() %>;
 	window-><%= self.name() %>.cv = <% if self.is_double() %>0.0<% else %>0<% end %>;
 	window-><%= self.name() %>.nextaction = False;
@@ -706,14 +752,8 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
     erb.result(binding)
   end
 
-  def generate_create_in_open()
-    script = <<-EOS
-	r = (RECT)<%= self.rect_string() %>;
-	window-><%= self.name() %>.id = ccre_nbx(wid, NB_PARTS|P_DISP, &r, window-><%= self.name() %>.format, (W*)&window-><%= self.name() %>.cv, NULL);
-	if (window-><%= self.name() %>.id < 0) {
-		DP_ER("ccre_nbx <%= self.name() %> error:", window-><%= self.name() %>.id);
-	}
-    EOS
+  def generate_create_systemcall_direct()
+    script = "ccre_nbx(wid, NB_PARTS|P_DISP, &r, window-><%= self.name() %>.format, (W*)&window-><%= self.name() %>.cv, NULL)"
 
     erb = ERB.new(script, nil, '-');
     erb.result(binding)
@@ -755,6 +795,7 @@ class HMITextMomentallySwitchParts < HMIParts
     script = <<-EOS
 	struct {
 		PAID id;
+		<% if self.is_databox_specify_argument() %>W dnum;<% end %>
 	} <%= self.name() %>;
     EOS
 
@@ -762,14 +803,8 @@ class HMITextMomentallySwitchParts < HMIParts
     erb.result(binding)
   end
 
-  def generate_create_in_open()
-    script = <<-EOS
-	r = (RECT)<%= self.rect_string() %>;
-	window-><%= self.name() %>.id = ccre_msw(wid, MS_PARTS|P_DISP, &r, (TC[]){MC_STR, <%= self.text_array() %>}, NULL);
-	if (window-><%= self.name() %>.id < 0) {
-		DP_ER("ccre_msw <%= self.name() %> error:", window-><%= self.name() %>.id);
-	}
-    EOS
+  def generate_create_systemcall_direct()
+    script = "ccre_msw(wid, MS_PARTS|P_DISP, &r, (TC[]){MC_STR, <%= self.text_array() %>}, NULL)"
 
     erb = ERB.new(script, nil, '-');
     erb.result(binding)
@@ -865,6 +900,7 @@ IMPORT W <%= window_name %>_get<%= self.name() %>value(<%= window_name %>_t *win
     script = <<-EOS
 	struct {
 		PAID id;
+		<% if self.is_databox_specify_argument() %>W dnum;<% end %>
 		TC format[<%= self.calc_serialbox_formatlength() %>];
 		W cv[<%= self.calc_serialbox_fieldsnumber() %>];
 		Bool nextaction;
@@ -959,6 +995,9 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
   def generate_initialize_in_new()
     script = <<-EOS
 	window-><%= self.name() %>.id = -1;
+	<%- if self.is_databox_specify_argument() -%>
+	window-><%= self.name() %>.dnum = dnum_<%= self.name() %>;
+	<%- end -%>
 	<%- l = 0 -%>
 	<%- @yaml["fields"].each do |field| -%>
 	<%- case field["type"] -%>
@@ -998,14 +1037,8 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
     erb.result(binding)
   end
 
-  def generate_create_in_open()
-    script = <<-EOS
-	r = (RECT)<%= self.rect_string() %>;
-	window-><%= self.name() %>.id = ccre_sbx(wid, SB_PARTS|P_DISP, &r, window-><%= self.name() %>.format, <%= self.calc_serialbox_fieldsnumber() %>, window-><%= self.name() %>.cv, NULL);
-	if (window-><%= self.name() %>.id < 0) {
-		DP_ER("ccre_sbx <%= self.name() %> error:", window-><%= self.name() %>.id);
-	}
-    EOS
+  def generate_create_systemcall_direct()
+    script = "ccre_sbx(wid, SB_PARTS|P_DISP, &r, window-><%= self.name() %>.format, <%= self.calc_serialbox_fieldsnumber() %>, window-><%= self.name() %>.cv, NULL)"
 
     erb = ERB.new(script, nil, '-');
     erb.result(binding)
@@ -1223,7 +1256,7 @@ IMPORT VOID <%= self.struct_name() %>_close(<%= self.struct_name() %>_t *window)
 
   def generate_initialize_arguments()
     script = <<-EOS
-<%- if self.is_attr_resizable() -%>RECT *r<% else %>PNT *p<% end %>, WID parent, TC *title, PAT *bgpat<%- -%>
+<%- if self.is_attr_resizable() -%>RECT *r<% else %>PNT *p<% end %>, WID parent, TC *title, PAT *bgpat<%- @parts.each do |p| -%><% if p.is_databox_specify_argument() %>, W dnum_<%= p.name() %><% end %><%- end -%><%- -%>
     EOS
 
     erb = ERB.new(script, nil, '-');
@@ -1232,7 +1265,7 @@ IMPORT VOID <%= self.struct_name() %>_close(<%= self.struct_name() %>_t *window)
 
   def generate_initialize_arguments_values()
     script = <<-EOS
-<%- if self.is_attr_resizable() -%>r<% else %>p<% end %>, parent, title, bgpat<%- -%>
+<%- if self.is_attr_resizable() -%>r<% else %>p<% end %>, parent, title, bgpat<%- @parts.each do |p| -%><% if p.is_databox_specify_argument() %>, dnum_<%= p.name() %><% end %><%- end -%><%- -%>
     EOS
 
     erb = ERB.new(script, nil, '-');
@@ -1251,7 +1284,7 @@ struct <%= self.struct_name() %>_t_ {
 	RECT r;
 	PAT bgpat;
 	<%- if self.is_attr_scrollable() -%>
-	windowscroll_t wscr;
+	hmi_windowscroll_t wscr;
 	<%- end -%>
 	WEVENT savedwev;
 	<%- @parts.each do |p| -%><%= p.generate_source_struct() %><%- end -%>
@@ -1285,17 +1318,17 @@ struct <%= self.struct_name() %>_t_ {
 <%- if self.is_attr_scrollable() -%>
 EXPORT VOID <%= self.struct_name() %>_scrollbyvalue(<%= self.struct_name() %>_t *window, W dh, W dv)
 {
-	windowscroll_scrollworkrect(&window->wscr, dh, dv);
+	hmi_windowscroll_scrollworkrect(&window->wscr, dh, dv);
 }
 
 EXPORT W <%= self.struct_name() %>_setdrawrect(<%= self.struct_name() %>_t *window, W l, W t, W r, W b)
 {
-	return windowscroll_setdrawrect(&window->wscr, l, t, r, b);
+	return hmi_windowscroll_setdrawrect(&window->wscr, l, t, r, b);
 }
 
 EXPORT W <%= self.struct_name() %>_setworkrect(<%= self.struct_name() %>_t *window, W l, W t, W r, W b)
 {
-	return windowscroll_setworkrect(&window->wscr, l, t, r, b);
+	return hmi_windowscroll_setworkrect(&window->wscr, l, t, r, b);
 }
 
 EXPORT W <%= self.struct_name() %>_scrollworkarea(<%= self.struct_name() %>_t *window, W dh, W dv)
@@ -1488,7 +1521,7 @@ EXPORT W <%= self.struct_name() %>_open(<%= self.struct_name() %>_t *window)
 	window->wid = wid;
 	window->gid = wget_gid(wid);
 	<%- if self.is_attr_scrollable() -%>
-	windowscroll_settarget(&window->wscr, wid);
+	hmi_windowscroll_settarget(&window->wscr, wid);
 	<%- end -%>
 
 	<%- @parts.each do |p| -%><%= p.generate_create_in_open() %><%- end -%>
@@ -1581,7 +1614,7 @@ EXPORT <%= self.struct_name() %>_t* <%= self.struct_name() %>_new(<%= self.gener
 	window->r.c.bottom = p->y + <%= self.get_window_height() %>;
 	<%- end -%>
 	<%- if self.is_attr_scrollable() -%>
-	err = windowscroll_initialize(&window->wscr, window->wid);
+	err = hmi_windowscroll_initialize(&window->wscr, window->wid);
 	if (err < 0) {
 		free(window);
 		return NULL;
@@ -1601,7 +1634,7 @@ LOCAL VOID <%= self.struct_name() %>_delete(<%= self.struct_name() %>_t *window)
 		wcls_wnd(window->wid, CLR);
 	}
 	<%- if self.is_attr_scrollable() -%>
-	windowscroll_finalize(&window->wscr);
+	hmi_windowscroll_finalize(&window->wscr);
 	<%- end -%>
 	free(window);
 }
@@ -2027,7 +2060,7 @@ LOCAL VOID <%= self.main_name() %>_weventbutdn(<%= self.main_name() %>_t *hmi, W
 		if (<%= self.main_name() %>_is<%= w.struct_name() %>WID(hmi, wev->s.wid) == True) {
 			evt->type = <%= self.main_name().upcase %>EVENT_TYPE_<%= w.struct_name().upcase %>_RESIZE;
 			<%= w.struct_name() %>_resize(hmi-><%= w.struct_name() %>, &evt->data.<%= w.struct_name() %>_resize.work_sz);
-			windowscroll_updatebar(&hmi-><%= w.struct_name() %>->wscr);
+			hmi_windowscroll_updatebar(&hmi-><%= w.struct_name() %>->wscr);
 			if (i > 0) {
 				<%= w.struct_name() %>_setflag(hmi-><%= w.struct_name() %>, <%= w.struct_name().upcase %>_FLAG_DRAWREQUEST);
 			}
@@ -2040,7 +2073,7 @@ LOCAL VOID <%= self.main_name() %>_weventbutdn(<%= self.main_name() %>_t *hmi, W
 		<%- @win.each do |w| -%>
 		<%- if w.is_attr_scrollable() -%>
 		if (<%= self.main_name() %>_is<%= w.struct_name() %>WID(hmi, wev->s.wid) == True) {
-			err = windowscroll_weventrbar(&hmi-><%= w.struct_name() %>->wscr, wev, &dh, &dv);
+			err = hmi_windowscroll_weventrbar(&hmi-><%= w.struct_name() %>->wscr, wev, &dh, &dv);
 			if (err < 0) {
 				return;
 			}
@@ -2063,7 +2096,7 @@ LOCAL VOID <%= self.main_name() %>_weventbutdn(<%= self.main_name() %>_t *hmi, W
 		<%- @win.each do |w| -%>
 		<%- if w.is_attr_scrollable() -%>
 		if (<%= self.main_name() %>_is<%= w.struct_name() %>WID(hmi, wev->s.wid) == True) {
-			err = windowscroll_weventbbar(&hmi-><%= w.struct_name() %>->wscr, wev, &dh, &dv);
+			err = hmi_windowscroll_weventbbar(&hmi-><%= w.struct_name() %>->wscr, wev, &dh, &dv);
 			if (err < 0) {
 				return;
 			}
@@ -2151,7 +2184,7 @@ LOCAL Bool <%= self.main_name() %>_checkflag(<%= self.main_name() %>_t *hmi, <%=
 	<%- @win.each do |w| -%>
 	<%- if w.is_need_flag() and w.is_attr_scrollable() -%>
 	if (<%= w.struct_name() %>_issetflag(hmi-><%= w.struct_name() %>, <%= w.struct_name().upcase %>_FLAG_RSCROLLING) == True) {
-		err = windowscroll_weventrbar(&hmi-><%= w.struct_name() %>->wscr, &hmi->wev, &dh, &dv);
+		err = hmi_windowscroll_weventrbar(&hmi-><%= w.struct_name() %>->wscr, &hmi->wev, &dh, &dv);
 		if (err < 0) {
 			<%= w.struct_name() %>_clearflag(hmi-><%= w.struct_name() %>, <%= w.struct_name().upcase %>_FLAG_RSCROLLING);
 			return False;
@@ -2169,7 +2202,7 @@ LOCAL Bool <%= self.main_name() %>_checkflag(<%= self.main_name() %>_t *hmi, <%=
 		return True;
 	}
 	if (<%= w.struct_name() %>_issetflag(hmi-><%= w.struct_name() %>, <%= w.struct_name().upcase %>_FLAG_BSCROLLING) == True) {
-		err = windowscroll_weventbbar(&hmi-><%= w.struct_name() %>->wscr, &hmi->wev, &dh, &dv);
+		err = hmi_windowscroll_weventbbar(&hmi-><%= w.struct_name() %>->wscr, &hmi->wev, &dh, &dv);
 		if (err < 0) {
 			<%= w.struct_name() %>_clearflag(hmi-><%= w.struct_name() %>, <%= w.struct_name().upcase %>_FLAG_BSCROLLING);
 			return False;
