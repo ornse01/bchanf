@@ -33,7 +33,7 @@ TARGET = libbchanf
 
 # ソースファイルのサーチパス
 TOPDIR = ../../src/bchanf
-S = $(TOPDIR)/src $(TOPDIR)/src/http $(TOPDIR)/src/parse $(TOPDIR)/src/coll $(TOPDIR)/src/coding $(TOPDIR)/src/tad
+S = $(TOPDIR)/src $(TOPDIR)/src/http $(TOPDIR)/src/parse $(TOPDIR)/src/coll $(TOPDIR)/src/coding $(TOPDIR)/src/tad $(TOPDIR)/src/hmi
 VPATH = $(S)
 
 # ヘッダファイルのディレクトリ追加
@@ -64,7 +64,9 @@ SRC_TAD =	taditerator.c \
 		tadstack.c \
 		tadtsvparser.c
 
-SRC =	$(SRC_HTTP) $(SRC_PARSE) $(SRC_COLL) $(SRC_CODING) $(SRC_TAD)
+SRC_HMI =	hmi_windowscroll.c
+
+SRC =	$(SRC_HTTP) $(SRC_PARSE) $(SRC_COLL) $(SRC_CODING) $(SRC_TAD) $(SRC_HMI)
 
 # データボックスソースファイル
 DBSRC =
