@@ -83,7 +83,7 @@ LOCAL unittest_driverentry_t* unittest_driverentry_new(UB *name, W name_len, uni
 	if (entry == NULL) {
 		return NULL;
 	}
-	entry->name = malloc(sizeof(UB)*name_len);
+	entry->name = malloc(sizeof(UB)*(name_len+1));
 	if (entry->name == NULL) {
 		free(entry);
 		return NULL;
