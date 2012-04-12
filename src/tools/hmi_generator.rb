@@ -162,7 +162,7 @@ class HMIParts
     erb.result(binding)
   end
 
-  def generate_source_struct()
+  def generate_source_struct(window_name)
     script = <<-EOS
     EOS
 
@@ -328,7 +328,7 @@ IMPORT W <%= window_name %>_end<%= self.name() %>action(<%= window_name %>_t *wi
     erb.result(binding)
   end
 
-  def generate_source_struct()
+  def generate_source_struct(window_name)
     script = <<-EOS
 	struct {
 		PAID id;
@@ -638,7 +638,7 @@ IMPORT W <%= window_name %>_get<%= self.name() %>value(<%= window_name %>_t *win
     erb.result(binding)
   end
 
-  def generate_source_struct()
+  def generate_source_struct(window_name)
     script = <<-EOS
 	struct {
 		PAID id;
@@ -791,7 +791,7 @@ class HMITextMomentallySwitchParts < HMIParts
     erb.result(binding)
   end
 
-  def generate_source_struct()
+  def generate_source_struct(window_name)
     script = <<-EOS
 	struct {
 		PAID id;
@@ -896,7 +896,7 @@ IMPORT W <%= window_name %>_get<%= self.name() %>value(<%= window_name %>_t *win
     erb.result(binding)
   end
 
-  def generate_source_struct()
+  def generate_source_struct(window_name)
     script = <<-EOS
 	struct {
 		PAID id;
@@ -1066,6 +1066,183 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
   end
 end
 
+class HMISwitchSelectorParts < HMIParts
+  def calc_formatlength()
+    l = 0;
+    @yaml["fields"].each { |field|
+      l+= 1 + calc_euc_to_TCArray_length(field["text"]);
+    }
+    l += 1; # for last TNULL
+    return l
+  end
+  def is_need_eventbreak()
+    return false
+  end
+
+  def generate_header_eventtype_enumulate(main_name, window_name)
+    script = <<-EOS
+	<%= main_name.upcase %>EVENT_TYPE_<%= window_name.upcase %>_PARTS_<%= self.name().upcase %>_CHANGE,
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_header_eventstruct_definition(main_name, window_name)
+    script = <<-EOS
+struct <%= window_name %>_eventdata_<%= self.name() %>_change_t_ {
+	<%= window_name.upcase %>_<%= self.name().upcase %>VALUE_T value;
+};
+typedef struct <%= window_name %>_eventdata_<%= self.name() %>_change_t_ <%= window_name %>_eventdata_<%= self.name() %>_change_t;
+
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_header_eventunion_member(main_name, window_name)
+    script = <<-EOS
+		<%= window_name %>_eventdata_<%= self.name() %>_change_t <%= window_name %>_<%= self.name() %>_change;
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_prototypes(window_name)
+    script = <<-EOS
+enum <%= window_name.upcase %>_<%= self.name().upcase %>VALUE_T_ {
+	<%= window_name.upcase %>_<%= self.name().upcase %>VALUE_NOSEL = 0,
+	<%- @yaml["fields"].each do |field| -%>
+	<%= window_name.upcase %>_<%= self.name().upcase %>VALUE_<%= field["name"].upcase %>,
+	<%- end -%>
+};
+typedef enum <%= window_name.upcase %>_<%= self.name().upcase %>VALUE_T_ <%= window_name.upcase %>_<%= self.name().upcase %>VALUE_T;
+IMPORT W <%= window_name %>_set<%= self.name() %>value(<%= window_name %>_t *window, <%= window_name.upcase %>_<%= self.name().upcase %>VALUE_T value);
+IMPORT W <%= window_name %>_get<%= self.name() %>value(<%= window_name %>_t *window, <%= window_name.upcase %>_<%= self.name().upcase %>VALUE_T *value);
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_source_struct(window_name)
+    script = <<-EOS
+	struct {
+		PAID id;
+		<%- if self.is_databox_use() -%>
+		W dnum;
+		<%- else -%>
+		TC format[<%= self.calc_formatlength()%>];
+		<%- end -%>
+		<%= window_name.upcase %>_<%= self.name().upcase %>VALUE_T value;
+	} <%= self.name() %>;
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_source_functions(main_name, window_name)
+    script = <<-EOS
+EXPORT W <%= window_name %>_set<%= self.name() %>value(<%= window_name %>_t *window, <%= window_name.upcase %>_<%= self.name().upcase %>VALUE_T value)
+{
+	W val;
+
+	val = window-><%= self.name() %>.value = value;
+	if (window->wid < 0) {
+		return 0;
+	}
+
+	return cset_val(window-><%= self.name() %>.id, 1, (W*)(&val));
+}
+
+EXPORT W <%= window_name %>_get<%= self.name() %>value(<%= window_name %>_t *window, <%= window_name.upcase %>_<%= self.name().upcase %>VALUE_T *value)
+{
+	W val,err;
+
+	if (window->wid > 0) {
+		err = cget_val(window-><%= self.name() %>.id, 1, (W*)(&val));
+		if (err < 0) {
+			return err;
+		}
+	}
+	*value = window-><%= self.name() %>.value = val;
+
+	return 0;
+}
+
+LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *window, WEVENT *wev, <%= main_name %>event_t *evt)
+{
+	W i;
+
+	i = cact_par(window-><%= self.name() %>.id, wev);
+	if ((i & 0x5000) != 0x5000) {
+		return;
+	}
+	window-><%= self.name() %>.value = i & 0xfff;
+	evt->type = <%= main_name.upcase %>EVENT_TYPE_<%= window_name.upcase %>_PARTS_<%= self.name().upcase %>_CHANGE;
+	evt->data.<%= window_name %>_<%= self.name() %>_change.value = window-><%= self.name() %>.value;
+}
+
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_initialize_in_new()
+    script = <<-EOS
+	window-><%= self.name() %>.id = -1;
+	<%- if self.is_databox_use() -%>
+	window-><%= self.name() %>.dnum = dnum_<%= self.name() %>;
+	<%- else -%>
+	  <%- l = 0 -%>
+	  <%- @yaml["fields"].each do |field| -%>
+	window-><%= self.name() %>.format[<%= l %>] = MC_STR;<%- l+=1 %>
+	    <%- conv_euc_to_TCArray(field["text"]).each do |ch| -%>
+	window-><%= self.name() %>.format[<%= l %>] = 0x<%= ch.to_s(16) %>;<%- l+=1 %>
+	    <%- end -%>
+	  <%- end -%>
+	window-><%= self.name() %>.format[<%= l %>] = TNULL;<%- l+=1 %>
+	<%- end -%>
+	window-><%= self.name() %>.value = 0;
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_create_systemcall_direct()
+    script = "ccre_sel(wid, WS_PARTS|P_DISP, &r, window-><%= self.name() %>.value, window-><%= self.name() %>.format, NULL)"
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_savevalue_in_close()
+    script = <<-EOS
+	err = cget_val(window-><%= self.name() %>.id, 1, (W*)(&window-><%= self.name() %>.value));
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_action_in_butdnwork(main_name, window_name)
+    script = <<-EOS
+	if (id == window-><%= self.name() %>.id) {
+		<%= window_name %>_action<%= self.name() %>(window, wev, evt);
+		return;
+	}
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+end
+
 def generate_parts(type, a)
   case type
   when "textbox"
@@ -1078,6 +1255,8 @@ def generate_parts(type, a)
     return HMISerialBoxParts.new(a);
   when "numberbox"
     return HMINumberBoxParts.new(a);
+  when "switchselector"
+    return HMISwitchSelectorParts.new(a);
   end
 end
 
@@ -1287,7 +1466,7 @@ struct <%= self.struct_name() %>_t_ {
 	hmi_windowscroll_t wscr;
 	<%- end -%>
 	WEVENT savedwev;
-	<%- @parts.each do |p| -%><%= p.generate_source_struct() %><%- end -%>
+	<%- @parts.each do |p| -%><%= p.generate_source_struct(self.struct_name()) %><%- end -%>
 };
 
     EOS
