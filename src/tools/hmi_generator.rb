@@ -1299,6 +1299,9 @@ class HMIWindow
   def is_attr_resizable()
     self.is_attr_xxx("resizable");
   end
+  def is_attr_opencheckable()
+    self.is_attr_xxx("opencheckable");
+  end
   def is_exportevent_draw()
     self.is_exportevent_xxx("draw");
   end
@@ -1405,6 +1408,9 @@ IMPORT W <%= self.struct_name() %>_setdrawrect(<%= self.struct_name() %>_t *wind
 IMPORT W <%= self.struct_name() %>_setworkrect(<%= self.struct_name() %>_t *window, W l, W t, W r, W b);
 IMPORT W <%= self.struct_name() %>_scrollworkarea(<%= self.struct_name() %>_t *window, W dh, W dv);
 IMPORT W <%= self.struct_name() %>_getworkrect(<%= self.struct_name() %>_t *window, RECT *r);
+<%- end -%>
+<%- if self.is_attr_opencheckable() -%>
+IMPORT Bool <%= self.struct_name() %>_isopen(<%= self.struct_name() %>_t *window);
 <%- end -%>
 <%- if self.is_exportevent_paste() -%>
 IMPORT VOID <%= self.struct_name() %>_responsepasterequest(<%= self.struct_name() %>_t *window, W nak, PNT *pos);
@@ -1526,6 +1532,16 @@ EXPORT W <%= self.struct_name() %>_scrollworkarea(<%= self.struct_name() %>_t *w
 EXPORT W <%= self.struct_name() %>_getworkrect(<%= self.struct_name() %>_t *window, RECT *r)
 {
 	return wget_wrk(window->wid, r);
+}
+
+<%- end -%>
+<%- if self.is_attr_opencheckable() -%>
+EXPORT Bool <%= self.struct_name() %>_isopen(<%= self.struct_name() %>_t *window)
+{
+	if (window->wid < 0) {
+		return False;
+	}
+	return True;
 }
 
 <%- end -%>
