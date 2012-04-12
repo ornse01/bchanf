@@ -2423,8 +2423,8 @@ def generate_header(filename, data)
 #include	<btron/hmi.h>
 
   EOS
-  fd.puts "#ifndef __" + filename.upcase.gsub(/\./, '_') + "_H__";
-  fd.puts "#define __" + filename.upcase.gsub(/\./, '_') + "_H__";
+  fd.puts "#ifndef __" + filename.upcase.gsub(/\./, '_') + "__";
+  fd.puts "#define __" + filename.upcase.gsub(/\./, '_') + "__";
   fd.puts "\n";
   fd.puts data.generate_header();
   fd.puts "#endif\n"
