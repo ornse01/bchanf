@@ -1332,6 +1332,11 @@ class HMIWindow
   def is_exist_controllparts()
     @parts.length > 0;
   end
+  def is_exist_nondatabox_controllparts()
+    @parts.any? { |item|
+      !item.is_databox_use();
+    };
+  end
   def is_need_flag()
     true # tmp
   end
@@ -1728,7 +1733,7 @@ LOCAL VOID <%= self.struct_name() %>_resize(<%= self.struct_name() %>_t *window,
 <% if self.is_attr_alwaysopen() %>LOCAL<% else %>EXPORT<% end %> W <%= self.struct_name() %>_open(<%= self.struct_name() %>_t *window<% if self.is_attr_alwaysopen() %>, TC *title<% end %>)
 {
 	WID wid;
-	<%- if self.is_exist_controllparts() -%>
+	<%- if self.is_exist_nondatabox_controllparts() -%>
 	RECT r;
 	<%- end -%>
 
