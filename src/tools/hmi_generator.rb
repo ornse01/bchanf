@@ -1352,6 +1352,13 @@ class HMIWindow
   def get_window_parent()
     @yaml["parent"]
   end
+  def get_window_title_max_length()
+    len = @yaml["title_max_length"];
+    if len == nil
+      return 128
+    end
+    return len
+  end
 
   def generate_header_eventtype_enumulate(main_name)
     script = <<-EOS
@@ -1485,6 +1492,9 @@ struct <%= self.struct_name() %>_t_ {
 	PAT bgpat;
 	<%- if self.is_attr_scrollable() -%>
 	hmi_windowscroll_t wscr;
+	<%- end -%>
+	<%- if !self.is_attr_alwaysopen() -%>
+	TC title[<%= self.get_window_title_max_length() %>+1];
 	<%- end -%>
 	WEVENT savedwev;
 	<%- @parts.each do |p| -%><%= p.generate_source_struct(self.struct_name()) %><%- end -%>
@@ -1648,7 +1658,13 @@ EXPORT WID <%= self.struct_name() %>_getWID(<%= self.struct_name() %>_t *window)
 
 EXPORT W <%= self.struct_name() %>_settitle(<%= self.struct_name() %>_t *window, TC *title)
 {
+	<%- if !self.is_attr_alwaysopen() -%>
+	tc_strncpy(window->title, title, <%= self.get_window_title_max_length() %>);
+	window->title[<%= self.get_window_title_max_length() %>] = TNULL;
+	return wset_tit(window->wid, -1, window->title, 0);
+	<%- else -%>
 	return wset_tit(window->wid, -1, title, 0);
+	<%- end -%>
 }
 
 EXPORT Bool <%= self.struct_name() %>_isactive(<%= self.struct_name() %>_t *window)
@@ -1709,12 +1725,9 @@ LOCAL VOID <%= self.struct_name() %>_resize(<%= self.struct_name() %>_t *window,
 }
 
 <%- end -%>
-<% if self.is_attr_alwaysopen() %>LOCAL<% else %>EXPORT<% end %> W <%= self.struct_name() %>_open(<%= self.struct_name() %>_t *window)
+<% if self.is_attr_alwaysopen() %>LOCAL<% else %>EXPORT<% end %> W <%= self.struct_name() %>_open(<%= self.struct_name() %>_t *window<% if self.is_attr_alwaysopen() %>, TC *title<% end %>)
 {
 	WID wid;
-	<%- if self.get_window_title() != nil -%>
-	TC title[] = {<%= conv_TCArray_to_hex_definition(conv_euc_to_TCArray(self.get_window_title())) %>};
-	<%- end -%>
 	<%- if self.is_exist_controllparts() -%>
 	RECT r;
 	<%- end -%>
@@ -1723,7 +1736,7 @@ LOCAL VOID <%= self.struct_name() %>_resize(<%= self.struct_name() %>_t *window,
 		return 0;
 	}
 
-	wid = wopn_wnd(WA_STD<% if self.is_attr_subwindow() %>|WA_SUBW<% end %><% if self.is_attr_resizable() %>|WA_SIZE|WA_HHDL|WA_VHDL<% end %><% if self.is_attr_scrollable() %>|WA_BBAR|WA_RBAR<% end %>, <% if self.is_attr_subwindow() %>window->parent->wid<% else %>window->parent<% end %>, &(window->r), NULL, 2, <%- if self.get_window_title() != nil -%>title<%- else -%>NULL<%- end -%>, &window->bgpat, NULL);
+	wid = wopn_wnd(WA_STD<% if self.is_attr_subwindow() %>|WA_SUBW<% end %><% if self.is_attr_resizable() %>|WA_SIZE|WA_HHDL|WA_VHDL<% end %><% if self.is_attr_scrollable() %>|WA_BBAR|WA_RBAR<% end %>, <% if self.is_attr_subwindow() %>window->parent->wid<% else %>window->parent<% end %>, &(window->r), NULL, 2, <% if !self.is_attr_alwaysopen() %>window->title<%- else -%>title<%- end -%>, &window->bgpat, NULL);
 	if (wid < 0) {
 		DP_ER("wopn_wnd: subjectoption error", wid);
 		return wid;
@@ -1832,10 +1845,21 @@ EXPORT <%= self.struct_name() %>_t* <%= self.struct_name() %>_new(<%= self.gener
 		return NULL;
 	}
 	<%- end -%>
+	<%- if !self.is_attr_alwaysopen() -%>
+	tc_strset(window->title, TNULL, <%= self.get_window_title_max_length() %>+1);
+	if (title != 0) {
+		tc_strncpy(window->title, title, <%= self.get_window_title_max_length() %>);
+	} else {
+		<%- l = 0 -%>
+		<%- conv_euc_to_TCArray(self.get_window_title()).each do |ch| -%>
+		window->title[<%= l %>] = 0x<%= ch.to_s(16) %>;<%- l+=1 %>
+		<%- end -%>
+	}
+	<%- end -%>
 	<%- @parts.each do |p| -%><%= p.generate_initialize_in_new() %><%- end -%>
 
 	<%- if self.is_attr_alwaysopen() -%>
-	err = <%= self.struct_name() %>_open(window);
+	err = <%= self.struct_name() %>_open(window, title);
 	if (err < 0) {
 		<%- if self.is_attr_scrollable() -%>
 		hmi_windowscroll_finalize(&window->wscr);
