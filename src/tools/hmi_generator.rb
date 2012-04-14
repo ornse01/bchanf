@@ -1302,6 +1302,9 @@ class HMIWindow
   def is_attr_opencheckable()
     self.is_attr_xxx("opencheckable");
   end
+  def is_attr_subwindow()
+    self.is_attr_xxx("subwindow");
+  end
   def is_exportevent_draw()
     self.is_exportevent_xxx("draw");
   end
@@ -1342,6 +1345,9 @@ class HMIWindow
       @parts.any? { |item|
         item.is_need_eventbreak();
       };
+  end
+  def get_window_parent()
+    @yaml["parent"]
   end
 
   def generate_header_eventtype_enumulate(main_name)
@@ -1441,7 +1447,7 @@ IMPORT VOID <%= self.struct_name() %>_close(<%= self.struct_name() %>_t *window)
 
   def generate_initialize_arguments()
     script = <<-EOS
-<%- if self.is_attr_resizable() -%>RECT *r<% else %>PNT *p<% end %>, WID parent, TC *title, PAT *bgpat<%- @parts.each do |p| -%><% if p.is_databox_specify_argument() %>, W dnum_<%= p.name() %><% end %><%- end -%><%- -%>
+<%- if self.is_attr_resizable() -%>RECT *r<% else %>PNT *p<% end %>, <%- if self.is_attr_subwindow() -%><%= self.get_window_parent() %>_t *parent<%- else -%>WID parent<%- end -%>, TC *title, PAT *bgpat<%- @parts.each do |p| -%><% if p.is_databox_specify_argument() %>, W dnum_<%= p.name() %><% end %><%- end -%><%- -%>
     EOS
 
     erb = ERB.new(script, nil, '-');
@@ -1465,7 +1471,11 @@ struct <%= self.struct_name() %>_t_ {
 	<%- end -%>
 	WID wid;
 	GID gid;
+	<%- if self.is_attr_subwindow() -%>
+	<%= self.get_window_parent() %>_t *parent;
+	<%- else -%>
 	WID parent;
+	<%- end -%>
 	RECT r;
 	PAT bgpat;
 	<%- if self.is_attr_scrollable() -%>
@@ -1708,7 +1718,7 @@ EXPORT W <%= self.struct_name() %>_open(<%= self.struct_name() %>_t *window)
 		return 0;
 	}
 
-	wid = wopn_wnd(WA_STD<% if self.is_attr_resizable() %>|WA_SIZE|WA_HHDL|WA_VHDL<% end %><% if self.is_attr_scrollable() %>|WA_BBAR|WA_RBAR<% end %>, window->parent, &(window->r), NULL, 2, <%- if self.get_window_title() != nil -%>title<%- else -%>NULL<%- end -%>, &window->bgpat, NULL);
+	wid = wopn_wnd(WA_STD<% if self.is_attr_subwindow() %>|WA_SUBW<% end %><% if self.is_attr_resizable() %>|WA_SIZE|WA_HHDL|WA_VHDL<% end %><% if self.is_attr_scrollable() %>|WA_BBAR|WA_RBAR<% end %>, <% if self.is_attr_subwindow() %>window->parent->wid<% else %>window->parent<% end %>, &(window->r), NULL, 2, <%- if self.get_window_title() != nil -%>title<%- else -%>NULL<%- end -%>, &window->bgpat, NULL);
 	if (wid < 0) {
 		DP_ER("wopn_wnd: subjectoption error", wid);
 		return wid;
@@ -2539,6 +2549,11 @@ struct <%= self.main_name() %>_t_ {
 <%- @win.each do |w| -%>
 EXPORT <%= w.struct_name() %>_t* <%= self.main_name() %>_new<%= w.struct_name() %>(<%= self.main_name() %>_t *hmi, <%= w.generate_initialize_arguments() %>)
 {
+	<%- if w.is_attr_subwindow -%>
+	if (parent == NULL) {
+		return NULL;
+	}
+	<%- end -%>
 	if (hmi-><%= w.struct_name() %> != NULL) {
 		return NULL;
 	}
