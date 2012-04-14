@@ -1305,6 +1305,9 @@ class HMIWindow
   def is_attr_subwindow()
     self.is_attr_xxx("subwindow");
   end
+  def is_attr_alwaysopen()
+    self.is_attr_xxx("alwaysopen");
+  end
   def is_exportevent_draw()
     self.is_exportevent_xxx("draw");
   end
@@ -1436,8 +1439,10 @@ IMPORT GID <%= self.struct_name() %>_getGID(<%= self.struct_name() %>_t *window)
 IMPORT WID <%= self.struct_name() %>_getWID(<%= self.struct_name() %>_t *window);
 IMPORT W <%= self.struct_name() %>_settitle(<%= self.struct_name() %>_t *window, TC *title);
 IMPORT Bool <%= self.struct_name() %>_isactive(<%= self.struct_name() %>_t *window);
+<%- if !self.is_attr_alwaysopen() -%>
 IMPORT W <%= self.struct_name() %>_open(<%= self.struct_name() %>_t *window);
 IMPORT VOID <%= self.struct_name() %>_close(<%= self.struct_name() %>_t *window);
+<%- end -%>
 <%- @parts.each do |p| -%><%= p.generate_prototypes(self.struct_name()) %><%- end -%>
     EOS
 
@@ -1704,7 +1709,7 @@ LOCAL VOID <%= self.struct_name() %>_resize(<%= self.struct_name() %>_t *window,
 }
 
 <%- end -%>
-EXPORT W <%= self.struct_name() %>_open(<%= self.struct_name() %>_t *window)
+<% if self.is_attr_alwaysopen() %>LOCAL<% else %>EXPORT<% end %> W <%= self.struct_name() %>_open(<%= self.struct_name() %>_t *window)
 {
 	WID wid;
 	<%- if self.get_window_title() != nil -%>
@@ -1736,6 +1741,7 @@ EXPORT W <%= self.struct_name() %>_open(<%= self.struct_name() %>_t *window)
 	return 0;
 }
 
+<%- if !self.is_attr_alwaysopen() -%>
 EXPORT VOID <%= self.struct_name() %>_close(<%= self.struct_name() %>_t *window)
 {
 	WDSTAT stat;
@@ -1759,6 +1765,7 @@ EXPORT VOID <%= self.struct_name() %>_close(<%= self.struct_name() %>_t *window)
 	window->gid = -1;
 }
 
+<%- end -%>
     EOS
 
     erb = ERB.new(script, nil, '-');
@@ -1826,6 +1833,17 @@ EXPORT <%= self.struct_name() %>_t* <%= self.struct_name() %>_new(<%= self.gener
 	}
 	<%- end -%>
 	<%- @parts.each do |p| -%><%= p.generate_initialize_in_new() %><%- end -%>
+
+	<%- if self.is_attr_alwaysopen() -%>
+	err = <%= self.struct_name() %>_open(window);
+	if (err < 0) {
+		<%- if self.is_attr_scrollable() -%>
+		hmi_windowscroll_finalize(&window->wscr);
+		<%- end -%>
+		free(window);
+		return NULL;
+	}
+	<%- end -%>
 
 	return window;
 }
