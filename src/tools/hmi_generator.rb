@@ -227,6 +227,15 @@ class HMIParts
 	if (window-><%= self.name() %>.id < 0) {
 		DP_ER("ccre_xxx <%= self.name() %> error:", window-><%= self.name() %>.id);
 	}
+	<%- if self.is_databox_use() -%><%= self.generate_loadvalue_in_open() %><%- end -%>
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_loadvalue_in_open()
+    script = <<-EOS
     EOS
 
     erb = ERB.new(script, nil, '-');
@@ -476,6 +485,15 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
 
   def generate_create_systemcall_direct()
     script = "ccre_tbx(wid, TB_PARTS|P_DISP, &r, <%= self.text_length() %>, window-><%= self.name() %>.buf, NULL)"
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_loadvalue_in_open()
+    script = <<-EOS
+	cset_val(window-><%= self.name() %>.id, <%= self.text_length() %>, (W*)(window-><%= self.name() %>.buf+<%= self.get_attr_offset() %>));
+    EOS
 
     erb = ERB.new(script, nil, '-');
     erb.result(binding)
@@ -754,6 +772,15 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
 
   def generate_create_systemcall_direct()
     script = "ccre_nbx(wid, NB_PARTS|P_DISP, &r, window-><%= self.name() %>.format, (W*)&window-><%= self.name() %>.cv, NULL)"
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_loadvalue_in_open()
+    script = <<-EOS
+	cset_val(window-><%= self.name() %>.id, <% if self.is_double() %>2<% else %>1<% end %>, (W*)(&window-><%= self.name() %>.cv));
+    EOS
 
     erb = ERB.new(script, nil, '-');
     erb.result(binding)
@@ -1044,6 +1071,15 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
     erb.result(binding)
   end
 
+  def generate_loadvalue_in_open()
+    script = <<-EOS
+	cset_val(window-><%= self.name() %>.id, <%= self.calc_serialbox_fieldsnumber() %>, (W*)(window-><%= self.name() %>.cv));
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
   def generate_savevalue_in_close()
     script = <<-EOS
 	err = cget_val(window-><%= self.name() %>.id, <%= self.calc_serialbox_fieldsnumber() %>, (W*)(window-><%= self.name() %>.cv));
@@ -1216,6 +1252,15 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
 
   def generate_create_systemcall_direct()
     script = "ccre_sel(wid, WS_PARTS|P_DISP, &r, window-><%= self.name() %>.value, window-><%= self.name() %>.format, NULL)"
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_loadvalue_in_open()
+    script = <<-EOS
+	cset_val(window-><%= self.name() %>.id, 1, (W*)(&window-><%= self.name() %>.value));
+    EOS
 
     erb = ERB.new(script, nil, '-');
     erb.result(binding)
