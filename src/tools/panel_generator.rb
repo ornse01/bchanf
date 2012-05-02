@@ -191,6 +191,14 @@ class PanelLine
       };
     end
   end
+  def layout
+    case @yaml["layout"]
+    when "flush left", "flush right", "centering", "justification"
+      return @yaml["layout"];
+    else
+      return "flush left"
+    end
+  end
 
   def height
     h = 0;
@@ -201,10 +209,10 @@ class PanelLine
     }
     return h;
   end
-  def width
+  def width(margin)
     w = 0;
     @items.each { |item|
-      w += item.width;
+      w += item.width + margin;
     }
     return w;
   end
@@ -270,7 +278,7 @@ class Panel
   def content_width
     w = @margin_left + @margin_right;
     @lines.each { |line|
-      w2 = @margin_left + line.width + @margin_right;
+      w2 = @margin_left + line.width(@margin_left + @margin_right) + @margin_right;
       if w2 > w
         w = w2
       end
@@ -307,18 +315,38 @@ IMPORT <%= panel_result_type_name() %> <%= panel_function_name() %>(<%= panel_ar
     erb.result(binding)
   end
 
+  def calc_line_layout_left(content_width, line)
+    case line.layout
+    when "flush left", "justification"
+      return @panel_padding_left + @margin_left;
+    when "flush right"
+      return @panel_padding_left + content_width - line.width;
+    when "centering"
+      return @panel_padding_left + (content_width - line.width) / 2;
+    end
+  end
+  def calc_line_layout_item_margin(content_width, line)
+    case line.layout
+    when "justification"
+      return @margin_right + @margin_left + (content_width - line.width(@margin_left + @margin_right)) / (line.items.length - 1);
+    else
+      return @margin_right + @margin_left;
+    end
+  end
+
   def generate_source_function_pnl_item_value_each()
+    cw = self.content_width;
     n = 0;
-    left = @panel_padding_left + @margin_left;
     top = @panel_padding_top + @margin_top;
     @lines.each { |l|
+      left = self.calc_line_layout_left(cw, l);
+      margin = self.calc_line_layout_item_margin(cw, l);
       l.items.each { |i|
         s = i.generate_pnl_item_value(n, left, top);
         yield(s);
         n += 1;
-        left += i.width + @margin_right + @margin_left;
+        left += i.width + margin;
       }
-      left = @panel_padding_left + @margin_left;
       top += l.height + @margin_bottom + @margin_top;
     }
   end
