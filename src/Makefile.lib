@@ -83,7 +83,7 @@ ifneq ($(mode), debug)
   CFLAGS += -Wall
 endif
 
-CFLAGS += $(BUILDOPTIONS) -DBCHAN_CONFIG_DEBUG
+CFLAGS += $(BUILDOPTIONS)
 
 LOADLIBES += -limg
 
