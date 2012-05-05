@@ -399,12 +399,41 @@ EXPORT W <%= window_name %>_get<%= self.name() %>text(<%= window_name %>_t *wind
 
 EXPORT W <%= window_name %>_cut<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len, Bool cut)
 {
-	return ccut_txt(window-><%= self.name() %>.id, len, str, cut == False ? 0 : 1);
+	W err;
+
+	err = ccut_txt(window-><%= self.name() %>.id, len, str, cut == False ? 0 : 1);
+	if (err < 0) {
+		return err;
+	}
+
+	if (cut != False) {
+		err = cget_val(window-><%= self.name() %>.id, <%= self.text_length() %>, (W*)(window-><%= self.name() %>.buf+<%= self.get_attr_offset() %>));
+		if (err < 0) {
+			return err;
+		}
+		window-><%= self.name() %>.buf_written = err;
+		return err;
+	}
+
+	return err;
 }
 
 EXPORT W <%= window_name %>_insert<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len)
 {
-	return cins_txt(window-><%= self.name() %>.id, (PNT){0x8000, 0x8000}, str);
+	W err;
+
+	err = cins_txt(window-><%= self.name() %>.id, (PNT){0x8000, 0x8000}, str);
+	if (err < 0) {
+		return err;
+	}
+
+	err = cget_val(window-><%= self.name() %>.id, <%= self.text_length() %>, (W*)(window-><%= self.name() %>.buf+<%= self.get_attr_offset() %>));
+	if (err < 0) {
+		return err;
+	}
+	window-><%= self.name() %>.buf_written = err;
+
+	return err;
 }
 
 LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *window, WEVENT *wev, <%= main_name %>event_t *evt)
