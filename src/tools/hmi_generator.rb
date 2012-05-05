@@ -416,6 +416,8 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
 	}
 	switch (i & 7) {
 	case	P_BUT:
+		cchg_par(window-><%= self.name() %>.id, P_INACT);
+		cchg_par(window-><%= self.name() %>.id, P_ACT);
 		wugt_evt(wev);
 		break;
 	case	P_TAB:
