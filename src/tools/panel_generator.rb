@@ -320,9 +320,9 @@ IMPORT <%= panel_result_type_name() %> <%= panel_function_name() %>(<%= panel_ar
     when "flush left", "justification"
       return @panel_padding_left + @margin_left;
     when "flush right"
-      return @panel_padding_left + content_width - line.width;
+      return @panel_padding_left + content_width - line.width(@margin_left + @margin_right);
     when "centering"
-      return @panel_padding_left + (content_width - line.width) / 2;
+      return @panel_padding_left + (content_width - line.width(@margin_left + @margin_right)) / 2;
     end
   end
   def calc_line_layout_item_margin(content_width, line)
