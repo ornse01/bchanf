@@ -330,7 +330,6 @@ typedef struct <%= window_name %>_eventdata_<%= self.name() %>_keymenu_t_ <%= wi
     script = <<-EOS
 IMPORT W <%= window_name %>_set<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len);
 IMPORT W <%= window_name %>_get<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len);
-IMPORT W <%= window_name %>_end<%= self.name() %>action(<%= window_name %>_t *window);
     EOS
 
     erb = ERB.new(script, nil, '-');
