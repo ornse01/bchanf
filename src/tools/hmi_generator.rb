@@ -330,6 +330,8 @@ typedef struct <%= window_name %>_eventdata_<%= self.name() %>_keymenu_t_ <%= wi
     script = <<-EOS
 IMPORT W <%= window_name %>_set<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len);
 IMPORT W <%= window_name %>_get<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len);
+IMPORT W <%= window_name %>_cut<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len, Bool cut);
+IMPORT W <%= window_name %>_insert<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len);
     EOS
 
     erb = ERB.new(script, nil, '-');
@@ -393,6 +395,16 @@ EXPORT W <%= window_name %>_get<%= self.name() %>text(<%= window_name %>_t *wind
 	memcpy(str, window-><%= self.name() %>.buf + <%= self.get_attr_offset() %>, cp_len * sizeof(TC));
 
 	return cp_len;
+}
+
+EXPORT W <%= window_name %>_cut<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len, Bool cut)
+{
+	return ccut_txt(window-><%= self.name() %>.id, len, str, cut == False ? 0 : 1);
+}
+
+EXPORT W <%= window_name %>_insert<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len)
+{
+	return cins_txt(window-><%= self.name() %>.id, (PNT){0x8000, 0x8000}, str);
 }
 
 LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *window, WEVENT *wev, <%= main_name %>event_t *evt)
