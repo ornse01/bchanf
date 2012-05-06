@@ -399,11 +399,11 @@ EXPORT W <%= window_name %>_get<%= self.name() %>text(<%= window_name %>_t *wind
 
 EXPORT W <%= window_name %>_cut<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len, Bool cut)
 {
-	W err;
+	W err, len0;
 
-	err = ccut_txt(window-><%= self.name() %>.id, len, str, cut == False ? 0 : 1);
-	if (err < 0) {
-		return err;
+	len0 = ccut_txt(window-><%= self.name() %>.id, len, str, cut == False ? 0 : 1);
+	if (len0 < 0) {
+		return len0;
 	}
 
 	if (cut != False) {
@@ -412,10 +412,10 @@ EXPORT W <%= window_name %>_cut<%= self.name() %>text(<%= window_name %>_t *wind
 			return err;
 		}
 		window-><%= self.name() %>.buf_written = err;
-		return err;
+		return len0;
 	}
 
-	return err;
+	return len0;
 }
 
 EXPORT W <%= window_name %>_insert<%= self.name() %>text(<%= window_name %>_t *window, TC *str, W len)
