@@ -443,8 +443,22 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
 	i = cact_par(window-><%= self.name() %>.id, wev);
 	if (i & 0x2000) {
 		window-><%= self.name() %>.nextaction = True;
-		<%= window_name %>_setflag(window, <%= window_name.upcase %>_FLAG_PARTS_OTHEREVENT);
-		wugt_evt(wev);
+		switch (i) {
+		case	P_MENU:
+			if ((wev->s.type == EV_KEYDWN)&&(wev->s.stat & ES_CMD)) {
+				evt->type = <%= main_name.upcase %>EVENT_TYPE_<%= window_name.upcase %>_PARTS_<%= self.name().upcase %>_KEYMENU;
+				evt->data.<%= window_name %>_<%= self.name() %>_keymenu.keycode = wev->e.data.key.code;
+			} else {
+				evt->type = <%= main_name.upcase %>EVENT_TYPE_<%= window_name.upcase %>_PARTS_<%= self.name().upcase %>_MENU;
+				evt->data.<%= window_name %>_<%= self.name() %>_menu.pos = wev->s.pos;
+			}
+			<%= window_name %>_setflag(window, <%= window_name.upcase %>_FLAG_PARTS_NEXTACTION);
+			break;
+		default:
+			wugt_evt(wev);
+			<%= window_name %>_setflag(window, <%= window_name.upcase %>_FLAG_PARTS_OTHEREVENT);
+			break;
+		}
 		return;
 	}
 	window-><%= self.name() %>.nextaction = False;
@@ -477,18 +491,6 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
 		evt->type = <%= main_name.upcase %>EVENT_TYPE_<%= window_name.upcase %>_PARTS_<%= self.name().upcase %>_COPY;
 		evt->data.<%= window_name %>_<%= self.name() %>_copy.rel_wid = wev->s.wid;
 		evt->data.<%= window_name %>_<%= self.name() %>_copy.pos = wev->s.pos;
-		break;
-	case	P_MENU:
-		if ((wev->s.type == EV_KEYDWN)&&(wev->s.stat & ES_CMD)) {
-			evt->type = <%= main_name.upcase %>EVENT_TYPE_<%= window_name.upcase %>_PARTS_<%= self.name().upcase %>_KEYMENU;
-			evt->data.<%= window_name %>_<%= self.name() %>_keymenu.keycode = wev->e.data.key.code;
-		} else {
-			evt->type = <%= main_name.upcase %>EVENT_TYPE_<%= window_name.upcase %>_PARTS_<%= self.name().upcase %>_MENU;
-			evt->data.<%= window_name %>_<%= self.name() %>_menu.pos = wev->s.pos;
-		}
-		window-><%= self.name() %>.nextaction = True;
-		<%= window_name %>_setflag(window, <%= window_name.upcase %>_FLAG_PARTS_NEXTACTION);
-		wugt_evt(wev);
 		break;
 	}
 }
