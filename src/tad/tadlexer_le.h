@@ -40,15 +40,10 @@
 /* Data structure identifier: result */
 struct tadlexer_le_result_ {
 	enum {
-		HTTP_TADLEXER_LE_RESULT_FIRST_BYTE,
-		HTTP_TADLEXER_LE_RESULT_DETERMINE_FIXED_SEGMENT,
-		HTTP_TADLEXER_LE_RESULT_DETERMINE_VARIABLE_SEGMENT,
-		HTTP_TADLEXER_LE_RESULT_READING_SEGMENT_LENGTH,
-		HTTP_TADLEXER_LE_RESULT_DETERMINE_SEGMENT_LENGTH,
-		HTTP_TADLEXER_LE_RESULT_DETERMINE_DATA_EMPTY,
-		HTTP_TADLEXER_LE_RESULT_READING_DATA,
-		HTTP_TADLEXER_LE_RESULT_READING_DATA_END,
+		TADLEXER_LE_RESULTTYPE_READING_SEGMENT,
+		TADLEXER_LE_RESULTTYPE_SEGMENT_END,
 	} type;
+	UW flag;
 	union {
 		TC ch;
 		struct {
@@ -58,6 +53,12 @@ struct tadlexer_le_result_ {
 	} val;
 };
 typedef struct tadlexer_le_result_ tadlexer_le_result;
+
+IMPORT Bool tadlexer_le_result_is_fixedsegment(tadlexer_le_result *result);
+IMPORT Bool tadlexer_le_result_is_variablesegment(tadlexer_le_result *result);
+IMPORT Bool tadlexer_le_result_is_segmentid_determined(tadlexer_le_result *result);
+IMPORT Bool tadlexer_le_result_is_lengthdetermined(tadlexer_le_result *result);
+IMPORT Bool tadlexer_le_result_is_readingdata(tadlexer_le_result *result);
 
 /* Functionality name: tadlexer */
 /* Detail name: le */

@@ -28508,6 +28508,7 @@ LOCAL UNITTEST_RESULT test_tadlexer_le_common(UB *data, W len, test_tadlexer_le_
 	tadlexer_le_t lexer;
 	tadlexer_le_result *result;
 	W i, result_len, j;
+	Bool ok;
 	UNITTEST_RESULT ret = UNITTEST_RESULT_PASS;
 
 	tadlexer_le_initialize(&lexer);
@@ -28516,75 +28517,68 @@ LOCAL UNITTEST_RESULT test_tadlexer_le_common(UB *data, W len, test_tadlexer_le_
 	for (i = 0; i < len; i++) {
 		tadlexer_le_inputbyte(&lexer, data[i], &result, &result_len);
 		switch (result->type) {
-		case HTTP_TADLEXER_LE_RESULT_FIRST_BYTE:
-			break;
-		case HTTP_TADLEXER_LE_RESULT_DETERMINE_FIXED_SEGMENT:
-			if (j >= expected_len) {
-				break;
+		case TADLEXER_LE_RESULTTYPE_READING_SEGMENT:
+			ok = tadlexer_le_result_is_variablesegment(result);
+			if (ok != False) {
+				if (expected[j].type != TEST_TADLEXER_LE_SEGMENT) {
+					printf("type fail [%d]: expected segment but charactor\n", j);
+					ret = UNITTEST_RESULT_FAIL;
+				}
 			}
-			if (expected[j].type != TEST_TADLEXER_LE_CH) {
-				printf("type fail [%d]: expected charactor but segument\n", j);
-				ret = UNITTEST_RESULT_FAIL;
+			ok = tadlexer_le_result_is_segmentid_determined(result);
+			if (ok != False) {
+				if (expected[j].segid != result->val.seg.id) {
+					printf("segment id fail [%d]: result = %02x, expected = %02x\n", j, result->val.seg.id, expected[j].segid);
+					ret = UNITTEST_RESULT_FAIL;
+				}
 			}
-			if (expected[j].ch != result->val.ch) {
-				printf("charactor fail [%d]: result = %04x, expected = %04x\n", j, result->val.ch, expected[j].ch);
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			j++;
-			break;
-		case HTTP_TADLEXER_LE_RESULT_DETERMINE_VARIABLE_SEGMENT:
-			break;
-		case HTTP_TADLEXER_LE_RESULT_READING_SEGMENT_LENGTH:
-			break;
-		case HTTP_TADLEXER_LE_RESULT_DETERMINE_SEGMENT_LENGTH:
-			if (expected[j].type != TEST_TADLEXER_LE_SEGMENT) {
-				printf("type fail [%d]: expected segment but charactor\n", j);
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			if (expected[j].segid != result->val.seg.id) {
-				printf("segment id fail [%d]: result = %02x, expected = %02x\n", j, result->val.seg.id, expected[j].segid);
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			if (expected[j].len != result->val.seg.len) {
-				printf("segment length fail [%d]: result = %d, expected = %d\n", j, result->val.seg.len, expected[j].len);
-				ret = UNITTEST_RESULT_FAIL;
+			ok = tadlexer_le_result_is_lengthdetermined(result);
+			if (ok != False) {
+				if (expected[j].len != result->val.seg.len) {
+					printf("segment length fail [%d]: result = %d, expected = %d\n", j, result->val.seg.len, expected[j].len);
+					ret = UNITTEST_RESULT_FAIL;
+				}
 			}
 			break;
-		case HTTP_TADLEXER_LE_RESULT_DETERMINE_DATA_EMPTY:
-			if (expected[j].type != TEST_TADLEXER_LE_SEGMENT) {
-				printf("type fail [%d]: expected segment but charactor\n", j);
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			if (expected[j].segid != result->val.seg.id) {
-				printf("segment id fail [%d]: result = %02x, expected = %02x\n", j, result->val.seg.id, expected[j].segid);
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			if (expected[j].len != result->val.seg.len) {
-				printf("segment length fail [%d]: result = %d, expected = %d\n", j, result->val.seg.len, expected[j].len);
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			j++;
-			break;
-		case HTTP_TADLEXER_LE_RESULT_READING_DATA:
-			if (expected[j].type != TEST_TADLEXER_LE_SEGMENT) {
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			if (expected[j].segid != result->val.seg.id) {
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			if (expected[j].len != result->val.seg.len) {
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			break;
-		case HTTP_TADLEXER_LE_RESULT_READING_DATA_END:
-			if (expected[j].type != TEST_TADLEXER_LE_SEGMENT) {
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			if (expected[j].segid != result->val.seg.id) {
-				ret = UNITTEST_RESULT_FAIL;
-			}
-			if (expected[j].len != result->val.seg.len) {
-				ret = UNITTEST_RESULT_FAIL;
+		case TADLEXER_LE_RESULTTYPE_SEGMENT_END:
+			ok = tadlexer_le_result_is_variablesegment(result);
+			if (ok != False) {
+				if (expected[j].type != TEST_TADLEXER_LE_SEGMENT) {
+					printf("type fail [%d]: expected segment but charactor\n", j);
+					ret = UNITTEST_RESULT_FAIL;
+				}
+				ok = tadlexer_le_result_is_segmentid_determined(result);
+				if (ok != False) {
+					if (expected[j].segid != result->val.seg.id) {
+						printf("segment id fail [%d]: result = %02x, expected = %02x\n", j, result->val.seg.id, expected[j].segid);
+						ret = UNITTEST_RESULT_FAIL;
+					}
+				} else {
+					printf("segment id is not determined\n");
+					ret = UNITTEST_RESULT_FAIL;
+				}
+				ok = tadlexer_le_result_is_lengthdetermined(result);
+				if (ok != False) {
+					if (expected[j].len != result->val.seg.len) {
+						printf("segment length fail [%d]: result = %d, expected = %d\n", j, result->val.seg.len, expected[j].len);
+						ret = UNITTEST_RESULT_FAIL;
+					}
+				} else {
+					printf("segment length is not determined\n");
+					ret = UNITTEST_RESULT_FAIL;
+				}
+			} else {
+				ok = tadlexer_le_result_is_fixedsegment(result);
+				if (ok != False) {
+					if (expected[j].type != TEST_TADLEXER_LE_CH) {
+						printf("type fail [%d]: expected charactor but segument\n", j);
+						ret = UNITTEST_RESULT_FAIL;
+					}
+					if (expected[j].ch != result->val.ch) {
+						printf("charactor fail [%d]: result = %04x, expected = %04x\n", j, result->val.ch, expected[j].ch);
+						ret = UNITTEST_RESULT_FAIL;
+					}
+				}
 			}
 			j++;
 			break;
