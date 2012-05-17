@@ -66,43 +66,43 @@ EXPORT VOID tadlexer_le_inputbyte(tadlexer_le_t *lexer, UB b, tadlexer_le_result
 	*result_len = 1;
 
 	switch (lexer->state) {
-	case HTTP_TADLEXER_LE_STATE_START:
+	case TADLEXER_LE_STATE_START:
 		lexer->segid = b;
-		lexer->state = HTTP_TADLEXER_LE_STATE_FIRST_BYTE;
+		lexer->state = TADLEXER_LE_STATE_FIRST_BYTE;
 		lexer->buf.type = TADLEXER_LE_RESULTTYPE_READING_SEGMENT;
 		lexer->buf.flag = 0;
 		break;
-	case HTTP_TADLEXER_LE_STATE_FIRST_BYTE:
+	case TADLEXER_LE_STATE_FIRST_BYTE:
 		if ((b == 0xFF)&&(((lexer->segid) & 0x80) == 0x80)) {
-			lexer->state = HTTP_TADLEXER_LE_STATE_SEGLEN_FIRST;
+			lexer->state = TADLEXER_LE_STATE_SEGLEN_FIRST;
 			lexer->buf.type = TADLEXER_LE_RESULTTYPE_READING_SEGMENT;
 			lexer->buf.flag = TADLEXER_LE_FLAG_VARIABLE_SEGMENT | TADLEXER_LE_FLAG_SEGMENTID_DETERMINE;
 			lexer->buf.val.seg.id = lexer->segid;
 		} else {
-			lexer->state = HTTP_TADLEXER_LE_STATE_START;
+			lexer->state = TADLEXER_LE_STATE_START;
 			lexer->buf.type = TADLEXER_LE_RESULTTYPE_SEGMENT_END;
 			lexer->buf.flag = TADLEXER_LE_FLAG_FIXED_SEGMENT;
 			lexer->buf.val.ch = lexer->segid | (b << 8);
 		}
 		break;
-	case HTTP_TADLEXER_LE_STATE_SEGLEN_FIRST:
+	case TADLEXER_LE_STATE_SEGLEN_FIRST:
 		lexer->len = b;
-		lexer->state = HTTP_TADLEXER_LE_STATE_SEGLEN_SECOND;
+		lexer->state = TADLEXER_LE_STATE_SEGLEN_SECOND;
 		lexer->buf.type = TADLEXER_LE_RESULTTYPE_READING_SEGMENT;
 		break;
-	case HTTP_TADLEXER_LE_STATE_SEGLEN_SECOND:
+	case TADLEXER_LE_STATE_SEGLEN_SECOND:
 		lexer->len |= b << 8;
 		if (lexer->len == 0) {
-			lexer->state = HTTP_TADLEXER_LE_STATE_START;
+			lexer->state = TADLEXER_LE_STATE_START;
 			lexer->buf.type = TADLEXER_LE_RESULTTYPE_SEGMENT_END;
 			lexer->buf.flag |= TADLEXER_LE_FLAG_LENGTH_DETERMINE;
 			lexer->buf.val.seg.id = lexer->segid;
 			lexer->buf.val.seg.len = 0;
 		} else if (lexer->len == 0xFFFF) {
-			lexer->state = HTTP_TADLEXER_LE_STATE_LSEGLEN_FIRST;
+			lexer->state = TADLEXER_LE_STATE_LSEGLEN_FIRST;
 			lexer->buf.type = TADLEXER_LE_RESULTTYPE_READING_SEGMENT;
 		} else {
-			lexer->state = HTTP_TADLEXER_LE_STATE_DATA;
+			lexer->state = TADLEXER_LE_STATE_DATA;
 			lexer->len_read = 0;
 			lexer->buf.type = TADLEXER_LE_RESULTTYPE_READING_SEGMENT;
 			lexer->buf.flag |= TADLEXER_LE_FLAG_LENGTH_DETERMINE;
@@ -110,35 +110,35 @@ EXPORT VOID tadlexer_le_inputbyte(tadlexer_le_t *lexer, UB b, tadlexer_le_result
 			lexer->buf.val.seg.len = lexer->len;
 		}
 		break;
-	case HTTP_TADLEXER_LE_STATE_LSEGLEN_FIRST:
+	case TADLEXER_LE_STATE_LSEGLEN_FIRST:
 		lexer->len = b;
-		lexer->state = HTTP_TADLEXER_LE_STATE_LSEGLEN_SECOND;
+		lexer->state = TADLEXER_LE_STATE_LSEGLEN_SECOND;
 		lexer->buf.type = TADLEXER_LE_RESULTTYPE_READING_SEGMENT;
 		break;
-	case HTTP_TADLEXER_LE_STATE_LSEGLEN_SECOND:
+	case TADLEXER_LE_STATE_LSEGLEN_SECOND:
 		lexer->len |= b << 8;
-		lexer->state = HTTP_TADLEXER_LE_STATE_LSEGLEN_THIRD;
+		lexer->state = TADLEXER_LE_STATE_LSEGLEN_THIRD;
 		lexer->buf.type = TADLEXER_LE_RESULTTYPE_READING_SEGMENT;
 		break;
-	case HTTP_TADLEXER_LE_STATE_LSEGLEN_THIRD:
+	case TADLEXER_LE_STATE_LSEGLEN_THIRD:
 		lexer->len |= b << 16;
-		lexer->state = HTTP_TADLEXER_LE_STATE_LSEGLEN_FORTH;
+		lexer->state = TADLEXER_LE_STATE_LSEGLEN_FORTH;
 		lexer->buf.type = TADLEXER_LE_RESULTTYPE_READING_SEGMENT;
 		break;
-	case HTTP_TADLEXER_LE_STATE_LSEGLEN_FORTH:
+	case TADLEXER_LE_STATE_LSEGLEN_FORTH:
 		lexer->len |= b << 24;
-		lexer->state = HTTP_TADLEXER_LE_STATE_DATA;
+		lexer->state = TADLEXER_LE_STATE_DATA;
 		lexer->len_read = 0;
 		lexer->buf.type = TADLEXER_LE_RESULTTYPE_READING_SEGMENT;
 		lexer->buf.flag |= TADLEXER_LE_FLAG_LENGTH_DETERMINE;
 		lexer->buf.val.seg.id = lexer->segid;
 		lexer->buf.val.seg.len = lexer->len;
 		break;
-	case HTTP_TADLEXER_LE_STATE_DATA:
+	case TADLEXER_LE_STATE_DATA:
 		lexer->buf.flag |= TADLEXER_LE_FLAG_READING_DATA;
 		lexer->len_read++;
 		if (lexer->len_read == lexer->len) {
-			lexer->state = HTTP_TADLEXER_LE_STATE_START;
+			lexer->state = TADLEXER_LE_STATE_START;
 			lexer->buf.type = TADLEXER_LE_RESULTTYPE_SEGMENT_END;
 		} else {
 			lexer->buf.type = TADLEXER_LE_RESULTTYPE_READING_SEGMENT;
@@ -149,7 +149,7 @@ EXPORT VOID tadlexer_le_inputbyte(tadlexer_le_t *lexer, UB b, tadlexer_le_result
 
 EXPORT VOID tadlexer_le_initialize(tadlexer_le_t *lexer)
 {
-	lexer->state = HTTP_TADLEXER_LE_STATE_START;
+	lexer->state = TADLEXER_LE_STATE_START;
 	lexer->segid = 0;
 	lexer->len = 0;
 }
