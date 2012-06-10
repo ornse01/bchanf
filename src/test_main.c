@@ -69,6 +69,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_tadstack_main(driver);
 	test_tadtsvparser_main(driver);
 	test_tadlexer_le_main(driver);
+	test_traydata_iterator_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);

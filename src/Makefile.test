@@ -79,12 +79,14 @@ SRC_CODING_TEST =	test_base64encoder.c \
 SRC_TAD =	taditerator.c \
 		tadstack.c \
 		tadtsvparser.c \
-		tadlexer_le.c
+		tadlexer_le.c \
+		traydata_iterator.c
 
 SRC_TAD_TEST = 	test_taditerator.c \
 		test_tadstack.c \
 		test_tadtsvparser.c \
-		test_tadlexer_le.c
+		test_tadlexer_le.c \
+		test_traydata_iterator.c
 
 SRC =	test_main.c $(SRC_UNITTEST) $(SRC_HTTP) $(SRC_HTTP_TEST) $(SRC_PARSE) $(SRC_PARSE_TEST) $(SRC_COLL) $(SRC_COLL_TEST) $(SRC_CODING) $(SRC_CODING_TEST) $(SRC_TAD) $(SRC_TAD_TEST)
 
