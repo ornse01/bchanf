@@ -71,8 +71,23 @@ class HMIParts
   def rect_string()
     "{{" + @yaml["rect"]["left"].to_s + ", " + @yaml["rect"]["top"].to_s + ", " + @yaml["rect"]["right"].to_s + ", " + @yaml["rect"]["bottom"].to_s + "}}";
   end
+  def rect_left()
+    @yaml["rect"]["left"].to_s
+  end
+  def rect_top()
+    @yaml["rect"]["top"].to_s
+  end
+  def rect_right()
+    @yaml["rect"]["right"].to_s
+  end
+  def rect_bottom()
+    @yaml["rect"]["bottom"].to_s
+  end
   def text_array()
     conv_TCArray_to_hex_definition(conv_euc_to_TCArray(@yaml["text"]));
+  end
+  def text_array_length()
+    calc_euc_to_TCArray_length(@yaml["text"]);
   end
   def is_attr_specified()
     @yaml["attr"] != nil
@@ -128,6 +143,9 @@ class HMIParts
   end
   def is_databox_use()
     @yaml["databox"] != nil && (@yaml["databox"]["specify"] != "direct" || @yaml["databox"]["specify"] != "argument")
+  end
+  def is_use_rect_in_open()
+    !is_databox_use()
   end
 
   def generate_header_eventtype_enumulate(main_name, window_name)
@@ -251,6 +269,14 @@ class HMIParts
   end
 
   def generate_action_in_butdnwork(main_name, window_name)
+    script = <<-EOS
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+
+  def generate_draw_in_draw(main_name, window_name)
     script = <<-EOS
     EOS
 
@@ -1332,6 +1358,30 @@ LOCAL VOID <%= window_name %>_action<%= self.name() %>(<%= window_name %>_t *win
   end
 end
 
+class HMIFixedTextParts < HMIParts
+  def is_need_eventbreak()
+    return false
+  end
+  def is_use_rect_in_open()
+    return false
+  end
+
+  def generate_initialize_in_new()
+    return ""
+  end
+  def generate_create_in_open()
+    return ""
+  end
+  def generate_draw_in_draw(main_name, window_name)
+    script = <<-EOS
+	gdra_stp(window->gid, <%= self.rect_left() %>, <%= self.rect_bottom() %>, (TC[]){<%= self.text_array() %>}, <%= self.text_array_length() %>, G_STORE);
+    EOS
+
+    erb = ERB.new(script, nil, '-');
+    erb.result(binding)
+  end
+end
+
 def generate_parts(type, a)
   case type
   when "textbox"
@@ -1346,6 +1396,8 @@ def generate_parts(type, a)
     return HMINumberBoxParts.new(a);
   when "switchselector"
     return HMISwitchSelectorParts.new(a);
+  when "fixedtext"
+    return HMIFixedTextParts.new(a)
   end
 end
 
@@ -1421,9 +1473,9 @@ class HMIWindow
   def is_exist_controllparts()
     @parts.length > 0;
   end
-  def is_exist_nondatabox_controllparts()
+  def is_exist_use_rect_in_open()
     @parts.any? { |item|
-      !item.is_databox_use();
+      item.is_use_rect_in_open();
     };
   end
   def is_need_flag()
@@ -1695,6 +1747,7 @@ EXPORT W <%= self.struct_name() %>_eraseworkarea(<%= self.struct_name() %>_t *wi
 LOCAL VOID <%= self.struct_name() %>_draw(<%= self.struct_name() %>_t *window, RECT *r)
 {
 	cdsp_pwd(window->wid, r, P_RDISP);
+	<%- @parts.each do |p| -%><%= p.generate_draw_in_draw(main_name, self.struct_name()) %><%- end -%>
 }
 
 LOCAL VOID <%= self.struct_name() %>_redisp(<%= self.struct_name() %>_t *window)
@@ -1822,7 +1875,7 @@ LOCAL VOID <%= self.struct_name() %>_resize(<%= self.struct_name() %>_t *window,
 <% if self.is_attr_alwaysopen() %>LOCAL<% else %>EXPORT<% end %> W <%= self.struct_name() %>_open(<%= self.struct_name() %>_t *window<% if self.is_attr_alwaysopen() %>, TC *title<% end %>)
 {
 	WID wid;
-	<%- if self.is_exist_nondatabox_controllparts() -%>
+	<%- if self.is_exist_use_rect_in_open() -%>
 	RECT r;
 	<%- end -%>
 
