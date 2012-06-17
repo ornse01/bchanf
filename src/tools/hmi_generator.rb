@@ -1374,6 +1374,7 @@ class HMIFixedTextParts < HMIParts
   end
   def generate_draw_in_draw(main_name, window_name)
     script = <<-EOS
+	gset_chc(window->gid, 0x10000000, -1);
 	gdra_stp(window->gid, <%= self.rect_left() %>, <%= self.rect_bottom() %>, (TC[]){<%= self.text_array() %>}, <%= self.text_array_length() %>, G_STORE);
     EOS
 
@@ -1985,6 +1986,11 @@ EXPORT <%= self.struct_name() %>_t* <%= self.struct_name() %>_new(<%= self.gener
 	window->r.c.right = p->x + <%= self.get_window_width() %>;
 	window->r.c.bottom = p->y + <%= self.get_window_height() %>;
 	<%- end -%>
+	if (bgpat != NULL) {
+		window->bgpat = *bgpat;
+	} else {
+		window->bgpat = (PAT){{0, 16, 16, 0x10ffffff, 0, FILL100}};
+	}
 	<%- if self.is_attr_scrollable() -%>
 	err = hmi_windowscroll_initialize(&window->wscr, window->wid);
 	if (err < 0) {
