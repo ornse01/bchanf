@@ -305,6 +305,7 @@ struct http_connector_t_ {
 	http_reqdict_t *dict;
 	http_transport_t *transport;
 	ID flg;
+	ID sem;
 };
 
 #define HTTP_CONNECTOR_FLAG_CREARMASK(flag) (~(flag))
@@ -318,7 +319,12 @@ EXPORT ID http_connector_createendpoint(http_connector_t *connector, UB *host, W
 	ID id;
 	W err;
 
+	err = wai_sem(connector->sem, T_FOREVER);
+	if (err < 0) {
+		return err;
+	}
 	id = http_reqdict_allocate(connector->dict, host, host_len, port, method);
+	sig_sem(connector->sem);
 	if (id < 0) {
 		DP_ER("http_reqdict_allocate", id);
 		return id; /* TODO */
@@ -338,9 +344,16 @@ EXPORT VOID http_connector_deleteendpoint(http_connector_t *connector, ID endpoi
 {
 	http_reqentry_t *entry;
 	Bool transport_close = True;
+	W err;
+
+	err = wai_sem(connector->sem, T_FOREVER);
+	if (err < 0) {
+		return;
+	}
 
 	entry = http_reqdict_getentrybyID(connector->dict, endpoint);
 	if (entry == NULL) {
+		sig_sem(connector->sem);
 		return;
 	}
 
@@ -362,6 +375,8 @@ EXPORT VOID http_connector_deleteendpoint(http_connector_t *connector, ID endpoi
 	}
 
 	http_reqdict_free(connector->dict, endpoint);
+
+	sig_sem(connector->sem);
 }
 
 LOCAL W http_connector_searchwaiting(http_connector_t *connector)
@@ -446,8 +461,13 @@ EXPORT W http_connector_waitconnection(http_connector_t *connector, TMOUT tmout)
 	W err;
 	Bool evt = False;
 
+	err = wai_sem(connector->sem, tmout);
+	if (err < 0) {
+		return err;
+	}
 	err = http_connector_searchwaiting(connector);
 	if (err < 0) {
+		sig_sem(connector->sem);
 		return err;
 	}
 	if (err > 0) {
@@ -456,6 +476,7 @@ EXPORT W http_connector_waitconnection(http_connector_t *connector, TMOUT tmout)
 	http_transport_releaseunusedendpoint(connector->transport);
 
 	err = http_connector_waitreceiving(connector, tmout);
+	sig_sem(connector->sem);
 	if (err < 0) {
 		return err;
 	}
@@ -776,7 +797,12 @@ EXPORT W http_connector_getevent(http_connector_t *connector, http_connector_eve
 		DP_ER("wai_flg", err);
 		return err;
 	}
+	err = wai_sem(connector->sem, T_FOREVER);
+	if (err < 0) {
+		return err;
+	}
 	found = http_connector_searcheventtarget(connector, event);
+	sig_sem(connector->sem);
 	if (found == False) {
 		err = clr_flg(connector->flg, HTTP_CONNECTOR_FLAG_CLEARMASK_EVENT);
 		if (err < 0) {
@@ -823,10 +849,16 @@ EXPORT W http_connector_sendrequestline(http_connector_t *connector, ID endpoint
 	Bool cont;
 	CONST UB *str;
 
+	err = wai_sem(connector->sem, T_FOREVER);
+	if (err < 0) {
+		return err;
+	}
+
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, SEND_REQUEST_LINE, entry);
 
 	err = http_requestlinestream_initialize(&reqline, entry->method, path, path_len);
 	if (err < 0) {
+		sig_sem(connector->sem);
 		return err;
 	}
 	for (;;) {
@@ -842,10 +874,13 @@ EXPORT W http_connector_sendrequestline(http_connector_t *connector, ID endpoint
 	http_requestlinestream_finalize(&reqline);
 
 	if (err < 0) {
+		sig_sem(connector->sem);
 		return err;
 	}
 
 	entry->snd_state = SEND_HEADER_MINE;
+
+	sig_sem(connector->sem);
 
 	return 0;
 }
@@ -878,15 +913,23 @@ EXPORT W http_connector_sendheader(http_connector_t *connector, ID endpoint, UB 
 	http_reqentry_t *entry;
 	W err;
 
+	err = wai_sem(connector->sem, T_FOREVER);
+	if (err < 0) {
+		return err;
+	}
+
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK_2(connector, endpoint, SEND_HEADER_MINE, SEND_HEADER_USER, entry);
 
 	if (entry->snd_state == SEND_HEADER_MINE) {
 		err = http_connector_writedefaultheader(connector, entry->transport, entry->host, entry->host_len);
 		if (err < 0) {
+			sig_sem(connector->sem);
 			return err;
 		}
 		entry->snd_state = SEND_HEADER_USER;
 	}
+
+	sig_sem(connector->sem);
 
 	return 0;
 }
@@ -896,20 +939,29 @@ EXPORT W http_connector_sendheaderend(http_connector_t *connector, ID endpoint)
 	http_reqentry_t *entry;
 	W err;
 
+	err = wai_sem(connector->sem, T_FOREVER);
+	if (err < 0) {
+		return err;
+	}
+
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK_2(connector, endpoint, SEND_HEADER_MINE, SEND_HEADER_USER, entry);
 
 	if (entry->snd_state == SEND_HEADER_MINE) {
 		err = http_connector_writedefaultheader(connector, entry->transport, entry->host, entry->host_len);
 		if (err < 0) {
+			sig_sem(connector->sem);
 			return err;
 		}
 	}
 	err = http_transport_write(connector->transport, entry->transport, "\r\n", 2);
 	if (err < 0) {
+		sig_sem(connector->sem);
 		return err;
 	}
 
 	entry->snd_state = SEND_MESSAGE_BODY;
+
+	sig_sem(connector->sem);
 
 	return 0;
 }
@@ -919,9 +971,15 @@ EXPORT W http_connector_sendmessagebody(http_connector_t *connector, ID endpoint
 	http_reqentry_t *entry;
 	W err;
 
+	err = wai_sem(connector->sem, T_FOREVER);
+	if (err < 0) {
+		return err;
+	}
+
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, SEND_MESSAGE_BODY, entry);
 
 	err = http_transport_write(connector->transport, entry->transport, p, len);
+	sig_sem(connector->sem);
 	if (err < 0) {
 		return err;
 	}
@@ -932,10 +990,18 @@ EXPORT W http_connector_sendmessagebody(http_connector_t *connector, ID endpoint
 EXPORT W http_connector_sendmessagebodyend(http_connector_t *connector, ID endpoint)
 {
 	http_reqentry_t *entry;
+	W err;
+
+	err = wai_sem(connector->sem, T_FOREVER);
+	if (err < 0) {
+		return err;
+	}
 
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, SEND_MESSAGE_BODY, entry);
 
 	entry->status = WAITING_RESPONSE;
+
+	sig_sem(connector->sem);
 
 	return 0;
 }
@@ -959,6 +1025,11 @@ EXPORT http_connector_t* http_connector_new()
 		DP_ER("cre_flg", connector->flg);
 		goto error_flg;
 	}
+	connector->sem = cre_sem(1, SEM_EXCL|DELEXIT);
+	if (connector->sem < 0) {
+		DP_ER("cre_sem", connector->sem);
+		goto error_sem;
+	}
 	connector->transport = http_transport_new(10/*tmp*/);
 	if (connector->transport == NULL) {
 		DP_ER("http_transport_new", -1);
@@ -969,6 +1040,8 @@ EXPORT http_connector_t* http_connector_new()
 
 	http_transport_delete(connector->transport);
 error_transport:
+	del_sem(connector->sem);
+error_sem:
 	del_flg(connector->flg);
 error_flg:
 	http_reqdict_delete(connector->dict);
@@ -980,6 +1053,7 @@ error_http_reqdict:
 EXPORT VOID http_connector_delete(http_connector_t *connector)
 {
 	http_transport_delete(connector->transport);
+	del_sem(connector->sem);
 	del_flg(connector->flg);
 	http_reqdict_delete(connector->dict);
 	free(connector);
