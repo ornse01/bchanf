@@ -308,6 +308,19 @@ struct http_connector_t_ {
 	ID sem;
 };
 
+#define HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_ERR(connector) \
+	err = wai_sem((connector)->sem, T_FOREVER); \
+	if (err < 0) { \
+		return err; \
+	}
+#define HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_VOID(connector) \
+	err = wai_sem((connector)->sem, T_FOREVER); \
+	if (err < 0) { \
+		return; \
+	}
+#define HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector) \
+	sig_sem((connector)->sem); 
+
 #define HTTP_CONNECTOR_FLAG_CREARMASK(flag) (~(flag))
 #define HTTP_CONNECTOR_FLAG_REQUEST 0x00000001
 #define HTTP_CONNECTOR_FLAG_EVENT   0x00000002
@@ -319,12 +332,9 @@ EXPORT ID http_connector_createendpoint(http_connector_t *connector, UB *host, W
 	ID id;
 	W err;
 
-	err = wai_sem(connector->sem, T_FOREVER);
-	if (err < 0) {
-		return err;
-	}
+	HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_ERR(connector);
 	id = http_reqdict_allocate(connector->dict, host, host_len, port, method);
-	sig_sem(connector->sem);
+	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 	if (id < 0) {
 		DP_ER("http_reqdict_allocate", id);
 		return id; /* TODO */
@@ -346,14 +356,11 @@ EXPORT VOID http_connector_deleteendpoint(http_connector_t *connector, ID endpoi
 	Bool transport_close = True;
 	W err;
 
-	err = wai_sem(connector->sem, T_FOREVER);
-	if (err < 0) {
-		return;
-	}
+	HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_VOID(connector);
 
 	entry = http_reqdict_getentrybyID(connector->dict, endpoint);
 	if (entry == NULL) {
-		sig_sem(connector->sem);
+		HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 		return;
 	}
 
@@ -376,7 +383,7 @@ EXPORT VOID http_connector_deleteendpoint(http_connector_t *connector, ID endpoi
 
 	http_reqdict_free(connector->dict, endpoint);
 
-	sig_sem(connector->sem);
+	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 }
 
 LOCAL W http_connector_searchwaiting(http_connector_t *connector)
@@ -461,13 +468,15 @@ EXPORT W http_connector_waitconnection(http_connector_t *connector, TMOUT tmout)
 	W err;
 	Bool evt = False;
 
-	err = wai_sem(connector->sem, tmout);
+	err = wai_flg(connector->flg, HTTP_CONNECTOR_FLAG_REQUEST, WF_AND, tmout);
 	if (err < 0) {
-		return err;
+		return 0;
 	}
+
+	HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_ERR(connector);
 	err = http_connector_searchwaiting(connector);
 	if (err < 0) {
-		sig_sem(connector->sem);
+		HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 		return err;
 	}
 	if (err > 0) {
@@ -476,7 +485,7 @@ EXPORT W http_connector_waitconnection(http_connector_t *connector, TMOUT tmout)
 	http_transport_releaseunusedendpoint(connector->transport);
 
 	err = http_connector_waitreceiving(connector, tmout);
-	sig_sem(connector->sem);
+	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 	if (err < 0) {
 		return err;
 	}
@@ -797,12 +806,9 @@ EXPORT W http_connector_getevent(http_connector_t *connector, http_connector_eve
 		DP_ER("wai_flg", err);
 		return err;
 	}
-	err = wai_sem(connector->sem, T_FOREVER);
-	if (err < 0) {
-		return err;
-	}
+	HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_ERR(connector);
 	found = http_connector_searcheventtarget(connector, event);
-	sig_sem(connector->sem);
+	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 	if (found == False) {
 		err = clr_flg(connector->flg, HTTP_CONNECTOR_FLAG_CLEARMASK_EVENT);
 		if (err < 0) {
@@ -849,16 +855,13 @@ EXPORT W http_connector_sendrequestline(http_connector_t *connector, ID endpoint
 	Bool cont;
 	CONST UB *str;
 
-	err = wai_sem(connector->sem, T_FOREVER);
-	if (err < 0) {
-		return err;
-	}
+	HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_ERR(connector);
 
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, SEND_REQUEST_LINE, entry);
 
 	err = http_requestlinestream_initialize(&reqline, entry->method, path, path_len);
 	if (err < 0) {
-		sig_sem(connector->sem);
+		HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 		return err;
 	}
 	for (;;) {
@@ -874,13 +877,13 @@ EXPORT W http_connector_sendrequestline(http_connector_t *connector, ID endpoint
 	http_requestlinestream_finalize(&reqline);
 
 	if (err < 0) {
-		sig_sem(connector->sem);
+		HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 		return err;
 	}
 
 	entry->snd_state = SEND_HEADER_MINE;
 
-	sig_sem(connector->sem);
+	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 
 	return 0;
 }
@@ -913,23 +916,20 @@ EXPORT W http_connector_sendheader(http_connector_t *connector, ID endpoint, UB 
 	http_reqentry_t *entry;
 	W err;
 
-	err = wai_sem(connector->sem, T_FOREVER);
-	if (err < 0) {
-		return err;
-	}
+	HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_ERR(connector);
 
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK_2(connector, endpoint, SEND_HEADER_MINE, SEND_HEADER_USER, entry);
 
 	if (entry->snd_state == SEND_HEADER_MINE) {
 		err = http_connector_writedefaultheader(connector, entry->transport, entry->host, entry->host_len);
 		if (err < 0) {
-			sig_sem(connector->sem);
+			HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 			return err;
 		}
 		entry->snd_state = SEND_HEADER_USER;
 	}
 
-	sig_sem(connector->sem);
+	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 
 	return 0;
 }
@@ -939,29 +939,26 @@ EXPORT W http_connector_sendheaderend(http_connector_t *connector, ID endpoint)
 	http_reqentry_t *entry;
 	W err;
 
-	err = wai_sem(connector->sem, T_FOREVER);
-	if (err < 0) {
-		return err;
-	}
+	HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_ERR(connector);
 
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK_2(connector, endpoint, SEND_HEADER_MINE, SEND_HEADER_USER, entry);
 
 	if (entry->snd_state == SEND_HEADER_MINE) {
 		err = http_connector_writedefaultheader(connector, entry->transport, entry->host, entry->host_len);
 		if (err < 0) {
-			sig_sem(connector->sem);
+			HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 			return err;
 		}
 	}
 	err = http_transport_write(connector->transport, entry->transport, "\r\n", 2);
 	if (err < 0) {
-		sig_sem(connector->sem);
+		HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 		return err;
 	}
 
 	entry->snd_state = SEND_MESSAGE_BODY;
 
-	sig_sem(connector->sem);
+	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 
 	return 0;
 }
@@ -971,15 +968,12 @@ EXPORT W http_connector_sendmessagebody(http_connector_t *connector, ID endpoint
 	http_reqentry_t *entry;
 	W err;
 
-	err = wai_sem(connector->sem, T_FOREVER);
-	if (err < 0) {
-		return err;
-	}
+	HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_ERR(connector);
 
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, SEND_MESSAGE_BODY, entry);
 
 	err = http_transport_write(connector->transport, entry->transport, p, len);
-	sig_sem(connector->sem);
+	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 	if (err < 0) {
 		return err;
 	}
@@ -992,16 +986,13 @@ EXPORT W http_connector_sendmessagebodyend(http_connector_t *connector, ID endpo
 	http_reqentry_t *entry;
 	W err;
 
-	err = wai_sem(connector->sem, T_FOREVER);
-	if (err < 0) {
-		return err;
-	}
+	HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_ERR(connector);
 
 	HTTP_CONNECTOR_SENDXXX_GET_CHECK(connector, endpoint, SEND_MESSAGE_BODY, entry);
 
 	entry->status = WAITING_RESPONSE;
 
-	sig_sem(connector->sem);
+	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 
 	return 0;
 }
