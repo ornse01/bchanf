@@ -423,6 +423,37 @@ LOCAL W http_connector_searchwaiting(http_connector_t *connector)
 	return ret;
 }
 
+LOCAL Bool http_connector_isexistwaiting(http_connector_t *connector)
+{
+	http_reqentry_t *entry;
+	http_recdictiterator_t iter;
+	Bool cont, ret = False;
+
+	http_reqdictiterator_initialize(&iter, connector->dict);
+	for (;;) {
+		cont = http_reqdictiterator_next(&iter, &entry);
+		if (cont == False) {
+			break;
+		}
+		if (entry->status == WAITING_TRANSPORT) {
+			ret = True;
+			break;
+		} else if (entry->status == SENDING_REQUEST) {
+			ret = True;
+			break;
+		} else if (entry->status == WAITING_RESPONSE) {
+			ret = True;
+			break;
+		} else if (entry->status == RECEIVING_RESPONSE) {
+			ret = True;
+			break;
+		}
+	}
+	http_reqdictiterator_finalize(&iter);
+
+	return ret;
+}
+
 LOCAL W http_connector_waitreceiving(http_connector_t *connector, TMOUT tmout)
 {
 	W ret = 0;
@@ -466,11 +497,11 @@ LOCAL W http_connector_waitreceiving(http_connector_t *connector, TMOUT tmout)
 EXPORT W http_connector_waitconnection(http_connector_t *connector, TMOUT tmout)
 {
 	W err;
-	Bool evt = False;
+	Bool evt = False, exist;
 
-	err = wai_flg(connector->flg, HTTP_CONNECTOR_FLAG_REQUEST, WF_AND, tmout);
+	err = wai_flg(connector->flg, HTTP_CONNECTOR_FLAG_REQUEST, WF_AND|NOCLR, tmout);
 	if (err < 0) {
-		return 0;
+		return err;
 	}
 
 	HTTP_CONNECTOR_ENTER_CRITICAL_SECTION_RET_ERR(connector);
@@ -483,6 +514,11 @@ EXPORT W http_connector_waitconnection(http_connector_t *connector, TMOUT tmout)
 		evt = True;
 	}
 	http_transport_releaseunusedendpoint(connector->transport);
+
+	exist = http_connector_isexistwaiting(connector);
+	if (exist == False) {
+		clr_flg(connector->flg, HTTP_CONNECTOR_FLAG_CLEARMASK_REQUEST);
+	}
 
 	err = http_connector_waitreceiving(connector, tmout);
 	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
