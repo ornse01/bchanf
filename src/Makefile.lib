@@ -62,7 +62,9 @@ SRC_CODING = 	base64encoder.c \
 
 SRC_TAD =	taditerator.c \
 		tadstack.c \
-		tadtsvparser.c
+		tadtsvparser.c \
+		tadlexer_le.c \
+		traydata_iterator.c
 
 SRC_HMI =	hmi_windowscroll.c
 
