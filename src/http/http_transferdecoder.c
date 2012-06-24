@@ -116,6 +116,27 @@ LOCAL HTTP_CHUNKEDBODYPARSER_RESULT http_chunkedbodyparser_inputchar(http_chunke
 			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE_CR;
 			break;
 		}
+		if ((ch == ' ')||(ch == '\t')) {
+			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE_IMPLIED_LWS;
+			break;
+		}
+		return HTTP_CHUNKEDBODYPARSER_RESULT_ERROR;
+	case HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE_IMPLIED_LWS:
+		if (ch == ';') {
+			if (parser->chunk_size == 0) {
+				parser->state = HTTP_CHUNKEDBODYPARSER_STATE_LAST_CHUNK_EXTENTION;
+			} else {
+				parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_EXTENTION;
+			}
+			break;
+		}
+		if (ch == '\r') {
+			parser->state = HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE_CR;
+			break;
+		}
+		if ((ch == ' ')||(ch == '\t')) {
+			break;
+		}
 		return HTTP_CHUNKEDBODYPARSER_RESULT_ERROR;
 	case HTTP_CHUNKEDBODYPARSER_STATE_CHUNK_SIZE_CR:
 		DP_STATE("CHUNK_SIZE_CR");

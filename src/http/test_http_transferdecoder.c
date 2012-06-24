@@ -114,6 +114,42 @@ LOCAL UB testdata_chunked_08[] = {
 	"\r\n"
 };
 
+LOCAL UB testdata_chunked_09[] = {
+	"1A \r\n"
+	"abcfefghijklmnopqrstuvwxyz\r\n"
+	"1a   \r\n"
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ\r\n"
+	"000 \r\n"
+	"\r\n"
+};
+
+LOCAL UB testdata_chunked_10[] = {
+	"1a ;name=value\r\n"
+	"abcfefghijklmnopqrstuvwxyz\r\n"
+	"1A  ;name\r\n"
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ\r\n"
+	"0 ;name=value\r\n"
+	"\r\n"
+};
+
+LOCAL UB testdata_chunked_11[] = {
+	"1A\t\r\n"
+	"abcfefghijklmnopqrstuvwxyz\r\n"
+	"1a\t\t\r\n"
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ\r\n"
+	"000\t\r\n"
+	"\r\n"
+};
+
+LOCAL UB testdata_chunked_12[] = {
+	"1a\t;name=value\r\n"
+	"abcfefghijklmnopqrstuvwxyz\r\n"
+	"1A\t\t;name\r\n"
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ\r\n"
+	"0\t;name=value\r\n"
+	"\r\n"
+};
+
 LOCAL UNITTEST_RESULT test_http_transferdecoder_common_perone(HTTP_TRANSFERCODING_TYPE type, UB *testdata, W testdata_len, W devide_len, UB *expected, W expected_len)
 {
 	http_transferdecoder_t decoder;
@@ -302,6 +338,42 @@ LOCAL UNITTEST_RESULT test_http_transferdecoder_chunked_8()
 	return test_http_transferdecoder_common(HTTP_TRANSFERCODING_TYPE_CHUNKED, testdata, testdata_len, expected, expected_len);
 }
 
+LOCAL UNITTEST_RESULT test_http_transferdecoder_chunked_9()
+{
+	UB *testdata = testdata_chunked_09;
+	W testdata_len = strlen(testdata_chunked_09);
+	UB *expected = testdata_identity_01;
+	W expected_len = strlen(testdata_identity_01);
+	return test_http_transferdecoder_common(HTTP_TRANSFERCODING_TYPE_CHUNKED, testdata, testdata_len, expected, expected_len);
+}
+
+LOCAL UNITTEST_RESULT test_http_transferdecoder_chunked_10()
+{
+	UB *testdata = testdata_chunked_10;
+	W testdata_len = strlen(testdata_chunked_10);
+	UB *expected = testdata_identity_01;
+	W expected_len = strlen(testdata_identity_01);
+	return test_http_transferdecoder_common(HTTP_TRANSFERCODING_TYPE_CHUNKED, testdata, testdata_len, expected, expected_len);
+}
+
+LOCAL UNITTEST_RESULT test_http_transferdecoder_chunked_11()
+{
+	UB *testdata = testdata_chunked_11;
+	W testdata_len = strlen(testdata_chunked_11);
+	UB *expected = testdata_identity_01;
+	W expected_len = strlen(testdata_identity_01);
+	return test_http_transferdecoder_common(HTTP_TRANSFERCODING_TYPE_CHUNKED, testdata, testdata_len, expected, expected_len);
+}
+
+LOCAL UNITTEST_RESULT test_http_transferdecoder_chunked_12()
+{
+	UB *testdata = testdata_chunked_12;
+	W testdata_len = strlen(testdata_chunked_12);
+	UB *expected = testdata_identity_01;
+	W expected_len = strlen(testdata_identity_01);
+	return test_http_transferdecoder_common(HTTP_TRANSFERCODING_TYPE_CHUNKED, testdata, testdata_len, expected, expected_len);
+}
+
 EXPORT VOID test_http_transferdecoder_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_http_transferdecoder_identity_1);
@@ -313,4 +385,8 @@ EXPORT VOID test_http_transferdecoder_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_http_transferdecoder_chunked_6);
 	UNITTEST_DRIVER_REGIST(driver, test_http_transferdecoder_chunked_7);
 	UNITTEST_DRIVER_REGIST(driver, test_http_transferdecoder_chunked_8);
+	UNITTEST_DRIVER_REGIST(driver, test_http_transferdecoder_chunked_9);
+	UNITTEST_DRIVER_REGIST(driver, test_http_transferdecoder_chunked_10);
+	UNITTEST_DRIVER_REGIST(driver, test_http_transferdecoder_chunked_11);
+	UNITTEST_DRIVER_REGIST(driver, test_http_transferdecoder_chunked_12);
 }
