@@ -60,17 +60,20 @@ LOCAL W traydata_iterator_inputTRAYREC(traydata_iterator_t *iterator, TRAYREC *r
 			tadlexer_le_initialize(&iterator->status.unite.lexer);
 			iterator->status.unite.rec_read_len = 0;
 		} else if (rec->id == TR_VOBJ) {
-			if (rec->len != sizeof(TR_VOBJREC)) {
-				break;
-			}
-			memcpy(&result->val.vobjrec, rec->dt, sizeof(TR_VOBJREC));
+			result->type = TRAYDATA_ITERATOR_RESULTTYPE_VOBJREC;
+			result->val.vobj.len = rec->len;
+			result->val.vobj.chunk_data = rec->dt;	
+			result->val.vobj.chunk_data_len = rec->len;
 			ret = 2;
 			break;
 		} else if (rec->id == (TR_VOBJ|TR_CONT)) {
-			memcpy((UB*)&result->val.vobjrec, rec->dt, rec->len);
 			iterator->status.devide_vobj.read_len = rec->len;
-			ret = 0;
 			iterator->state = TRAYDATA_ITERATOR_STATE_REC_VOBJ_DEVIDE;
+			result->type = TRAYDATA_ITERATOR_RESULTTYPE_VOBJREC_CONT;
+			result->val.vobj.len = 0; /* TODO */
+			result->val.vobj.chunk_data = rec->dt;	
+			result->val.vobj.chunk_data_len = rec->len;
+			ret = 2;
 			break;
 		} else if ((rec->id & TR_CONT) != 0) {
 			iterator->state = TRAYDATA_ITERATOR_STATE_REC_DEVIDE;
@@ -209,14 +212,17 @@ LOCAL W traydata_iterator_inputTRAYREC(traydata_iterator_t *iterator, TRAYREC *r
 		break;
 	case TRAYDATA_ITERATOR_STATE_REC_VOBJ_DEVIDE:
 		DP_STATE("TRAYDATA_ITERATOR_STATE_REC_VOBJ_DEVIDE");
-		if (iterator->status.devide_vobj.read_len + rec->len <= sizeof(TR_VOBJREC)) {
-			memcpy(((UB*)&result->val.vobjrec) + iterator->status.devide_vobj.read_len, rec->dt, rec->len);
-			ret = 0;
+		if (rec->id == TR_VOBJ) {
+			iterator->state = TRAYDATA_ITERATOR_STATE_REC_START;
+			result->type = TRAYDATA_ITERATOR_RESULTTYPE_VOBJREC;
 		} else {
-			ret = -1;
+			result->type = TRAYDATA_ITERATOR_RESULTTYPE_VOBJREC_CONT;
 		}
+		result->val.vobj.len = 0; /* TODO */
+		result->val.vobj.chunk_data = rec->dt;	
+		result->val.vobj.chunk_data_len = rec->len;
 		iterator->status.devide_vobj.read_len = rec->len;
-		iterator->state = TRAYDATA_ITERATOR_STATE_REC_VOBJ_DEVIDE;
+		ret = 2;
 		break;
 	case TRAYDATA_ITERATOR_STATE_REC_DEVIDE:
 		DP_STATE("TRAYDATA_ITERATOR_STATE_REC_DEVIDE");

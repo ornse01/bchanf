@@ -75,6 +75,36 @@ LOCAL UB test_traydata_testdata01[] = {
 	0x00, 0x00,
 };
 
+LOCAL UB testdata_infoseg[] = {0x00, 0x00, 0x02, 0x00, 0x22, 0x01};
+LOCAL UB testdata_textseg[] = {
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x88, 0xff, 0x88, 0xff, 0x21, 0x00, 0x00, 0x00
+};
+LOCAL struct {
+	VLINK vlnk;
+	VOBJSEG vseg;
+	UB data[4];
+} testdata_vobjrec = {
+	{
+		{0x2341, 0x2342, TNULL},
+		0, 1, 2,
+		{1, 2, 3}
+	},
+	{
+		{{0, 1, 100, 101}},
+		100,
+		-1,
+		0x10ffffff,
+		0x10ffffff,
+		0x10ffffff,
+		0x10ffffff,
+		4
+	},
+	{1, 2, 3, 4}
+};
+LOCAL TC testdata_text[] = {0x2346, 0x2352, 0x234f, 0x234d};
+
 typedef struct {
 	enum {
 		TEST_TRAYDATA_ITERATOR_CH,
@@ -125,6 +155,16 @@ LOCAL test_traydata_iterator_expected_t test_traydata_expected01[] = {
 	{TEST_TRAYDATA_ITERATOR_CH, 0x2364, 0, 0},
 	{TEST_TRAYDATA_ITERATOR_CH, 0x2379, 0, 0},
 	{TEST_TRAYDATA_ITERATOR_SEGMENT, 0, 0xe2, 0},
+};
+
+LOCAL test_traydata_iterator_expected_t test_traydata_expected02[] = {
+	{TEST_TRAYDATA_ITERATOR_SEGMENT, 0, 0xe0, 6},
+	{TEST_TRAYDATA_ITERATOR_SEGMENT, 0, 0xe1, 24},
+	{TEST_TRAYDATA_ITERATOR_VOBJ, 0, 0, sizeof(testdata_vobjrec)},
+	{TEST_TRAYDATA_ITERATOR_CH, 0x2346, 0, 0},
+	{TEST_TRAYDATA_ITERATOR_CH, 0x2352, 0, 0},
+	{TEST_TRAYDATA_ITERATOR_CH, 0x234f, 0, 0},
+	{TEST_TRAYDATA_ITERATOR_CH, 0x234d, 0, 0},
 };
 
 LOCAL UNITTEST_RESULT test_traydata_iterator_common(TRAYREC *rec, W len, test_traydata_iterator_expected_t *expected, W expected_len)
@@ -268,9 +308,57 @@ LOCAL UNITTEST_RESULT test_traydata_3()
 	return test_traydata_iterator_common(rec, len, expected, expected_len);
 }
 
+LOCAL UNITTEST_RESULT test_traydata_4()
+{
+	TRAYREC rec[] = {
+		{TS_INFO, 6, testdata_infoseg},
+		{TS_TEXT, 24, testdata_textseg},
+		{TR_VOBJ, sizeof(testdata_vobjrec), (UB*)&testdata_vobjrec},
+		{TR_TEXT, sizeof(testdata_text), (UB*)testdata_text},
+	};
+	W len = sizeof(rec)/sizeof(TRAYREC);
+	test_traydata_iterator_expected_t *expected = test_traydata_expected02;
+	W expected_len = sizeof(test_traydata_expected02)/sizeof(test_traydata_iterator_expected_t);
+	return test_traydata_iterator_common(rec, len, expected, expected_len);
+}
+
+LOCAL UNITTEST_RESULT test_traydata_5()
+{
+	TRAYREC rec[] = {
+		{TS_INFO, 6, testdata_infoseg},
+		{TS_TEXT, 24, testdata_textseg},
+		{TR_VOBJ|TR_CONT, 10, (UB*)&testdata_vobjrec},
+		{TR_VOBJ, sizeof(testdata_vobjrec) - 10, ((UB*)&testdata_vobjrec)+10},
+		{TR_TEXT, sizeof(testdata_text), (UB*)testdata_text},
+	};
+	W len = sizeof(rec)/sizeof(TRAYREC);
+	test_traydata_iterator_expected_t *expected = test_traydata_expected02;
+	W expected_len = sizeof(test_traydata_expected02)/sizeof(test_traydata_iterator_expected_t);
+	return test_traydata_iterator_common(rec, len, expected, expected_len);
+}
+
+LOCAL UNITTEST_RESULT test_traydata_6()
+{
+	TRAYREC rec[] = {
+		{TS_INFO, 6, testdata_infoseg},
+		{TS_TEXT, 24, testdata_textseg},
+		{TR_VOBJ|TR_CONT, 10, (UB*)&testdata_vobjrec},
+		{TR_VOBJ|TR_CONT, 15, ((UB*)&testdata_vobjrec)+10},
+		{TR_VOBJ, sizeof(testdata_vobjrec) - 15, ((UB*)&testdata_vobjrec)+15},
+		{TR_TEXT, sizeof(testdata_text), (UB*)testdata_text},
+	};
+	W len = sizeof(rec)/sizeof(TRAYREC);
+	test_traydata_iterator_expected_t *expected = test_traydata_expected02;
+	W expected_len = sizeof(test_traydata_expected02)/sizeof(test_traydata_iterator_expected_t);
+	return test_traydata_iterator_common(rec, len, expected, expected_len);
+}
+
 EXPORT VOID test_traydata_iterator_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_traydata_1);
 	UNITTEST_DRIVER_REGIST(driver, test_traydata_2);
 	UNITTEST_DRIVER_REGIST(driver, test_traydata_3);
+	UNITTEST_DRIVER_REGIST(driver, test_traydata_4);
+	UNITTEST_DRIVER_REGIST(driver, test_traydata_5);
+	UNITTEST_DRIVER_REGIST(driver, test_traydata_6);
 }

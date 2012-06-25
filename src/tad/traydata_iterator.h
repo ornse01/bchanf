@@ -76,6 +76,7 @@ struct traydata_iterator_result_ {
 		TRAYDATA_ITERATOR_RESULTTYPE_FIXED_SEGMENT,
 		TRAYDATA_ITERATOR_RESULTTYPE_VARIABLE_SEGMENT_CONT,
 		TRAYDATA_ITERATOR_RESULTTYPE_VARIABLE_SEGMENT,
+		TRAYDATA_ITERATOR_RESULTTYPE_VOBJREC_CONT,
 		TRAYDATA_ITERATOR_RESULTTYPE_VOBJREC,
 		TRAYDATA_ITERATOR_RESULTTYPE_END,
 	} type;
@@ -87,7 +88,11 @@ struct traydata_iterator_result_ {
 			UB *chunk_data;
 			UW chunk_data_len;
 		} seg;
-		TR_VOBJREC vobjrec;
+		struct {
+			UW len;
+			UB *chunk_data;
+			UW chunk_data_len;
+		} vobj;
 	} val;
 };
 typedef struct traydata_iterator_result_ traydata_iterator_result;
