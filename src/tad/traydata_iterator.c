@@ -77,6 +77,7 @@ LOCAL W traydata_iterator_inputTRAYREC(traydata_iterator_t *iterator, TRAYREC *r
 			break;
 		} else if ((rec->id & TR_CONT) != 0) {
 			iterator->state = TRAYDATA_ITERATOR_STATE_REC_DEVIDE;
+			iterator->status.devide.id = rec->id & (~TR_CONT);
 			result->type = TRAYDATA_ITERATOR_RESULTTYPE_VARIABLE_SEGMENT_CONT;
 			result->val.seg.id = rec->id;
 			result->val.seg.seglen = rec->len;
@@ -227,6 +228,7 @@ LOCAL W traydata_iterator_inputTRAYREC(traydata_iterator_t *iterator, TRAYREC *r
 	case TRAYDATA_ITERATOR_STATE_REC_DEVIDE:
 		DP_STATE("TRAYDATA_ITERATOR_STATE_REC_DEVIDE");
 		if (rec->id == iterator->status.devide.id) {
+			iterator->state = TRAYDATA_ITERATOR_STATE_REC_START;
 			result->type = TRAYDATA_ITERATOR_RESULTTYPE_VARIABLE_SEGMENT;
 		} else {
 			result->type = TRAYDATA_ITERATOR_RESULTTYPE_VARIABLE_SEGMENT_CONT;
@@ -235,7 +237,7 @@ LOCAL W traydata_iterator_inputTRAYREC(traydata_iterator_t *iterator, TRAYREC *r
 		result->val.seg.seglen = -1; /* TODO */
 		result->val.seg.chunk_data = rec->dt;
 		result->val.seg.chunk_data_len = rec->len;
-		ret = 1;
+		ret = 2;
 		break;
 	}
 

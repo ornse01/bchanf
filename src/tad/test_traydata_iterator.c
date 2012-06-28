@@ -353,6 +353,37 @@ LOCAL UNITTEST_RESULT test_traydata_6()
 	return test_traydata_iterator_common(rec, len, expected, expected_len);
 }
 
+LOCAL UNITTEST_RESULT test_traydata_7()
+{
+	TRAYREC rec[] = {
+		{TS_INFO, 6, testdata_infoseg},
+		{TS_TEXT|TR_CONT, 10, testdata_textseg},
+		{TS_TEXT, 24-10, testdata_textseg+10},
+		{TR_VOBJ, sizeof(testdata_vobjrec), (UB*)&testdata_vobjrec},
+		{TR_TEXT, sizeof(testdata_text), (UB*)testdata_text},
+	};
+	W len = sizeof(rec)/sizeof(TRAYREC);
+	test_traydata_iterator_expected_t *expected = test_traydata_expected02;
+	W expected_len = sizeof(test_traydata_expected02)/sizeof(test_traydata_iterator_expected_t);
+	return test_traydata_iterator_common(rec, len, expected, expected_len);
+}
+
+LOCAL UNITTEST_RESULT test_traydata_8()
+{
+	TRAYREC rec[] = {
+		{TS_INFO, 6, testdata_infoseg},
+		{TS_TEXT|TR_CONT, 10, testdata_textseg},
+		{TS_TEXT|TR_CONT, 10, testdata_textseg+10},
+		{TS_TEXT, 24-20, testdata_textseg+20},
+		{TR_VOBJ, sizeof(testdata_vobjrec), (UB*)&testdata_vobjrec},
+		{TR_TEXT, sizeof(testdata_text), (UB*)testdata_text},
+	};
+	W len = sizeof(rec)/sizeof(TRAYREC);
+	test_traydata_iterator_expected_t *expected = test_traydata_expected02;
+	W expected_len = sizeof(test_traydata_expected02)/sizeof(test_traydata_iterator_expected_t);
+	return test_traydata_iterator_common(rec, len, expected, expected_len);
+}
+
 EXPORT VOID test_traydata_iterator_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_traydata_1);
@@ -361,4 +392,6 @@ EXPORT VOID test_traydata_iterator_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_traydata_4);
 	UNITTEST_DRIVER_REGIST(driver, test_traydata_5);
 	UNITTEST_DRIVER_REGIST(driver, test_traydata_6);
+	UNITTEST_DRIVER_REGIST(driver, test_traydata_7);
+	UNITTEST_DRIVER_REGIST(driver, test_traydata_8);
 }
