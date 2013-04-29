@@ -309,6 +309,96 @@ LOCAL UNITTEST_RESULT test_treebase_node_6()
 	return ret;
 }
 
+/* treebase_preordertraversal_t */
+
+typedef struct {
+	Bool cont;
+	treebase_node_t *node;
+	TREEBASE_TRAVERSAL_DIRECTION dir;
+} test_treebase_preordertraversal_expected_t;
+
+LOCAL UNITTEST_RESULT test_treebase_preordertraversal_common(treebase_node_t *root, test_treebase_preordertraversal_expected_t *expected, W expected_len)
+{
+	treebase_node_t *node_result;
+	treebase_preordertraversal_t traversal;
+	TREEBASE_TRAVERSAL_DIRECTION dir;
+	Bool cont;
+	UNITTEST_RESULT ret = UNITTEST_RESULT_PASS;
+	W i;
+
+	treebase_preordertraversal_initialize(&traversal, root);
+
+	for (i = 0;; i++) {
+		cont = treebase_preordertraversal_next(&traversal, &node_result, &dir);
+		if (i < expected_len) {
+			if (expected[i].cont != cont) {
+				printf("%d: cont is not expected\n", i);
+				ret = UNITTEST_RESULT_FAIL;
+			}
+			if (expected[i].node != node_result) {
+				printf("%d: node is not expected\n", i);
+				ret = UNITTEST_RESULT_FAIL;
+			}
+			if (expected[i].dir != dir) {
+				printf("%d: direction is not expected\n", i);
+				ret = UNITTEST_RESULT_FAIL;
+			}
+		}
+
+		if (cont == False) {
+			break;
+		}
+	}
+	if (i != expected_len) {
+		printf("node number check fail: expected = %d, result = %d\n", expected_len, i);
+		ret = UNITTEST_RESULT_FAIL;
+	}
+
+	treebase_preordertraversal_finalize(&traversal);
+
+	return ret;
+}
+
+LOCAL UNITTEST_RESULT test_treebase_preordertraversal_1()
+{
+	treebase_node_t node0, node1, node2, node3, node4;
+	test_treebase_preordertraversal_expected_t expected[] = {
+		{ True, &node0, TREEBASE_TRAVERSAL_DIRECTION_DOWN },
+		{ True, &node1, TREEBASE_TRAVERSAL_DIRECTION_DOWN },
+		{ True, &node2, TREEBASE_TRAVERSAL_DIRECTION_DOWN },
+		{ True, &node2, TREEBASE_TRAVERSAL_DIRECTION_UP },
+		{ True, &node3, TREEBASE_TRAVERSAL_DIRECTION_DOWN },
+		{ True, &node3, TREEBASE_TRAVERSAL_DIRECTION_UP },
+		{ True, &node4, TREEBASE_TRAVERSAL_DIRECTION_DOWN },
+		{ True, &node4, TREEBASE_TRAVERSAL_DIRECTION_UP },
+		{ True, &node1, TREEBASE_TRAVERSAL_DIRECTION_UP },
+		{ True, &node0, TREEBASE_TRAVERSAL_DIRECTION_UP },
+	};
+	W expected_len = sizeof(expected) / sizeof(test_treebase_preordertraversal_expected_t);
+	UNITTEST_RESULT ret;
+
+	treebase_node_initialize(&node0);
+	treebase_node_initialize(&node1);
+	treebase_node_initialize(&node2);
+	treebase_node_initialize(&node3);
+	treebase_node_initialize(&node4);
+
+	treebase_node_appendchild(&node0, &node1);
+	treebase_node_appendchild(&node1, &node2);
+	treebase_node_appendchild(&node1, &node3);
+	treebase_node_appendchild(&node1, &node4);
+
+	ret = test_treebase_preordertraversal_common(&node0, expected, expected_len);
+
+	treebase_node_finalize(&node4);
+	treebase_node_finalize(&node3);
+	treebase_node_finalize(&node2);
+	treebase_node_finalize(&node1);
+	treebase_node_finalize(&node0);
+
+	return ret;
+}
+
 
 EXPORT VOID test_treebase_main(unittest_driver_t *driver)
 {
@@ -318,4 +408,5 @@ EXPORT VOID test_treebase_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_treebase_node_4);
 	UNITTEST_DRIVER_REGIST(driver, test_treebase_node_5);
 	UNITTEST_DRIVER_REGIST(driver, test_treebase_node_6);
+	UNITTEST_DRIVER_REGIST(driver, test_treebase_preordertraversal_1);
 }
