@@ -25,6 +25,7 @@
  */
 
 #include    <basic.h>
+#include    <btron/dp.h>
 
 #include	"cssmetric.h"
 #include	<coll/treebase.h>
@@ -56,6 +57,7 @@ struct cssrendering_basebox_t_ {
 	treebase_node_t base;
 	CSSRENDERING_BOX_TYPE type;
 	cssmetric_rectangle_t content_edge;
+	VP userdata;
 };
 typedef struct cssrendering_basebox_t_ cssrendering_basebox_t;
 
@@ -103,6 +105,7 @@ struct cssrendering_drawtraversal_result_ {
 		struct {
 			cssrendering_textfragment_t *fragment;
 			cssmetric_point_t blstart; /* baseline start */
+			VP nodedata;
 		} text;
 	} data;
 };
@@ -110,14 +113,17 @@ typedef struct cssrendering_drawtraversal_result_ cssrendering_drawtraversal_res
 
 IMPORT VOID cssrendering_linebox_initialize(cssrendering_linebox_t *box);
 IMPORT VOID cssrendering_linebox_finalize(cssrendering_linebox_t *box);
+IMPORT VOID cssrendering_linebox_setuserdata(cssrendering_linebox_t *box, VP data);
 
 IMPORT VOID cssrendering_anonymousbox_initialize(cssrendering_anonymousbox_t *box);
 IMPORT VOID cssrendering_anonymousbox_finalize(cssrendering_anonymousbox_t *box);
 IMPORT VOID cssrendering_anonymousbox_appendchild(cssrendering_anonymousbox_t *box, cssrendering_linebox_t *child);
+IMPORT VOID cssrendering_anonymousbox_setuserdata(cssrendering_anonymousbox_t *box, VP data);
 
 IMPORT VOID cssrendering_blockbox_initialize(cssrendering_blockbox_t *box);
 IMPORT VOID cssrendering_blockbox_finalize(cssrendering_blockbox_t *box);
 IMPORT VOID cssrendering_blockbox_appendanonymouschild(cssrendering_blockbox_t *box, cssrendering_anonymousbox_t *child);
+IMPORT VOID cssrendering_blockbox_setuserdata(cssrendering_blockbox_t *box, VP data);
 
 IMPORT VOID cssrendering_drawtraversal_initialize(cssrendering_drawtraversal_t *traversal, cssrendering_blockbox_t *root);
 IMPORT VOID cssrendering_drawtraversal_finalize(cssrendering_drawtraversal_t *traversal);

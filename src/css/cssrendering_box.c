@@ -49,15 +49,28 @@ LOCAL VOID cssrendering_basebox_appendchild(cssrendering_basebox_t *box, cssrend
 	box->content_edge.c.bottom = 0;
 }
 
+LOCAL VOID cssrendering_basebox_setuserdata(cssrendering_basebox_t *box, VP data)
+{
+	box->userdata = data;
+}
+
 LOCAL VOID cssrendering_basebox_initialize(cssrendering_basebox_t *box, CSSRENDERING_BOX_TYPE type)
 {
 	treebase_node_initialize(&box->base);
 	box->type = type;
+	box->userdata = NULL;
 }
 
 LOCAL VOID cssrendering_basebox_finalize(cssrendering_basebox_t *box)
 {
 	treebase_node_finalize(&box->base);
+}
+
+/* cssrendering_linebox */
+
+EXPORT VOID cssrendering_linebox_setuserdata(cssrendering_linebox_t *box, VP data)
+{
+	cssrendering_basebox_setuserdata(&box->base, data);
 }
 
 EXPORT VOID cssrendering_linebox_initialize(cssrendering_linebox_t *box)
@@ -75,6 +88,11 @@ EXPORT VOID cssrendering_linebox_finalize(cssrendering_linebox_t *box)
 EXPORT VOID cssrendering_anonymousbox_appendchild(cssrendering_anonymousbox_t *box, cssrendering_linebox_t *child)
 {
 	cssrendering_basebox_appendchild(&box->base, &child->base);
+}
+
+EXPORT VOID cssrendering_anonymousbox_setuserdata(cssrendering_anonymousbox_t *box, VP data)
+{
+	cssrendering_basebox_setuserdata(&box->base, data);
 }
 
 EXPORT VOID cssrendering_anonymousbox_initialize(cssrendering_anonymousbox_t *box)
@@ -97,6 +115,11 @@ EXPORT VOID cssrendering_blockbox_appendanonymouschild(cssrendering_blockbox_t *
 EXPORT VOID cssrendering_blockbox_appendblockchild(cssrendering_blockbox_t *box, cssrendering_blockbox_t *child)
 {
 	cssrendering_basebox_appendchild(&box->base, &child->base);
+}
+
+EXPORT VOID cssrendering_blockbox_setuserdata(cssrendering_blockbox_t *box, VP data)
+{
+	cssrendering_basebox_setuserdata(&box->base, data);
 }
 
 EXPORT VOID cssrendering_blockbox_initialize(cssrendering_blockbox_t *box)
@@ -134,6 +157,7 @@ EXPORT Bool cssrendering_drawtraversal_next(cssrendering_drawtraversal_t *traver
 					result->data.text.fragment = &(box->l.text);
 					result->data.text.blstart.x = traversal->origin.x + box->base.content_edge.c.left;
 					result->data.text.blstart.y = traversal->origin.y + box->base.content_edge.c.top + box->l.baseline;
+					result->data.text.nodedata = box->base.userdata;
 					break;
 				}
 			} else {
