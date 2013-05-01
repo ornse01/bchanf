@@ -40,6 +40,14 @@
 # define DP_ER(msg, err) /**/
 #endif
 
+LOCAL Bool cssmetric_rectangle_andrect(cssmetric_rectangle_t a, cssmetric_rectangle_t b)
+{
+	if (a.c.left < b.c.right && b.c.left < a.c.right && a.c.top < b.c.bottom && b.c.top < a.c.bottom) {
+		return True;
+	}
+	return False;
+}
+
 LOCAL VOID cssrendering_basebox_appendchild(cssrendering_basebox_t *box, cssrendering_basebox_t *child)
 {
 	treebase_node_appendchild(&box->base, &child->base);
@@ -136,7 +144,7 @@ EXPORT VOID cssrendering_blockbox_finalize(cssrendering_blockbox_t *box)
 
 EXPORT Bool cssrendering_drawtraversal_next(cssrendering_drawtraversal_t *traversal, cssrendering_drawtraversal_result *result)
 {
-	Bool cont;
+	Bool cont, ok;
 	TREEBASE_TRAVERSAL_DIRECTION dir;
 	union {
 		cssrendering_basebox_t base;
@@ -144,6 +152,7 @@ EXPORT Bool cssrendering_drawtraversal_next(cssrendering_drawtraversal_t *traver
 		cssrendering_anonymousbox_t a;
 		cssrendering_blockbox_t b;
 	} *box;
+	cssmetric_rectangle_t r;
 
 	for (;;) {
 		cont = treebase_preordertraversal_next(&traversal->base, (treebase_node_t**)&box, &dir);
@@ -153,10 +162,20 @@ EXPORT Bool cssrendering_drawtraversal_next(cssrendering_drawtraversal_t *traver
 					traversal->origin.x += box->base.content_edge.c.left;
 					traversal->origin.y += box->base.content_edge.c.top;
 				} else if (box->base.type == CSSRENDEREING_BOX_TYPE_LINE) {
+					r = box->base.content_edge;
+					r.c.left += traversal->origin.x;
+					r.c.top += traversal->origin.y;
+					r.c.right += traversal->origin.x;
+					r.c.bottom += traversal->origin.y;
+					ok = cssmetric_rectangle_andrect(r, traversal->draw);
+					if (ok == False) {
+						continue;
+					}
+
 					result->type = CSSRENDERING_DRAWTRAVERSAL_RESULTTYPE_TEXT;
 					result->data.text.fragment = &(box->l.text);
-					result->data.text.blstart.x = traversal->origin.x + box->base.content_edge.c.left;
-					result->data.text.blstart.y = traversal->origin.y + box->base.content_edge.c.top + box->l.baseline;
+					result->data.text.blstart.x = r.c.left;
+					result->data.text.blstart.y = r.c.top + box->l.baseline;
 					result->data.text.nodedata = box->base.userdata;
 					break;
 				}
@@ -175,11 +194,12 @@ EXPORT Bool cssrendering_drawtraversal_next(cssrendering_drawtraversal_t *traver
 	return cont;
 }
 
-EXPORT VOID cssrendering_drawtraversal_initialize(cssrendering_drawtraversal_t *traversal, cssrendering_blockbox_t *root)
+EXPORT VOID cssrendering_drawtraversal_initialize(cssrendering_drawtraversal_t *traversal, cssrendering_blockbox_t *root, cssmetric_rectangle_t draw)
 {
 	treebase_preordertraversal_initialize(&traversal->base, &root->base.base);
 	traversal->origin.x = 0;
 	traversal->origin.y = 0;
+	traversal->draw = draw;
 }
 
 EXPORT VOID cssrendering_drawtraversal_finalize(cssrendering_drawtraversal_t *traversal)

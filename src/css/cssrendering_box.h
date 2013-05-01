@@ -91,6 +91,7 @@ typedef struct cssrendering_blockbox_t_ cssrendering_blockbox_t;
 struct cssrendering_drawtraversal_t_ {
 	treebase_preordertraversal_t base;
 	cssmetric_point_t origin;
+	cssmetric_rectangle_t draw;
 };
 typedef struct cssrendering_drawtraversal_t_ cssrendering_drawtraversal_t;
 
@@ -125,7 +126,7 @@ IMPORT VOID cssrendering_blockbox_finalize(cssrendering_blockbox_t *box);
 IMPORT VOID cssrendering_blockbox_appendanonymouschild(cssrendering_blockbox_t *box, cssrendering_anonymousbox_t *child);
 IMPORT VOID cssrendering_blockbox_setuserdata(cssrendering_blockbox_t *box, VP data);
 
-IMPORT VOID cssrendering_drawtraversal_initialize(cssrendering_drawtraversal_t *traversal, cssrendering_blockbox_t *root);
+IMPORT VOID cssrendering_drawtraversal_initialize(cssrendering_drawtraversal_t *traversal, cssrendering_blockbox_t *root, cssmetric_rectangle_t draw);
 IMPORT VOID cssrendering_drawtraversal_finalize(cssrendering_drawtraversal_t *traversal);
 IMPORT Bool cssrendering_drawtraversal_next(cssrendering_drawtraversal_t *traversal, cssrendering_drawtraversal_result *result);
 
