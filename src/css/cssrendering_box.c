@@ -173,9 +173,8 @@ EXPORT Bool cssrendering_drawtraversal_next(cssrendering_drawtraversal_t *traver
 					}
 
 					result->type = CSSRENDERING_DRAWTRAVERSAL_RESULTTYPE_TEXT;
+					result->data.text.content_edge = r;
 					result->data.text.fragment = &(box->l.text);
-					result->data.text.blstart.x = r.c.left;
-					result->data.text.blstart.y = r.c.top + box->l.baseline;
 					result->data.text.nodedata = box->base.userdata;
 					break;
 				}

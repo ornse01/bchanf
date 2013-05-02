@@ -66,7 +66,6 @@ typedef struct cssrendering_basebox_t_ cssrendering_basebox_t;
 struct cssrendering_linebox_t_ {
 	cssrendering_basebox_t base;
 	cssrendering_textfragment_t text;
-	W baseline;
 };
 typedef struct cssrendering_linebox_t_ cssrendering_linebox_t;
 
@@ -104,8 +103,8 @@ struct cssrendering_drawtraversal_result_ {
 	} type;
 	union {
 		struct {
+			cssmetric_rectangle_t content_edge;
 			cssrendering_textfragment_t *fragment;
-			cssmetric_point_t blstart; /* baseline start */
 			VP nodedata;
 		} text;
 	} data;
