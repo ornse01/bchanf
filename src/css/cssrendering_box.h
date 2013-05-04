@@ -73,7 +73,6 @@ typedef struct cssrendering_linebox_t_ cssrendering_linebox_t;
 /* Detail name: anonymousbox */
 struct cssrendering_anonymousbox_t_ {
 	cssrendering_basebox_t base;
-	cssmetric_rectangle_t view;
 };
 typedef struct cssrendering_anonymousbox_t_ cssrendering_anonymousbox_t;
 

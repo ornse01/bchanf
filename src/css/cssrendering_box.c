@@ -156,37 +156,36 @@ EXPORT Bool cssrendering_drawtraversal_next(cssrendering_drawtraversal_t *traver
 
 	for (;;) {
 		cont = treebase_preordertraversal_next(&traversal->base, (treebase_node_t**)&box, &dir);
-		if (cont != False) {
-			if (dir == TREEBASE_TRAVERSAL_DIRECTION_DOWN) {
-				if ((box->base.type == CSSRENDEREING_BOX_TYPE_BLOCK)||(box->base.type == CSSRENDEREING_BOX_TYPE_ANONYMOUS)) {
-					traversal->origin.x += box->base.content_edge.c.left;
-					traversal->origin.y += box->base.content_edge.c.top;
-				} else if (box->base.type == CSSRENDEREING_BOX_TYPE_LINE) {
-					r = box->base.content_edge;
-					r.c.left += traversal->origin.x;
-					r.c.top += traversal->origin.y;
-					r.c.right += traversal->origin.x;
-					r.c.bottom += traversal->origin.y;
-					ok = cssmetric_rectangle_andrect(r, traversal->draw);
-					if (ok == False) {
-						continue;
-					}
+		if (cont == False) {
+			break;
+		}
+		if (dir == TREEBASE_TRAVERSAL_DIRECTION_DOWN) {
+			if ((box->base.type == CSSRENDEREING_BOX_TYPE_BLOCK)||(box->base.type == CSSRENDEREING_BOX_TYPE_ANONYMOUS)) {
+				traversal->origin.x += box->base.content_edge.c.left;
+				traversal->origin.y += box->base.content_edge.c.top;
+			} else if (box->base.type == CSSRENDEREING_BOX_TYPE_LINE) {
+				r = box->base.content_edge;
+				r.c.left += traversal->origin.x;
+				r.c.top += traversal->origin.y;
+				r.c.right += traversal->origin.x;
+				r.c.bottom += traversal->origin.y;
+				ok = cssmetric_rectangle_andrect(r, traversal->draw);
+				if (ok == False) {
+					continue;
+				}
 
-					result->type = CSSRENDERING_DRAWTRAVERSAL_RESULTTYPE_TEXT;
-					result->data.text.content_edge = r;
-					result->data.text.fragment = &(box->l.text);
-					result->data.text.nodedata = box->base.userdata;
-					break;
-				}
-			} else {
-				if ((box->base.type == CSSRENDEREING_BOX_TYPE_BLOCK)||(box->base.type == CSSRENDEREING_BOX_TYPE_ANONYMOUS)) {
-					traversal->origin.x -= box->base.content_edge.c.left;
-					traversal->origin.y -= box->base.content_edge.c.top;
-				} else {
-				}
+				result->type = CSSRENDERING_DRAWTRAVERSAL_RESULTTYPE_TEXT;
+				result->data.text.content_edge = r;
+				result->data.text.fragment = &(box->l.text);
+				result->data.text.nodedata = box->base.userdata;
+				break;
 			}
 		} else {
-			break;
+			if ((box->base.type == CSSRENDEREING_BOX_TYPE_BLOCK)||(box->base.type == CSSRENDEREING_BOX_TYPE_ANONYMOUS)) {
+				traversal->origin.x -= box->base.content_edge.c.left;
+				traversal->origin.y -= box->base.content_edge.c.top;
+			} else {
+			}
 		}
 	}
 
