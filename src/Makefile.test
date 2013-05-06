@@ -31,7 +31,7 @@ include ../../etc/makerules
 TARGET = bchanf_test
 
 # ソースファイルのサーチパス
-S = ../src ../src/unittest ../src/http ../src/parse ../src/coll ../src/coding ../src/tad
+S = ../src ../src/unittest ../src/http ../src/parse ../src/coll ../src/coding ../src/tad ../src/css
 VPATH = $(S)
 
 # ヘッダファイルのディレクトリ追加
@@ -90,7 +90,13 @@ SRC_TAD_TEST = 	test_taditerator.c \
 		test_tadlexer_le.c \
 		test_traydata_iterator.c
 
-SRC =	test_main.c $(SRC_UNITTEST) $(SRC_HTTP) $(SRC_HTTP_TEST) $(SRC_PARSE) $(SRC_PARSE_TEST) $(SRC_COLL) $(SRC_COLL_TEST) $(SRC_CODING) $(SRC_CODING_TEST) $(SRC_TAD) $(SRC_TAD_TEST)
+SRC_CSS =	cssrendering_box.c \
+		cssrendering_coordinate.c
+
+SRC_CSS_TEST =	test_cssrendering_box.c \
+		test_cssrendering_coordinate.c
+
+SRC =	test_main.c $(SRC_UNITTEST) $(SRC_HTTP) $(SRC_HTTP_TEST) $(SRC_PARSE) $(SRC_PARSE_TEST) $(SRC_COLL) $(SRC_COLL_TEST) $(SRC_CODING) $(SRC_CODING_TEST) $(SRC_TAD) $(SRC_TAD_TEST) $(SRC_CSS) $(SRC_CSS_TEST)
 
 # データボックスソースファイル
 DBSRC =

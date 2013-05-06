@@ -1,7 +1,7 @@
 /*
  * test_main.c
  *
- * Copyright (c) 2012 project bchan
+ * Copyright (c) 2012-2013 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -37,6 +37,7 @@
 #include    <test_coll.h>
 #include    <test_coding.h>
 #include    <test_tad.h>
+#include    <test_css.h>
 
 
 EXPORT	W	MAIN(MESSAGE *msg)
@@ -71,6 +72,9 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_tadtsvparser_main(driver);
 	test_tadlexer_le_main(driver);
 	test_traydata_iterator_main(driver);
+
+	test_cssrendering_box_main(driver);
+	test_cssrendering_coordinate_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);
