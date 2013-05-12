@@ -1,7 +1,7 @@
 /*
  * arraybase.h
  *
- * Copyright (c) 2010-2012 project bchan
+ * Copyright (c) 2010-2013 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -34,7 +34,6 @@
 #ifndef __ARRAYBASE_H__
 #define __ARRAYBASE_H__
 
-/* Vendor name: */
 /* Functionality name: arraybase */
 /* Detail name: datanode */
 struct arraybase_datanode_t_ {
@@ -43,7 +42,6 @@ struct arraybase_datanode_t_ {
 };
 typedef struct arraybase_datanode_t_ arraybase_datanode_t;
 
-/* Vendor name: */
 /* Functionality name: arraybase */
 /* Detail name: */
 struct arraybase_t_ {

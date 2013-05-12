@@ -33,7 +33,6 @@
 #ifndef __BYTEARRAY_H__
 #define __BYTEARRAY_H__
 
-/* Vendor name: */
 /* Functionality name: bytearray */
 /* Detail name: */
 struct bytearray_t_ {
@@ -42,7 +41,6 @@ struct bytearray_t_ {
 };
 typedef struct bytearray_t_ bytearray_t;
 
-/* Vendor name: */
 /* Functionality name: bytearray */
 /* Detail name: cursor */
 struct bytearray_cursor_t_ {

@@ -1,7 +1,7 @@
 /*
  * idtocb.h
  *
- * Copyright (c) 2012 project bchan
+ * Copyright (c) 2012-2013 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -36,7 +36,6 @@
 #ifndef __IDTOCB_H__
 #define __IDTOCB_H__
 
-/* Vendor name: */
 /* Functionality name: idtocb */
 /* Detail name: entry */
 struct idtocb_entry_t_ {
@@ -44,7 +43,6 @@ struct idtocb_entry_t_ {
 };
 typedef struct idtocb_entry_t_ idtocb_entry_t;
 
-/* Vendor name: */
 /* Functionality name: idtocb */
 /* Detail name: */
 typedef struct idtocb_t_ idtocb_t;
@@ -55,7 +53,6 @@ IMPORT ID idtocb_allocate(idtocb_t *manager);
 IMPORT VOID idtocb_free(idtocb_t *manager, ID id);
 IMPORT W idtocb_getcontrolblock(idtocb_t *manager, ID id, idtocb_entry_t **ptr);
 
-/* Vendor name: */
 /* Functionality name: idtocb */
 /* Detail name: iterator */
 struct idtocb_iterator_t_ {
