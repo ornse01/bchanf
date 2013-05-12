@@ -56,7 +56,8 @@ SRC_PARSE =	tokenchecker.c \
 
 SRC_COLL =	idtocb.c \
 		arraybase.c \
-		treebase.c
+		treebase.c \
+		bytearray.c
 
 SRC_CODING = 	base64encoder.c \
 		base64decoder.c

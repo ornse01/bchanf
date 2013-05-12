@@ -1,7 +1,7 @@
 /*
  * test_coll.h
  *
- * Copyright (c) 2012 project bchan
+ * Copyright (c) 2012-2013 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -33,5 +33,6 @@
 IMPORT VOID test_idtocb_main(unittest_driver_t *driver);
 EXPORT VOID test_arraybase_main(unittest_driver_t *driver);
 IMPORT VOID test_treebase_main(unittest_driver_t *driver);
+IMPORT VOID test_bytearray_main(unittest_driver_t *driver);
 
 #endif

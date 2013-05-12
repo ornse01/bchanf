@@ -66,11 +66,13 @@ SRC_PARSE_TEST =	test_tokenchecker.c \
 
 SRC_COLL =	idtocb.c \
 		arraybase.c \
-		treebase.c
+		treebase.c \
+		bytearray.c
 
 SRC_COLL_TEST =	test_idtocb.c \
 		test_arraybase.c \
-		test_treebase.c
+		test_treebase.c \
+		test_bytearray.c
 
 SRC_CODING = 	base64encoder.c \
 		base64decoder.c
