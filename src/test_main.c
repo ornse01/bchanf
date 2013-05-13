@@ -64,6 +64,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_arraybase_main(driver);
 	test_treebase_main(driver);
 	test_bytearray_main(driver);
+	test_wordarray_main(driver);
 
 	test_base64encoder_main(driver);
 	test_base64decoder_main(driver);
