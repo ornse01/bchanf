@@ -31,8 +31,9 @@
 #define __TEST_COLL_H__
 
 IMPORT VOID test_idtocb_main(unittest_driver_t *driver);
-EXPORT VOID test_arraybase_main(unittest_driver_t *driver);
+IMPORT VOID test_arraybase_main(unittest_driver_t *driver);
 IMPORT VOID test_treebase_main(unittest_driver_t *driver);
 IMPORT VOID test_bytearray_main(unittest_driver_t *driver);
+IMPORT VOID test_wordarray_main(unittest_driver_t *driver);
 
 #endif
