@@ -72,6 +72,24 @@ EXPORT W bytearray_popback(bytearray_t *bytearray)
 	return 0;
 }
 
+EXPORT W bytearray_getat(bytearray_t *bytearray, W at, UB *p)
+{
+	if (at >= bytearray->len) {
+		return -1;
+	}
+	*p = bytearray->ptr[at];
+	return 0;
+}
+
+EXPORT W bytearray_setat(bytearray_t *bytearray, W at, UB val)
+{
+	if (at >= bytearray->len) {
+		return -1;
+	}
+	bytearray->ptr[at] = val;
+	return 0;
+}
+
 EXPORT W bytearray_initialize(bytearray_t *bytearray)
 {
 	bytearray->ptr = NULL;
@@ -221,6 +239,60 @@ EXPORT W bytearray_cursor_getUW(bytearray_cursor_t *cursor, UW *p)
 		return -1; /* TODO */
 	}
 	*p = *(UW*)(cursor->target->ptr + cursor->index);
+	return 0;
+}
+
+EXPORT W bytearray_cursor_setB(bytearray_cursor_t *cursor, B val)
+{
+	if (cursor->index + sizeof(B) > cursor->target->len) {
+		return -1; /* TODO */
+	}
+	*(cursor->target->ptr + cursor->index) = val;
+	return 0;
+}
+
+EXPORT W bytearray_cursor_setH(bytearray_cursor_t *cursor, H val)
+{
+	if (cursor->index + sizeof(H) > cursor->target->len) {
+		return -1; /* TODO */
+	}
+	*(H*)(cursor->target->ptr + cursor->index) = val;
+	return 0;
+}
+
+EXPORT W bytearray_cursor_setW(bytearray_cursor_t *cursor, W val)
+{
+	if (cursor->index + sizeof(W) > cursor->target->len) {
+		return -1; /* TODO */
+	}
+	*(W*)(cursor->target->ptr + cursor->index) = val;
+	return 0;
+}
+
+EXPORT W bytearray_cursor_setUB(bytearray_cursor_t *cursor, UB val)
+{
+	if (cursor->index + sizeof(UB) > cursor->target->len) {
+		return -1; /* TODO */
+	}
+	*(cursor->target->ptr + cursor->index) = val;
+	return 0;
+}
+
+EXPORT W bytearray_cursor_setUH(bytearray_cursor_t *cursor, UH val)
+{
+	if (cursor->index + sizeof(UH) > cursor->target->len) {
+		return -1; /* TODO */
+	}
+	*(UH*)(cursor->target->ptr + cursor->index) = val;
+	return 0;
+}
+
+EXPORT W bytearray_cursor_setUW(bytearray_cursor_t *cursor, UW val)
+{
+	if (cursor->index + sizeof(UW) > cursor->target->len) {
+		return -1; /* TODO */
+	}
+	*(UW*)(cursor->target->ptr + cursor->index) = val;
 	return 0;
 }
 

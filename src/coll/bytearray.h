@@ -55,6 +55,8 @@ IMPORT UB* bytearray_getbuffer(bytearray_t *bytearray);
 IMPORT W bytearray_getlength(bytearray_t *bytearray);
 IMPORT W bytearray_pushback(bytearray_t *bytearray, UB val);
 IMPORT W bytearray_popback(bytearray_t *bytearray);
+IMPORT W bytearray_getat(bytearray_t *bytearray, W at, UB *p);
+IMPORT W bytearray_setat(bytearray_t *bytearray, W at, UB val);
 
 IMPORT VOID bytearray_cursor_initialize(bytearray_cursor_t *cursor, bytearray_t *bytearray);
 IMPORT VOID bytearray_cursor_finalize(bytearray_cursor_t *cursor);
@@ -68,5 +70,11 @@ IMPORT W bytearray_cursor_getW(bytearray_cursor_t *cursor, W *p);
 IMPORT W bytearray_cursor_getUB(bytearray_cursor_t *cursor, UB *p);
 IMPORT W bytearray_cursor_getUH(bytearray_cursor_t *cursor, UH *p);
 IMPORT W bytearray_cursor_getUW(bytearray_cursor_t *cursor, UW *p);
+IMPORT W bytearray_cursor_setB(bytearray_cursor_t *cursor, B val);
+IMPORT W bytearray_cursor_setH(bytearray_cursor_t *cursor, H val);
+IMPORT W bytearray_cursor_setW(bytearray_cursor_t *cursor, W val);
+IMPORT W bytearray_cursor_setUB(bytearray_cursor_t *cursor, UB val);
+IMPORT W bytearray_cursor_setUH(bytearray_cursor_t *cursor, UH val);
+IMPORT W bytearray_cursor_setUW(bytearray_cursor_t *cursor, UW val);
 
 #endif

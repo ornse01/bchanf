@@ -118,6 +118,66 @@ LOCAL UNITTEST_RESULT test_bytearray_2()
 	return result;
 }
 
+LOCAL UNITTEST_RESULT test_bytearray_3()
+{
+	bytearray_t array;
+	W i, err;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+	UB data[] = {0x1, 0x2, 0x3}, data2[] = {0x5, 0x6, 0x7}, val;
+	W data_len = sizeof(data);
+
+	err = bytearray_initialize(&array);
+	if (err < 0) {
+		printf("bytearray_initialize error: %08x\n", err);
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	for (i = 0; i < data_len; i++) {
+		err = bytearray_pushback(&array, data[i]);
+		if (err < 0) {
+			printf("bytearray_pushback error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+			break;
+		}
+	}
+
+	for (i = 0; i < data_len; i++) {
+		err = bytearray_getat(&array, i, &val);
+		if (err < 0) {
+			printf("bytearray_getat return error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+		}
+		if (val != data[i]) {
+			printf("bytearray_getat value error: result = %d, expected = %d\n", val, data[i]);
+			result = UNITTEST_RESULT_FAIL;
+		}
+	}
+
+	for (i = 0; i < data_len; i++) {
+		err = bytearray_setat(&array, i, data2[i]);
+		if (err < 0) {
+			printf("bytearray_getat return error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+		}
+	}
+
+	for (i = 0; i < data_len; i++) {
+		err = bytearray_getat(&array, i, &val);
+		if (err < 0) {
+			printf("bytearray_getat return error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+		}
+		if (val != data2[i]) {
+			printf("bytearray_getat value error: result = %d, expected = %d\n", val, data2[i]);
+			result = UNITTEST_RESULT_FAIL;
+		}
+	}
+
+	bytearray_finalize(&array);
+
+	return result;
+}
+
 typedef struct {
 	UB *init;
 	W init_len;
@@ -658,10 +718,356 @@ LOCAL UNITTEST_RESULT test_bytearray_cursor_getUW_1()
 	return test_bytearray_cursor_getUW_common(&testdata);
 }
 
+typedef struct {
+	UB *init;
+	W init_len;
+	UB val;
+	W val_at;
+	UB *expected;
+	W expected_len;
+} test_bytearray_cursor_setUB;
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUB_common(test_bytearray_cursor_setUB *testdata)
+{
+	bytearray_t array;
+	W i, len, err;
+	bytearray_cursor_t cursor;
+	UB *p;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+
+	err = bytearray_initialize(&array);
+	if (err < 0) {
+		printf("bytearray_initialize error: %08x\n", err);
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	for (i = 0; i < testdata->init_len; i++) {
+		err = bytearray_pushback(&array, testdata->init[i]);
+		if (err < 0) {
+			printf("bytearray_pushback error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+			break;
+		}
+	}
+
+	bytearray_cursor_initialize(&cursor, &array);
+
+	err = bytearray_cursor_move(&cursor, testdata->val_at);
+	if (err < 0) {
+		printf("bytearray_cursor_move error: %08x", err);
+		result = UNITTEST_RESULT_FAIL;
+	}
+	err = bytearray_cursor_setUB(&cursor, testdata->val);
+	if (err < 0) {
+		printf("bytearray_cursor_setUB error: %08x", err);
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	bytearray_cursor_finalize(&cursor);
+
+	p = bytearray_getbuffer(&array);
+	len = bytearray_getlength(&array);
+	if (len != testdata->expected_len) {
+		printf("buffer length fail: expected = %d, result = %d\n", testdata->expected_len, len);
+		result = UNITTEST_RESULT_FAIL;
+	} else {
+		if (memcmp(testdata->expected, p, testdata->expected_len) != 0) {
+			printf("buffer result fail\n");
+			result = UNITTEST_RESULT_FAIL;
+			for (i = 0; i < testdata->expected_len; i++) {
+				printf("%d: %x, %x\n", i, testdata->expected[i], p[i]);
+			}
+		}
+	}
+
+	bytearray_finalize(&array);
+
+	return result;
+}
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUB_1()
+{
+	UB init[] = {0x1, 0x2, 0x3};
+	W init_len = sizeof(init);
+	UB val = 0x4;
+	W val_at = 0;
+	UB expected[] = {0x4, 0x2, 0x3};
+	W expected_len = sizeof(expected);
+	test_bytearray_cursor_setUB testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_bytearray_cursor_setUB_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUB_2()
+{
+	UB init[] = {0x1, 0x2, 0x3};
+	W init_len = sizeof(init);
+	UB val = 0x4;
+	W val_at = 1;
+	UB expected[] = {0x1, 0x4, 0x3};
+	W expected_len = sizeof(expected);
+	test_bytearray_cursor_setUB testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_bytearray_cursor_setUB_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUB_3()
+{
+	UB init[] = {0x1, 0x2, 0x3};
+	W init_len = sizeof(init);
+	UB val = 0x4;
+	W val_at = 2;
+	UB expected[] = {0x1, 0x2, 0x4};
+	W expected_len = sizeof(expected);
+	test_bytearray_cursor_setUB testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_bytearray_cursor_setUB_common(&testdata);
+}
+
+typedef struct {
+	UB *init;
+	W init_len;
+	UH val;
+	W val_at;
+	UB *expected;
+	W expected_len;
+} test_bytearray_cursor_setUH;
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUH_common(test_bytearray_cursor_setUH *testdata)
+{
+	bytearray_t array;
+	W i, len, err;
+	bytearray_cursor_t cursor;
+	UB *p;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+
+	err = bytearray_initialize(&array);
+	if (err < 0) {
+		printf("bytearray_initialize error: %08x\n", err);
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	for (i = 0; i < testdata->init_len; i++) {
+		err = bytearray_pushback(&array, testdata->init[i]);
+		if (err < 0) {
+			printf("bytearray_pushback error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+			break;
+		}
+	}
+
+	bytearray_cursor_initialize(&cursor, &array);
+
+	err = bytearray_cursor_move(&cursor, testdata->val_at);
+	if (err < 0) {
+		printf("bytearray_cursor_move error: %08x", err);
+		result = UNITTEST_RESULT_FAIL;
+	}
+	err = bytearray_cursor_setUH(&cursor, testdata->val);
+	if (err < 0) {
+		printf("bytearray_cursor_setUB error: %08x", err);
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	bytearray_cursor_finalize(&cursor);
+
+	p = bytearray_getbuffer(&array);
+	len = bytearray_getlength(&array);
+	if (len != testdata->expected_len) {
+		printf("buffer length fail: expected = %d, result = %d\n", testdata->expected_len, len);
+		result = UNITTEST_RESULT_FAIL;
+	} else {
+		if (memcmp(testdata->expected, p, testdata->expected_len) != 0) {
+			printf("buffer result fail\n");
+			result = UNITTEST_RESULT_FAIL;
+			for (i = 0; i < testdata->expected_len; i++) {
+				printf("%d: %x, %x\n", i, testdata->expected[i], p[i]);
+			}
+		}
+	}
+
+	bytearray_finalize(&array);
+
+	return result;
+}
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUH_1()
+{
+	UB init[] = {0x1, 0x2, 0x3, 0x4};
+	W init_len = sizeof(init);
+	UH val = 0x5;
+	W val_at = 0;
+	UB expected[] = {0x5, 0x0, 0x3, 0x4};
+	W expected_len = sizeof(expected);
+	test_bytearray_cursor_setUH testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_bytearray_cursor_setUH_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUH_2()
+{
+	UB init[] = {0x1, 0x2, 0x3, 0x4};
+	W init_len = sizeof(init);
+	UH val = 0x5;
+	W val_at = 1;
+	UB expected[] = {0x1, 0x5, 0x0, 0x4};
+	W expected_len = sizeof(expected);
+	test_bytearray_cursor_setUH testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_bytearray_cursor_setUH_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUH_3()
+{
+	UB init[] = {0x1, 0x2, 0x3, 0x4};
+	W init_len = sizeof(init);
+	UH val = 0x5;
+	W val_at = 2;
+	UB expected[] = {0x1, 0x2, 0x5, 0x0};
+	W expected_len = sizeof(expected);
+	test_bytearray_cursor_setUH testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_bytearray_cursor_setUH_common(&testdata);
+}
+
+typedef struct {
+	UB *init;
+	W init_len;
+	UW val;
+	W val_at;
+	UB *expected;
+	W expected_len;
+} test_bytearray_cursor_setUW;
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUW_common(test_bytearray_cursor_setUW *testdata)
+{
+	bytearray_t array;
+	W i, len, err;
+	bytearray_cursor_t cursor;
+	UB *p;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+
+	err = bytearray_initialize(&array);
+	if (err < 0) {
+		printf("bytearray_initialize error: %08x\n", err);
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	for (i = 0; i < testdata->init_len; i++) {
+		err = bytearray_pushback(&array, testdata->init[i]);
+		if (err < 0) {
+			printf("bytearray_pushback error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+			break;
+		}
+	}
+
+	bytearray_cursor_initialize(&cursor, &array);
+
+	err = bytearray_cursor_move(&cursor, testdata->val_at);
+	if (err < 0) {
+		printf("bytearray_cursor_move error: %08x", err);
+		result = UNITTEST_RESULT_FAIL;
+	}
+	err = bytearray_cursor_setUW(&cursor, testdata->val);
+	if (err < 0) {
+		printf("bytearray_cursor_setUB error: %08x", err);
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	bytearray_cursor_finalize(&cursor);
+
+	p = bytearray_getbuffer(&array);
+	len = bytearray_getlength(&array);
+	if (len != testdata->expected_len) {
+		printf("buffer length fail: expected = %d, result = %d\n", testdata->expected_len, len);
+		result = UNITTEST_RESULT_FAIL;
+	} else {
+		if (memcmp(testdata->expected, p, testdata->expected_len) != 0) {
+			printf("buffer result fail\n");
+			result = UNITTEST_RESULT_FAIL;
+			for (i = 0; i < testdata->expected_len; i++) {
+				printf("%d: %x, %x\n", i, testdata->expected[i], p[i]);
+			}
+		}
+	}
+
+	bytearray_finalize(&array);
+
+	return result;
+}
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUW_1()
+{
+	UB init[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6};
+	W init_len = sizeof(init);
+	UW val = 0x7;
+	W val_at = 0;
+	UB expected[] = {0x7, 0x0, 0x0, 0x0, 0x5, 0x6};
+	W expected_len = sizeof(expected);
+	test_bytearray_cursor_setUW testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_bytearray_cursor_setUW_common(&testdata);
+}
+
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUW_2()
+{
+	UB init[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6};
+	W init_len = sizeof(init);
+	UW val = 0x7;
+	W val_at = 1;
+	UB expected[] = {0x1, 0x7, 0x0, 0x0, 0x0, 0x6};
+	W expected_len = sizeof(expected);
+	test_bytearray_cursor_setUW testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_bytearray_cursor_setUW_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_bytearray_cursor_setUW_3()
+{
+	UB init[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6};
+	W init_len = sizeof(init);
+	UW val = 0x7;
+	W val_at = 2;
+	UB expected[] = {0x1, 0x2, 0x7, 0x0, 0x0, 0x0};
+	W expected_len = sizeof(expected);
+	test_bytearray_cursor_setUW testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_bytearray_cursor_setUW_common(&testdata);
+}
 EXPORT VOID test_bytearray_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_bytearray_1);
 	UNITTEST_DRIVER_REGIST(driver, test_bytearray_2);
+	UNITTEST_DRIVER_REGIST(driver, test_bytearray_3);
 	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_insert_1);
 	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_insert_2);
 	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_insert_3);
@@ -677,4 +1083,13 @@ EXPORT VOID test_bytearray_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_getUB_1);
 	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_getUH_1);
 	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_getUW_1);
+	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_setUB_1);
+	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_setUB_2);
+	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_setUB_3);
+	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_setUH_1);
+	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_setUH_2);
+	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_setUH_3);
+	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_setUW_1);
+	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_setUW_2);
+	UNITTEST_DRIVER_REGIST(driver, test_bytearray_cursor_setUW_3);
 }
