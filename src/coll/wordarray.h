@@ -55,6 +55,8 @@ IMPORT UW* wordarray_getbuffer(wordarray_t *wordarray);
 IMPORT W wordarray_getlength(wordarray_t *wordarray);
 IMPORT W wordarray_pushback(wordarray_t *wordarray, UW val);
 IMPORT W wordarray_popback(wordarray_t *wordarray);
+IMPORT W wordarray_getat(wordarray_t *wordarray, W at, UW *p);
+IMPORT W wordarray_setat(wordarray_t *wordarray, W at, UW val);
 
 IMPORT VOID wordarray_cursor_initialize(wordarray_cursor_t *cursor, wordarray_t *wordarray);
 IMPORT VOID wordarray_cursor_finalize(wordarray_cursor_t *cursor);
@@ -64,5 +66,7 @@ IMPORT W wordarray_cursor_insert(wordarray_cursor_t *cursor, UW *data, W len);
 IMPORT Bool wordarray_cursor_isend(wordarray_cursor_t *cursor);
 IMPORT W wordarray_cursor_getW(wordarray_cursor_t *cursor, W *p);
 IMPORT W wordarray_cursor_getUW(wordarray_cursor_t *cursor, UW *p);
+IMPORT W wordarray_cursor_setW(wordarray_cursor_t *cursor, W val);
+IMPORT W wordarray_cursor_setUW(wordarray_cursor_t *cursor, UW val);
 
 #endif

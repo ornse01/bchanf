@@ -89,6 +89,38 @@ EXPORT W wordarray_popback(wordarray_t *wordarray)
 	return 0;
 }
 
+EXPORT W wordarray_getat(wordarray_t *wordarray, W at, UW *p)
+{
+	bytearray_cursor_t cursor;
+	W err;
+
+	/* should be more efficient? */
+	bytearray_cursor_initialize(&cursor, &wordarray->rawdata);
+	err = bytearray_cursor_move(&cursor, at*sizeof(UW));
+	if (err == 0) {
+		err = bytearray_cursor_getUW(&cursor, p);
+	}
+	bytearray_cursor_finalize(&cursor);
+
+	return err;
+}
+
+EXPORT W wordarray_setat(wordarray_t *wordarray, W at, UW val)
+{
+	bytearray_cursor_t cursor;
+	W err;
+
+	/* should be more efficient? */
+	bytearray_cursor_initialize(&cursor, &wordarray->rawdata);
+	err = bytearray_cursor_move(&cursor, at*sizeof(UW));
+	if (err == 0) {
+		err = bytearray_cursor_setUW(&cursor, val);
+	}
+	bytearray_cursor_finalize(&cursor);
+
+	return err;
+}
+
 EXPORT W wordarray_initialize(wordarray_t *wordarray)
 {
 	return bytearray_initialize(&wordarray->rawdata);
@@ -127,6 +159,16 @@ EXPORT W wordarray_cursor_getW(wordarray_cursor_t *cursor, W *p)
 EXPORT W wordarray_cursor_getUW(wordarray_cursor_t *cursor, UW *p)
 {
 	return bytearray_cursor_getUW(&cursor->base, p);
+}
+
+EXPORT W wordarray_cursor_setW(wordarray_cursor_t *cursor, W val)
+{
+	return bytearray_cursor_setW(&cursor->base, val);
+}
+
+EXPORT W wordarray_cursor_setUW(wordarray_cursor_t *cursor, UW val)
+{
+	return bytearray_cursor_setUW(&cursor->base, val);
 }
 
 EXPORT VOID wordarray_cursor_initialize(wordarray_cursor_t *cursor, wordarray_t *wordarray)

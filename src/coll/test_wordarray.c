@@ -118,6 +118,66 @@ LOCAL UNITTEST_RESULT test_wordarray_2()
 	return result;
 }
 
+LOCAL UNITTEST_RESULT test_wordarray_3()
+{
+	wordarray_t array;
+	W i, err;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+	UW data[] = {0x1, 0x2, 0x3}, data2[] = {0x5, 0x6, 0x7}, val;
+	W data_len = sizeof(data);
+
+	err = wordarray_initialize(&array);
+	if (err < 0) {
+		printf("wordarray_initialize error: %08x\n", err);
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	for (i = 0; i < data_len; i++) {
+		err = wordarray_pushback(&array, data[i]);
+		if (err < 0) {
+			printf("wordarray_pushback error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+			break;
+		}
+	}
+
+	for (i = 0; i < data_len; i++) {
+		err = wordarray_getat(&array, i, &val);
+		if (err < 0) {
+			printf("wordarray_getat return error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+		}
+		if (val != data[i]) {
+			printf("wordarray_getat value error: result = %d, expected = %d\n", val, data[i]);
+			result = UNITTEST_RESULT_FAIL;
+		}
+	}
+
+	for (i = 0; i < data_len; i++) {
+		err = wordarray_setat(&array, i, data2[i]);
+		if (err < 0) {
+			printf("wordarray_getat return error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+		}
+	}
+
+	for (i = 0; i < data_len; i++) {
+		err = wordarray_getat(&array, i, &val);
+		if (err < 0) {
+			printf("wordarray_getat return error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+		}
+		if (val != data2[i]) {
+			printf("wordarray_getat value error: result = %d, expected = %d\n", val, data2[i]);
+			result = UNITTEST_RESULT_FAIL;
+		}
+	}
+
+	wordarray_finalize(&array);
+
+	return result;
+}
+
 typedef struct {
 	UW *init;
 	W init_len;
@@ -518,10 +578,126 @@ LOCAL UNITTEST_RESULT test_wordarray_cursor_getUW_1()
 	return test_wordarray_cursor_getUW_common(&testdata);
 }
 
+typedef struct {
+	UW *init;
+	W init_len;
+	UW val;
+	W val_at;
+	UW *expected;
+	W expected_len;
+} test_wordarray_cursor_setUW;
+
+LOCAL UNITTEST_RESULT test_wordarray_cursor_setUW_common(test_wordarray_cursor_setUW *testdata)
+{
+	wordarray_t array;
+	W i, len, err;
+	wordarray_cursor_t cursor;
+	UW *p;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+
+	err = wordarray_initialize(&array);
+	if (err < 0) {
+		printf("wordarray_initialize error: %08x\n", err);
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	for (i = 0; i < testdata->init_len; i++) {
+		err = wordarray_pushback(&array, testdata->init[i]);
+		if (err < 0) {
+			printf("wordarray_pushback error: %08x", err);
+			result = UNITTEST_RESULT_FAIL;
+			break;
+		}
+	}
+
+	wordarray_cursor_initialize(&cursor, &array);
+
+	err = wordarray_cursor_move(&cursor, testdata->val_at);
+	if (err < 0) {
+		printf("wordarray_cursor_move error: %08x", err);
+		result = UNITTEST_RESULT_FAIL;
+	}
+	err = wordarray_cursor_setUW(&cursor, testdata->val);
+	if (err < 0) {
+		printf("wordarray_cursor_setUW error: %08x", err);
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	wordarray_cursor_finalize(&cursor);
+
+	p = wordarray_getbuffer(&array);
+	len = wordarray_getlength(&array);
+	if (len != testdata->expected_len) {
+		printf("buffer length fail: expected = %d, result = %d\n", testdata->expected_len, len);
+		result = UNITTEST_RESULT_FAIL;
+	} else {
+		if (memcmp(testdata->expected, p, testdata->expected_len) != 0) {
+			printf("buffer result fail\n");
+			result = UNITTEST_RESULT_FAIL;
+			for (i = 0; i < testdata->expected_len; i++) {
+				printf("%d: %x, %x\n", i, testdata->expected[i], p[i]);
+			}
+		}
+	}
+
+	wordarray_finalize(&array);
+
+	return result;
+}
+
+LOCAL UNITTEST_RESULT test_wordarray_cursor_setUW_1()
+{
+	UW init[] = {0x1, 0x2, 0x3};
+	W init_len = sizeof(init);
+	UW val = 0x4;
+	W val_at = 0;
+	UW expected[] = {0x4, 0x2, 0x3};
+	W expected_len = sizeof(expected);
+	test_wordarray_cursor_setUW testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_wordarray_cursor_setUW_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_wordarray_cursor_setUW_2()
+{
+	UW init[] = {0x1, 0x2, 0x3};
+	W init_len = sizeof(init);
+	UW val = 0x4;
+	W val_at = 1;
+	UW expected[] = {0x1, 0x4, 0x3};
+	W expected_len = sizeof(expected);
+	test_wordarray_cursor_setUW testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_wordarray_cursor_setUW_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_wordarray_cursor_setUW_3()
+{
+	UW init[] = {0x1, 0x2, 0x3};
+	W init_len = sizeof(init);
+	UW val = 0x4;
+	W val_at = 2;
+	UW expected[] = {0x1, 0x2, 0x4};
+	W expected_len = sizeof(expected);
+	test_wordarray_cursor_setUW testdata = {
+		init, init_len,
+		val, val_at,
+		expected, expected_len
+	};
+	return test_wordarray_cursor_setUW_common(&testdata);
+}
+
 EXPORT VOID test_wordarray_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_wordarray_1);
 	UNITTEST_DRIVER_REGIST(driver, test_wordarray_2);
+	UNITTEST_DRIVER_REGIST(driver, test_wordarray_3);
 	UNITTEST_DRIVER_REGIST(driver, test_wordarray_cursor_insert_1);
 	UNITTEST_DRIVER_REGIST(driver, test_wordarray_cursor_insert_2);
 	UNITTEST_DRIVER_REGIST(driver, test_wordarray_cursor_insert_3);
@@ -535,4 +711,7 @@ EXPORT VOID test_wordarray_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_wordarray_cursor_erase_8);
 	UNITTEST_DRIVER_REGIST(driver, test_wordarray_cursor_erase_9);
 	UNITTEST_DRIVER_REGIST(driver, test_wordarray_cursor_getUW_1);
+	UNITTEST_DRIVER_REGIST(driver, test_wordarray_cursor_setUW_1);
+	UNITTEST_DRIVER_REGIST(driver, test_wordarray_cursor_setUW_2);
+	UNITTEST_DRIVER_REGIST(driver, test_wordarray_cursor_setUW_3);
 }
