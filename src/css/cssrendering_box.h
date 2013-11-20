@@ -110,6 +110,32 @@ struct cssrendering_drawtraversal_result_ {
 };
 typedef struct cssrendering_drawtraversal_result_ cssrendering_drawtraversal_result;
 
+/* Functionality name: cssrendering */
+/* Detail name: hittraversal */
+struct cssrendering_hittraversal_t_ {
+	treebase_postordertraversal_t base;
+	cssmetric_point_t origin;
+	cssmetric_rectangle_t draw;
+};
+typedef struct cssrendering_hittraversal_t_ cssrendering_hittraversal_t;
+
+/* Functionality name: cssrendering */
+/* Detail name: hittraversal */
+/* Data structure identifier: result */
+struct cssrendering_hittraversal_result_ {
+	enum {
+		CSSRENDERING_HITTRAVERSAL_RESULTTYPE_BLOCK,
+		CSSRENDERING_HITTRAVERSAL_RESULTTYPE_LINE,
+	} type;
+	union {
+		struct {
+			cssmetric_rectangle_t content_edge;
+			VP nodedata;
+		} line;
+	} data;
+};
+typedef struct cssrendering_hittraversal_result_ cssrendering_hittraversal_result;
+
 IMPORT VOID cssrendering_linebox_initialize(cssrendering_linebox_t *box);
 IMPORT VOID cssrendering_linebox_finalize(cssrendering_linebox_t *box);
 IMPORT VOID cssrendering_linebox_setuserdata(cssrendering_linebox_t *box, VP data);
@@ -127,5 +153,9 @@ IMPORT VOID cssrendering_blockbox_setuserdata(cssrendering_blockbox_t *box, VP d
 IMPORT VOID cssrendering_drawtraversal_initialize(cssrendering_drawtraversal_t *traversal, cssrendering_blockbox_t *root, cssmetric_rectangle_t draw);
 IMPORT VOID cssrendering_drawtraversal_finalize(cssrendering_drawtraversal_t *traversal);
 IMPORT Bool cssrendering_drawtraversal_next(cssrendering_drawtraversal_t *traversal, cssrendering_drawtraversal_result *result);
+
+IMPORT VOID cssrendering_hittraversal_initialize(cssrendering_hittraversal_t *traversal, cssrendering_blockbox_t *root, cssmetric_rectangle_t draw);
+IMPORT VOID cssrendering_hittraversal_finalize(cssrendering_hittraversal_t *traversal);
+IMPORT Bool cssrendering_hittraversal_next(cssrendering_hittraversal_t *traversal, cssrendering_hittraversal_result *result);
 
 #endif

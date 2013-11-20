@@ -204,3 +204,67 @@ EXPORT VOID cssrendering_drawtraversal_finalize(cssrendering_drawtraversal_t *tr
 {
 	treebase_preordertraversal_finalize(&traversal->base);
 }
+
+/* cssrendering_hittraversal */
+
+EXPORT Bool cssrendering_hittraversal_next(cssrendering_hittraversal_t *traversal, cssrendering_hittraversal_result *result)
+{
+	Bool cont, ok;
+	TREEBASE_TRAVERSAL_DIRECTION dir;
+	union {
+		cssrendering_basebox_t base;
+		cssrendering_linebox_t l;
+		cssrendering_anonymousbox_t a;
+		cssrendering_blockbox_t b;
+	} *box;
+	cssmetric_rectangle_t r;
+
+	for (;;) {
+		cont = treebase_postordertraversal_next(&traversal->base, (treebase_node_t**)&box, &dir);
+		if (cont == False) {
+			break;
+		}
+		if (dir == TREEBASE_TRAVERSAL_DIRECTION_DOWN) {
+			if ((box->base.type == CSSRENDEREING_BOX_TYPE_BLOCK)||(box->base.type == CSSRENDEREING_BOX_TYPE_ANONYMOUS)) {
+				traversal->origin.x += box->base.content_edge.c.left;
+				traversal->origin.y += box->base.content_edge.c.top;
+			} else if (box->base.type == CSSRENDEREING_BOX_TYPE_LINE) {
+				r = box->base.content_edge;
+				r.c.left += traversal->origin.x;
+				r.c.top += traversal->origin.y;
+				r.c.right += traversal->origin.x;
+				r.c.bottom += traversal->origin.y;
+				ok = cssmetric_rectangle_andrect(r, traversal->draw);
+				if (ok == False) {
+					continue;
+				}
+
+				result->type = CSSRENDERING_HITTRAVERSAL_RESULTTYPE_LINE;
+				result->data.line.content_edge = r;
+				result->data.line.nodedata = box->base.userdata;
+				break;
+			}
+		} else {
+			if ((box->base.type == CSSRENDEREING_BOX_TYPE_BLOCK)||(box->base.type == CSSRENDEREING_BOX_TYPE_ANONYMOUS)) {
+				traversal->origin.x -= box->base.content_edge.c.left;
+				traversal->origin.y -= box->base.content_edge.c.top;
+			} else {
+			}
+		}
+	}
+
+	return cont;
+}
+
+EXPORT VOID cssrendering_hittraversal_initialize(cssrendering_hittraversal_t *traversal, cssrendering_blockbox_t *root, cssmetric_rectangle_t draw)
+{
+	treebase_postordertraversal_initialize(&traversal->base, &root->base.base);
+	traversal->origin.x = 0;
+	traversal->origin.y = 0;
+	traversal->draw = draw;
+}
+
+EXPORT VOID cssrendering_hittraversal_finalize(cssrendering_hittraversal_t *traversal)
+{
+	treebase_postordertraversal_finalize(&traversal->base);
+}
