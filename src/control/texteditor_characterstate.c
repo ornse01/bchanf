@@ -87,6 +87,11 @@ EXPORT W texteditor_characterstate_getlang(texteditor_characterstate_t *state, T
 	return tadlangcodetoTC(&state->lang, str, len);
 }
 
+EXPORT VOID texteditor_characterstate_getlangcode(texteditor_characterstate_t *state, tadlangcode *lang)
+{
+	*lang = state->lang;
+}
+
 EXPORT Bool texteditor_characterstate_islang(texteditor_characterstate_t *state, TC *str, W len)
 {
 	return tadlangcodecmpTC(str, len, &state->lang);

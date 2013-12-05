@@ -45,6 +45,7 @@ IMPORT VOID texteditor_characterstate_finalize(texteditor_characterstate_t *stat
 IMPORT W texteditor_charactorstate_input(texteditor_characterstate_t *state, tadfragment_cursor_segment *segment);
 IMPORT Bool texteditor_characterstate_ishankaku(texteditor_characterstate_t *state);
 IMPORT W texteditor_characterstate_getlang(texteditor_characterstate_t *state, TC *str, W len);
+IMPORT VOID texteditor_characterstate_getlangcode(texteditor_characterstate_t *state, tadlangcode *lang);
 IMPORT Bool texteditor_characterstate_islang(texteditor_characterstate_t *state, TC *str, W len);
 
 #endif
