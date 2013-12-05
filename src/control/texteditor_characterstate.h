@@ -27,6 +27,7 @@
 #include    <basic.h>
 
 #include	<tad/tadfragment.h>
+#include	<tad/tadlangcode.h>
 
 #ifndef __TEXTEDITOR_CHARACTERSTATE_H__
 #define __TEXTEDITOR_CHARACTERSTATE_H__
@@ -35,10 +36,7 @@
 /* Detail name: characterstate */
 struct texteditor_characterstate_t_ {
 	RATIO w_ratio;
-	struct {
-		UW iter;
-		UB code;
-	} lang;
+	tadlangcode lang;
 };
 typedef struct texteditor_characterstate_t_ texteditor_characterstate_t;
 
