@@ -1,7 +1,7 @@
 /*
  * cssrendering_box.h
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -148,6 +148,7 @@ IMPORT VOID cssrendering_anonymousbox_setuserdata(cssrendering_anonymousbox_t *b
 IMPORT VOID cssrendering_blockbox_initialize(cssrendering_blockbox_t *box);
 IMPORT VOID cssrendering_blockbox_finalize(cssrendering_blockbox_t *box);
 IMPORT VOID cssrendering_blockbox_appendanonymouschild(cssrendering_blockbox_t *box, cssrendering_anonymousbox_t *child);
+IMPORT VOID cssrendering_blockbox_appendblockchild(cssrendering_blockbox_t *box, cssrendering_blockbox_t *child);
 IMPORT VOID cssrendering_blockbox_setuserdata(cssrendering_blockbox_t *box, VP data);
 
 IMPORT VOID cssrendering_drawtraversal_initialize(cssrendering_drawtraversal_t *traversal, cssrendering_blockbox_t *root, cssmetric_rectangle_t draw);
