@@ -114,6 +114,115 @@ LOCAL UNITTEST_RESULT test_cssrendering_drawtraversal_1()
 
 	return ret;
 }
+LOCAL UNITTEST_RESULT test_cssrendering_drawtraversal_2()
+{
+	cssrendering_blockbox_t root, block[5];
+	cssrendering_anonymousbox_t anon[5];
+	cssrendering_linebox_t line[5];
+	cssrendering_drawtraversal_t traversal;
+	cssrendering_drawtraversal_result result;
+	cssmetric_rectangle_t draw;
+	Bool cont, line_called[5] = {False, False, False, False, False};
+	UNITTEST_RESULT ret = UNITTEST_RESULT_PASS;
+
+	cssrendering_blockbox_initialize(&root);
+	cssrendering_blockbox_initialize(block+0);
+	cssrendering_blockbox_initialize(block+1);
+	cssrendering_blockbox_initialize(block+2);
+	cssrendering_blockbox_initialize(block+3);
+	cssrendering_blockbox_initialize(block+4);
+	cssrendering_anonymousbox_initialize(anon+0);
+	cssrendering_anonymousbox_initialize(anon+1);
+	cssrendering_anonymousbox_initialize(anon+2);
+	cssrendering_anonymousbox_initialize(anon+3);
+	cssrendering_anonymousbox_initialize(anon+4);
+	cssrendering_linebox_initialize(line+0);
+	cssrendering_linebox_initialize(line+1);
+	cssrendering_linebox_initialize(line+2);
+	cssrendering_linebox_initialize(line+3);
+	cssrendering_linebox_initialize(line+4);
+
+	cssrendering_blockbox_appendblockchild(&root, block+0);
+	cssrendering_blockbox_appendblockchild(&root, block+1);
+	cssrendering_blockbox_appendblockchild(&root, block+2);
+	cssrendering_blockbox_appendblockchild(&root, block+3);
+	cssrendering_blockbox_appendblockchild(&root, block+4);
+	cssrendering_blockbox_appendanonymouschild(block+0, anon+0);
+	cssrendering_blockbox_appendanonymouschild(block+1, anon+1);
+	cssrendering_blockbox_appendanonymouschild(block+2, anon+2);
+	cssrendering_blockbox_appendanonymouschild(block+3, anon+3);
+	cssrendering_blockbox_appendanonymouschild(block+4, anon+4);
+	cssrendering_anonymousbox_appendchild(anon+0, line+0);
+	cssrendering_anonymousbox_appendchild(anon+1, line+1);
+	cssrendering_anonymousbox_appendchild(anon+2, line+2);
+	cssrendering_anonymousbox_appendchild(anon+3, line+3);
+	cssrendering_anonymousbox_appendchild(anon+4, line+4);
+
+	block[0].base.content_edge = (cssmetric_rectangle_t){{0, 0, 100, 100}};
+	block[1].base.content_edge = (cssmetric_rectangle_t){{0, 100, 100, 200}};
+	block[2].base.content_edge = (cssmetric_rectangle_t){{0, 200, 100, 300}};
+	block[3].base.content_edge = (cssmetric_rectangle_t){{0, 300, 100, 400}};
+	block[4].base.content_edge = (cssmetric_rectangle_t){{0, 400, 100, 500}};
+	line[0].base.content_edge = (cssmetric_rectangle_t){{0, 0, 100, 100}};
+	cssrendering_linebox_setuserdata(line+0, line+0);
+	line[1].base.content_edge = (cssmetric_rectangle_t){{0, 0, 100, 100}};
+	cssrendering_linebox_setuserdata(line+1, line+1);
+	line[2].base.content_edge = (cssmetric_rectangle_t){{0, 0, 100, 100}};
+	cssrendering_linebox_setuserdata(line+2, line+2);
+	line[3].base.content_edge = (cssmetric_rectangle_t){{0, 0, 100, 100}};
+	cssrendering_linebox_setuserdata(line+3, line+3);
+	line[4].base.content_edge = (cssmetric_rectangle_t){{0, 0, 100, 100}};
+	cssrendering_linebox_setuserdata(line+4, line+4);
+
+	draw = (cssmetric_rectangle_t){{25, 150, 75, 350}};
+	cssrendering_drawtraversal_initialize(&traversal, &root, draw);
+	for (;;) {
+		cont = cssrendering_drawtraversal_next(&traversal, &result);
+		if (cont == False) {
+			break;
+		}
+		if (result.type != CSSRENDERING_DRAWTRAVERSAL_RESULTTYPE_TEXT) {
+			continue;
+		}
+		if (result.data.text.nodedata == (line+0)) {
+			line_called[0] = True;
+		} else if (result.data.text.nodedata == (line+1)) {
+			line_called[1] = True;
+		} else if (result.data.text.nodedata == (line+2)) {
+			line_called[2] = True;
+		} else if (result.data.text.nodedata == (line+3)) {
+			line_called[3] = True;
+		} else if (result.data.text.nodedata == (line+4)) {
+			line_called[4] = True;
+		}
+	}
+	cssrendering_drawtraversal_finalize(&traversal);
+
+	if ((line_called[0] == False)&&(line_called[1] != False)&&(line_called[2] != False)&&(line_called[3] != False)&&(line_called[4] == False)) {
+		ret = UNITTEST_RESULT_PASS;
+	} else {
+		ret = UNITTEST_RESULT_FAIL;
+	}
+
+	cssrendering_linebox_finalize(line+4);
+	cssrendering_linebox_finalize(line+3);
+	cssrendering_linebox_finalize(line+2);
+	cssrendering_linebox_finalize(line+1);
+	cssrendering_linebox_finalize(line+0);
+	cssrendering_anonymousbox_finalize(anon+4);
+	cssrendering_anonymousbox_finalize(anon+3);
+	cssrendering_anonymousbox_finalize(anon+2);
+	cssrendering_anonymousbox_finalize(anon+1);
+	cssrendering_anonymousbox_finalize(anon+0);
+	cssrendering_blockbox_finalize(block+4);
+	cssrendering_blockbox_finalize(block+3);
+	cssrendering_blockbox_finalize(block+2);
+	cssrendering_blockbox_finalize(block+1);
+	cssrendering_blockbox_finalize(block+0);
+	cssrendering_blockbox_finalize(&root);
+
+	return ret;
+}
 
 LOCAL UNITTEST_RESULT test_cssrendering_hittraversal_1()
 {
@@ -196,5 +305,6 @@ LOCAL UNITTEST_RESULT test_cssrendering_hittraversal_1()
 EXPORT VOID test_cssrendering_box_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_drawtraversal_1);
+	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_drawtraversal_2);
 	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_hittraversal_1);
 }
