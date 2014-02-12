@@ -51,10 +51,6 @@ LOCAL Bool cssmetric_rectangle_andrect(cssmetric_rectangle_t a, cssmetric_rectan
 LOCAL VOID cssrendering_basebox_appendchild(cssrendering_basebox_t *box, cssrendering_basebox_t *child)
 {
 	treebase_node_appendchild(&box->base, &child->base);
-	box->content_edge.c.left = 0;
-	box->content_edge.c.top = 0;
-	box->content_edge.c.right = 0;
-	box->content_edge.c.bottom = 0;
 }
 
 LOCAL VOID cssrendering_basebox_setuserdata(cssrendering_basebox_t *box, VP data)
@@ -66,6 +62,10 @@ LOCAL VOID cssrendering_basebox_initialize(cssrendering_basebox_t *box, CSSRENDE
 {
 	treebase_node_initialize(&box->base);
 	box->type = type;
+	box->content_edge.c.left = 0;
+	box->content_edge.c.top = 0;
+	box->content_edge.c.right = 0;
+	box->content_edge.c.bottom = 0;
 	box->userdata = NULL;
 }
 

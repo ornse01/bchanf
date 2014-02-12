@@ -302,9 +302,105 @@ LOCAL UNITTEST_RESULT test_cssrendering_hittraversal_1()
 	return ret;
 }
 
+LOCAL UNITTEST_RESULT test_cssrendering_blockbox_appendchild1()
+{
+	cssrendering_blockbox_t root;
+	cssrendering_anonymousbox_t anon;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+
+	cssrendering_blockbox_initialize(&root);
+	cssrendering_anonymousbox_initialize(&anon);
+
+	root.base.content_edge = (cssmetric_rectangle_t){{0, 0, 100, 100}};
+	cssrendering_blockbox_appendanonymouschild(&root, &anon);
+
+	if (root.base.content_edge.c.left != 0) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	if (root.base.content_edge.c.top != 0) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	if (root.base.content_edge.c.right != 100) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	if (root.base.content_edge.c.bottom != 100) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	cssrendering_anonymousbox_finalize(&anon);
+	cssrendering_blockbox_finalize(&root);
+
+	return result;
+}
+
+LOCAL UNITTEST_RESULT test_cssrendering_blockbox_appendchild2()
+{
+	cssrendering_blockbox_t root;
+	cssrendering_blockbox_t child;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+
+	cssrendering_blockbox_initialize(&root);
+	cssrendering_blockbox_initialize(&child);
+
+	root.base.content_edge = (cssmetric_rectangle_t){{0, 0, 100, 100}};
+	cssrendering_blockbox_appendblockchild(&root, &child);
+
+	if (root.base.content_edge.c.left != 0) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	if (root.base.content_edge.c.top != 0) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	if (root.base.content_edge.c.right != 100) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	if (root.base.content_edge.c.bottom != 100) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	cssrendering_blockbox_finalize(&child);
+	cssrendering_blockbox_finalize(&root);
+
+	return result;
+}
+
+LOCAL UNITTEST_RESULT test_cssrendering_anonymousbox_appendchild1()
+{
+	cssrendering_anonymousbox_t anon;
+	cssrendering_linebox_t line;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+
+	cssrendering_anonymousbox_initialize(&anon);
+	cssrendering_linebox_initialize(&line);
+
+	anon.base.content_edge = (cssmetric_rectangle_t){{0, 0, 100, 100}};
+	cssrendering_anonymousbox_appendchild(&anon, &line);
+
+	if (anon.base.content_edge.c.left != 0) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	if (anon.base.content_edge.c.top != 0) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	if (anon.base.content_edge.c.right != 100) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	if (anon.base.content_edge.c.bottom != 100) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	cssrendering_linebox_finalize(&line);
+	cssrendering_anonymousbox_finalize(&anon);
+
+	return result;
+}
+
 EXPORT VOID test_cssrendering_box_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_drawtraversal_1);
 	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_drawtraversal_2);
 	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_hittraversal_1);
+	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_blockbox_appendchild1);
+	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_blockbox_appendchild2);
+	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_anonymousbox_appendchild1);
 }
