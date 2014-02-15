@@ -99,6 +99,7 @@ typedef struct cssrendering_drawtraversal_t_ cssrendering_drawtraversal_t;
 struct cssrendering_drawtraversal_result_ {
 	enum {
 		CSSRENDERING_DRAWTRAVERSAL_RESULTTYPE_TEXT,
+		CSSRENDERING_DRAWTRAVERSAL_RESULTTYPE_BLOCK,
 	} type;
 	union {
 		struct {
@@ -106,6 +107,10 @@ struct cssrendering_drawtraversal_result_ {
 			cssrendering_textfragment_t *fragment;
 			VP nodedata;
 		} text;
+		struct {
+			cssmetric_rectangle_t content_edge;
+			VP nodedata;
+		} block;
 	} data;
 };
 typedef struct cssrendering_drawtraversal_result_ cssrendering_drawtraversal_result;

@@ -1,7 +1,7 @@
 /*
  * cssrendering_box.c
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -160,9 +160,28 @@ EXPORT Bool cssrendering_drawtraversal_next(cssrendering_drawtraversal_t *traver
 			break;
 		}
 		if (dir == TREEBASE_TRAVERSAL_DIRECTION_DOWN) {
-			if ((box->base.type == CSSRENDEREING_BOX_TYPE_BLOCK)||(box->base.type == CSSRENDEREING_BOX_TYPE_ANONYMOUS)) {
+			if (box->base.type == CSSRENDEREING_BOX_TYPE_ANONYMOUS) {
 				traversal->origin.x += box->base.content_edge.c.left;
 				traversal->origin.y += box->base.content_edge.c.top;
+			} else if (box->base.type == CSSRENDEREING_BOX_TYPE_BLOCK) {
+				r = box->base.content_edge;
+				r.c.left += traversal->origin.x;
+				r.c.top += traversal->origin.y;
+				r.c.right += traversal->origin.x;
+				r.c.bottom += traversal->origin.y;
+
+				traversal->origin.x += box->base.content_edge.c.left;
+				traversal->origin.y += box->base.content_edge.c.top;
+
+				ok = cssmetric_rectangle_andrect(r, traversal->draw);
+				if (ok == False) {
+					continue;
+				}
+
+				result->type = CSSRENDERING_DRAWTRAVERSAL_RESULTTYPE_BLOCK;
+				result->data.block.content_edge = r;
+				result->data.block.nodedata = box->base.userdata;
+				break;
 			} else if (box->base.type == CSSRENDEREING_BOX_TYPE_LINE) {
 				r = box->base.content_edge;
 				r.c.left += traversal->origin.x;

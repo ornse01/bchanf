@@ -114,6 +114,7 @@ LOCAL UNITTEST_RESULT test_cssrendering_drawtraversal_1()
 
 	return ret;
 }
+
 LOCAL UNITTEST_RESULT test_cssrendering_drawtraversal_2()
 {
 	cssrendering_blockbox_t root, block[5];
@@ -214,6 +215,79 @@ LOCAL UNITTEST_RESULT test_cssrendering_drawtraversal_2()
 	cssrendering_anonymousbox_finalize(anon+2);
 	cssrendering_anonymousbox_finalize(anon+1);
 	cssrendering_anonymousbox_finalize(anon+0);
+	cssrendering_blockbox_finalize(block+4);
+	cssrendering_blockbox_finalize(block+3);
+	cssrendering_blockbox_finalize(block+2);
+	cssrendering_blockbox_finalize(block+1);
+	cssrendering_blockbox_finalize(block+0);
+	cssrendering_blockbox_finalize(&root);
+
+	return ret;
+}
+
+LOCAL UNITTEST_RESULT test_cssrendering_drawtraversal_3()
+{
+	cssrendering_blockbox_t root, block[5];
+	cssrendering_drawtraversal_t traversal;
+	cssrendering_drawtraversal_result result;
+	cssmetric_rectangle_t draw;
+	Bool cont, block_called[5] = {False, False, False, False, False};
+	UNITTEST_RESULT ret = UNITTEST_RESULT_PASS;
+
+	cssrendering_blockbox_initialize(&root);
+	cssrendering_blockbox_initialize(block+0);
+	cssrendering_blockbox_initialize(block+1);
+	cssrendering_blockbox_initialize(block+2);
+	cssrendering_blockbox_initialize(block+3);
+	cssrendering_blockbox_initialize(block+4);
+
+	cssrendering_blockbox_appendblockchild(&root, block+0);
+	cssrendering_blockbox_appendblockchild(&root, block+1);
+	cssrendering_blockbox_appendblockchild(&root, block+2);
+	cssrendering_blockbox_appendblockchild(&root, block+3);
+	cssrendering_blockbox_appendblockchild(&root, block+4);
+
+	block[0].base.content_edge = (cssmetric_rectangle_t){{0, 0, 100, 100}};
+	cssrendering_blockbox_setuserdata(block+0, block+0);
+	block[1].base.content_edge = (cssmetric_rectangle_t){{0, 100, 100, 200}};
+	cssrendering_blockbox_setuserdata(block+1, block+1);
+	block[2].base.content_edge = (cssmetric_rectangle_t){{0, 200, 100, 300}};
+	cssrendering_blockbox_setuserdata(block+2, block+2);
+	block[3].base.content_edge = (cssmetric_rectangle_t){{0, 300, 100, 400}};
+	cssrendering_blockbox_setuserdata(block+3, block+3);
+	block[4].base.content_edge = (cssmetric_rectangle_t){{0, 400, 100, 500}};
+	cssrendering_blockbox_setuserdata(block+4, block+4);
+
+	draw = (cssmetric_rectangle_t){{25, 150, 75, 350}};
+	cssrendering_drawtraversal_initialize(&traversal, &root, draw);
+	for (;;) {
+		cont = cssrendering_drawtraversal_next(&traversal, &result);
+		if (cont == False) {
+			break;
+		}
+		if (result.type != CSSRENDERING_DRAWTRAVERSAL_RESULTTYPE_BLOCK) {
+			continue;
+		}
+		if (result.data.block.nodedata == (block+0)) {
+			block_called[0] = True;
+		} else if (result.data.block.nodedata == (block+1)) {
+			block_called[1] = True;
+		} else if (result.data.block.nodedata == (block+2)) {
+			block_called[2] = True;
+		} else if (result.data.block.nodedata == (block+3)) {
+			block_called[3] = True;
+		} else if (result.data.block.nodedata == (block+4)) {
+			block_called[4] = True;
+		}
+	}
+	cssrendering_drawtraversal_finalize(&traversal);
+
+	if ((block_called[0] == False)&&(block_called[1] != False)&&(block_called[2] != False)&&(block_called[3] != False)&&(block_called[4] == False)) {
+		ret = UNITTEST_RESULT_PASS;
+	} else {
+		ret = UNITTEST_RESULT_FAIL;
+	}
+
 	cssrendering_blockbox_finalize(block+4);
 	cssrendering_blockbox_finalize(block+3);
 	cssrendering_blockbox_finalize(block+2);
@@ -399,6 +473,7 @@ EXPORT VOID test_cssrendering_box_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_drawtraversal_1);
 	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_drawtraversal_2);
+	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_drawtraversal_3);
 	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_hittraversal_1);
 	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_blockbox_appendchild1);
 	UNITTEST_DRIVER_REGIST(driver, test_cssrendering_blockbox_appendchild2);
