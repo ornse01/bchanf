@@ -1,7 +1,7 @@
 /*
  * http_connector.c
  *
- * Copyright (c) 2012 project bchan
+ * Copyright (c) 2012-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -655,6 +655,9 @@ LOCAL W http_connector_rcv_message_body_contentdecode(http_connector_t *connecto
 			return err;
 		}
 		entry->rcv_reader.body.content_result_consumed = 0;
+		if (entry->rcv_reader.body.content_result_len == 0) {
+			return 0;
+		}
 	}
 	result = entry->rcv_reader.body.content_result + entry->rcv_reader.body.content_result_consumed;
 	entry->rcv_reader.body.content_result_consumed++;
