@@ -968,9 +968,11 @@ EXPORT W http_connector_sendheader(http_connector_t *connector, ID endpoint, UB 
 		entry->snd_state = SEND_HEADER_USER;
 	}
 
+	err = http_transport_write(connector->transport, entry->transport, p, len);
+
 	HTTP_CONNECTOR_LEAVE_CRITICAL_SECTION(connector);
 
-	return 0;
+	return err;
 }
 
 EXPORT W http_connector_sendheaderend(http_connector_t *connector, ID endpoint)
