@@ -61,11 +61,13 @@ struct http_reqentry_t_ {
 	enum {
 		NON_EXISTENT,
 		WAITING_TRANSPORT,
+		DETECTING_ERROR,
 		SENDING_REQUEST,
 		WAITING_RESPONSE,
 		RECEIVING_RESPONSE,
 		ABORTED_BY_TRANSPORT,
-		COMPLETED
+		COMPLETED,
+		FAILED
 	} status;
 	enum {
 		SEND_REQUEST_LINE,
@@ -377,8 +379,10 @@ EXPORT VOID http_connector_deleteendpoint(http_connector_t *connector, ID endpoi
 		break;
 	case NON_EXISTENT:
 	case WAITING_TRANSPORT:
+	case DETECTING_ERROR:
 	case ABORTED_BY_TRANSPORT:
 	case COMPLETED:
+	case FAILED:
 	}
 
 	http_reqdict_free(connector->dict, endpoint);
@@ -405,6 +409,8 @@ LOCAL W http_connector_searchwaiting(http_connector_t *connector)
 			if ((endpoint & 0xFFFF0000) == ER_NOEXS) {
 				endpoint = http_transport_prepairendpoint(connector->transport, &entry->addr);
 				if (endpoint < 0) {
+					entry->status = DETECTING_ERROR;
+					ret++;
 					continue;
 				}
 			} else if (endpoint < 0) {
@@ -436,6 +442,9 @@ LOCAL Bool http_connector_isexistwaiting(http_connector_t *connector)
 			break;
 		}
 		if (entry->status == WAITING_TRANSPORT) {
+			ret = True;
+			break;
+		} else if (entry->status == DETECTING_ERROR) {
 			ret = True;
 			break;
 		} else if (entry->status == SENDING_REQUEST) {
@@ -812,6 +821,13 @@ EXPORT Bool http_connector_searcheventtarget(http_connector_t *connector, http_c
 			found = True;
 			break;
 		}
+		if (entry->status == DETECTING_ERROR) {
+			event->type = HTTP_CONNECTOR_EVENTTYPE_ERROR;
+			event->endpoint = entry->base.id;
+			entry->status = FAILED;
+			found = True;
+			break;
+		}
 		if (entry->status == RECEIVING_RESPONSE) {
 			err = http_connector_handleevent_receiving_response(connector, entry, event);
 			if ((err < 0)&&((err & 0xFFFF0000) != EX_WOULDBLOCK)) {
@@ -819,6 +835,7 @@ EXPORT Bool http_connector_searcheventtarget(http_connector_t *connector, http_c
 				event->endpoint = entry->base.id;
 				entry->status = ABORTED_BY_TRANSPORT;
 				http_reqentry_detachendpoint(entry, connector->transport, True);
+				found = True;
 				break;
 			}
 			found = True;
