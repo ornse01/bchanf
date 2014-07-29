@@ -28,10 +28,12 @@
 
 #include	<basic.h>
 #include	<bstdio.h>
+#include	<bstdlib.h>
 
 #include    <coll/bytearray.h>
 #include    <coll/wordarray.h>
 #include    "tadlexer_le.h"
+#include    "tadlangcode.h"
 
 #ifdef BCHAN_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -281,6 +283,14 @@ EXPORT W tadfragment_popback(tadfragment_t *fragment)
 	return 0;
 }
 
+EXPORT VOID tadfragment_truncate(tadfragment_t *fragment, W size)
+{
+	W curr_size = tadfragment_getsegmentlength(fragment);
+	for (; curr_size > size; curr_size--) {
+		tadfragment_popback(fragment);
+	}
+}
+
 EXPORT W tadfragment_initialize(tadfragment_t *fragment)
 {
 	W err;
@@ -444,6 +454,26 @@ EXPORT W tadfragment_cursor_insert(tadfragment_cursor_t *cursor, UB *data, W len
 		wordarray_cursor_setW(&cursor->base, val + len);
 		wordarray_cursor_move(&cursor->base, 1);
 	}
+
+	return err;
+}
+
+/* TODO: more efficient */
+EXPORT W tadfragment_cursor_insertlang(tadfragment_cursor_t *cursor, tadlangcode *lang)
+{
+	TC *data;
+	W err;
+	W len = tadlangcodetoTC(lang, NULL, -1);
+
+	data = (TC*)malloc(sizeof(TC) * len);
+	if (data == NULL) {
+		return -1; /* TODO */
+	}
+	tadlangcodetoTC(lang, data, len);
+
+	err = tadfragment_cursor_insert(cursor, (UB *)data, sizeof(TC)*len);
+
+	free(data);
 
 	return err;
 }

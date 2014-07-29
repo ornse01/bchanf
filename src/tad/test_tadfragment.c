@@ -1,7 +1,7 @@
 /*
  * test_taditerator.c
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -32,6 +32,8 @@
 #include	<bstdio.h>
 #include	<bstdlib.h>
 #include	<tcode.h>
+
+#include "tadlangcode.h"
 
 #include    <unittest_driver.h>
 
@@ -297,6 +299,144 @@ LOCAL UNITTEST_RESULT test_tadfragment_popback_8()
 typedef struct {
 	TC *original;
 	W original_len;
+	W truncate_size;
+	TC *expected;
+	W expected_len;
+	W expected_segment_num;
+} test_tadfragment_truncate_t;
+
+LOCAL UNITTEST_RESULT test_tadfragment_truncate_common(test_tadfragment_truncate_t *testdata)
+{
+	tadfragment_t fragment;
+	W len, err;
+	UB *buf;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+
+	err = tadfragment_initialize(&fragment);
+	if (err < 0) {
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	err = tadfragment_pushback(&fragment, (UB*)testdata->original, testdata->original_len);
+	if (err < 0) {
+		printf("tadfragment_pushback error\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	tadfragment_truncate(&fragment, testdata->truncate_size);
+
+	len = tadfragment_getsegmentlength(&fragment);
+	if (len != testdata->expected_segment_num) {
+		printf("tadfragment_getsegmentlength fail: expected = %d, result = %d\n", testdata->expected_segment_num, len);
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	len = tadfragment_getbufferlength(&fragment);
+	if (len != testdata->expected_len) {
+		printf("tadfragment_getbufferlength fail: expected = %d, result = %d\n", testdata->expected_len, len);
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	buf = tadfragment_getbuffer(&fragment);
+	if (memcmp(buf, testdata->expected, testdata->expected_len) != 0) {
+		printf("tadfragment_getbuffer fail\n");
+		{
+			W i;
+			for (i = 0; i < testdata->expected_len; i++) {
+				printf("%02x, %02x\n", buf[i], ((UB*)testdata->expected)[i]);
+			}
+		}
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	tadfragment_finalize(&fragment);
+
+	return result;
+}
+
+LOCAL UNITTEST_RESULT test_tadfragment_truncate_1()
+{
+	TC original[] = {TK_A, TK_B, TK_C};
+	W original_len = sizeof(original);
+	W truncate_size = 0;
+	TC expected[] = {};
+	W expected_len = sizeof(expected);
+	W expected_segment_num = 0;
+	test_tadfragment_truncate_t testdata = {
+		original, original_len,
+		truncate_size,
+		expected, expected_len, expected_segment_num
+	};
+	return test_tadfragment_truncate_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_tadfragment_truncate_2()
+{
+	TC original[] = {TK_A, TK_B, TK_C};
+	W original_len = sizeof(original);
+	W truncate_size = 1;
+	TC expected[] = {TK_A};
+	W expected_len = sizeof(expected);
+	W expected_segment_num = 1;
+	test_tadfragment_truncate_t testdata = {
+		original, original_len,
+		truncate_size,
+		expected, expected_len, expected_segment_num
+	};
+	return test_tadfragment_truncate_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_tadfragment_truncate_3()
+{
+	TC original[] = {TK_A, TK_B, TK_C};
+	W original_len = sizeof(original);
+	W truncate_size = 2;
+	TC expected[] = {TK_A, TK_B};
+	W expected_len = sizeof(expected);
+	W expected_segment_num = 2;
+	test_tadfragment_truncate_t testdata = {
+		original, original_len,
+		truncate_size,
+		expected, expected_len, expected_segment_num
+	};
+	return test_tadfragment_truncate_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_tadfragment_truncate_4()
+{
+	TC original[] = {TK_A, TK_B, TK_C};
+	W original_len = sizeof(original);
+	W truncate_size = 3;
+	TC expected[] = {TK_A, TK_B, TK_C};
+	W expected_len = sizeof(expected);
+	W expected_segment_num = 3;
+	test_tadfragment_truncate_t testdata = {
+		original, original_len,
+		truncate_size,
+		expected, expected_len, expected_segment_num
+	};
+	return test_tadfragment_truncate_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_tadfragment_truncate_5()
+{
+	TC original[] = {TK_A, TK_B, TK_C};
+	W original_len = sizeof(original);
+	W truncate_size = 4;
+	TC expected[] = {TK_A, TK_B, TK_C};
+	W expected_len = sizeof(expected);
+	W expected_segment_num = 3;
+	test_tadfragment_truncate_t testdata = {
+		original, original_len,
+		truncate_size,
+		expected, expected_len, expected_segment_num
+	};
+	return test_tadfragment_truncate_common(&testdata);
+}
+
+typedef struct {
+	TC *original;
+	W original_len;
 	TC *insert;
 	W insert_len;
 	W insert_pos;
@@ -438,6 +578,165 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_insert_4()
 		expected, expected_len, expected_segment_num
 	};
 	return test_tadfragment_cursor_insert_common(&testdata);
+}
+
+typedef struct {
+	TC *original;
+	W original_len;
+	tadlangcode *insert;
+	W insert_pos;
+	TC *expected;
+	W expected_len;
+	W expected_segment_num;
+} test_tadfragment_cursor_insertlang_t;
+
+LOCAL UNITTEST_RESULT test_tadfragment_cursor_insertlang_common(test_tadfragment_cursor_insertlang_t *testdata)
+{
+	tadfragment_t fragment;
+	tadfragment_cursor_t cursor;
+	W len, err;
+	UB *buf;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+
+	err = tadfragment_initialize(&fragment);
+	if (err < 0) {
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	err = tadfragment_pushback(&fragment, (UB*)testdata->original, testdata->original_len);
+	if (err < 0) {
+		printf("tadfragment_pushback error\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	tadfragment_cursor_initialize(&cursor, &fragment);
+
+	err = tadfragment_cursor_move(&cursor, testdata->insert_pos);
+	if (err < 0) {
+		printf("tadfragment_cursor_move error\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+	err = tadfragment_cursor_insertlang(&cursor, testdata->insert);
+	if (err < 0) {
+		printf("tadfragment_cursor_insertlang error\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	tadfragment_cursor_finalize(&cursor);
+
+	len = tadfragment_getsegmentlength(&fragment);
+	if (len != testdata->expected_segment_num) {
+		printf("tadfragment_getsegmentlength fail: expected = %d, result = %d\n", testdata->expected_segment_num, len);
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	len = tadfragment_getbufferlength(&fragment);
+	if (len != testdata->expected_len) {
+		printf("tadfragment_getbufferlength fail: expected = %d, result = %d\n", testdata->expected_len, len);
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	buf = tadfragment_getbuffer(&fragment);
+	if (memcmp(buf, testdata->expected, testdata->expected_len) != 0) {
+		printf("tadfragment_getbuffer fail\n");
+		{
+			W i;
+			for (i = 0; i < testdata->expected_len; i++) {
+				printf("%02x, %02x\n", buf[i], ((UB*)testdata->expected)[i]);
+			}
+		}
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	tadfragment_finalize(&fragment);
+
+	return result;
+}
+
+LOCAL UNITTEST_RESULT test_tadfragment_cursor_insertlang_1()
+{
+	TC original[] = {TK_A, TK_B, TK_C};
+	W original_len = sizeof(original);
+	tadlangcode insert = {0, 0x21};
+	W insert_pos = 0;
+	TC expected[] = {0xFE21, TK_A, TK_B, TK_C};
+	W expected_len = sizeof(expected);
+	W expected_segment_num = 4;
+	test_tadfragment_cursor_insertlang_t testdata = {
+		original, original_len,
+		&insert, insert_pos,
+		expected, expected_len, expected_segment_num
+	};
+	return test_tadfragment_cursor_insertlang_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_tadfragment_cursor_insertlang_2()
+{
+	TC original[] = {TK_A, TK_B, TK_C};
+	W original_len = sizeof(original);
+	tadlangcode insert = {0, 0x21};
+	W insert_pos = 1;
+	TC expected[] = {TK_A, 0xFE21, TK_B, TK_C};
+	W expected_len = sizeof(expected);
+	W expected_segment_num = 4;
+	test_tadfragment_cursor_insertlang_t testdata = {
+		original, original_len,
+		&insert, insert_pos,
+		expected, expected_len, expected_segment_num
+	};
+	return test_tadfragment_cursor_insertlang_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_tadfragment_cursor_insertlang_3()
+{
+	TC original[] = {TK_A, TK_B, TK_C};
+	W original_len = sizeof(original);
+	tadlangcode insert = {0, 0x21};
+	W insert_pos = 2;
+	TC expected[] = {TK_A, TK_B, 0xFE21, TK_C};
+	W expected_len = sizeof(expected);
+	W expected_segment_num = 4;
+	test_tadfragment_cursor_insertlang_t testdata = {
+		original, original_len,
+		&insert, insert_pos,
+		expected, expected_len, expected_segment_num
+	};
+	return test_tadfragment_cursor_insertlang_common(&testdata);
+}
+
+
+LOCAL UNITTEST_RESULT test_tadfragment_cursor_insertlang_4()
+{
+	TC original[] = {TK_A, TK_B, TK_C};
+	W original_len = sizeof(original);
+	tadlangcode insert = {0, 0x21};
+	W insert_pos = 3;
+	TC expected[] = {TK_A, TK_B, TK_C, 0xFE21};
+	W expected_len = sizeof(expected);
+	W expected_segment_num = 4;
+	test_tadfragment_cursor_insertlang_t testdata = {
+		original, original_len,
+		&insert, insert_pos,
+		expected, expected_len, expected_segment_num
+	};
+	return test_tadfragment_cursor_insertlang_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_tadfragment_cursor_insertlang_5()
+{
+	TC original[] = {TK_A, TK_B, TK_C};
+	W original_len = sizeof(original);
+	tadlangcode insert = {2, 0x21};
+	W insert_pos = 1;
+	TC expected[] = {TK_A, 0xFEFE, 0xFE21, TK_B, TK_C};
+	W expected_len = sizeof(expected);
+	W expected_segment_num = 4;
+	test_tadfragment_cursor_insertlang_t testdata = {
+		original, original_len,
+		&insert, insert_pos,
+		expected, expected_len, expected_segment_num
+	};
+	return test_tadfragment_cursor_insertlang_common(&testdata);
 }
 
 LOCAL Bool test_tadfragment_common_verify_segment(tadfragment_cursor_segment *segment, tadfragment_cursor_segment *expected)
@@ -897,10 +1196,20 @@ EXPORT VOID test_tadfragment_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_popback_6);
 	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_popback_7);
 	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_popback_8);
+	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_truncate_1);
+	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_truncate_2);
+	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_truncate_3);
+	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_truncate_4);
+	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_truncate_5);
 	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_insert_1);
 	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_insert_2);
 	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_insert_3);
 	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_insert_4);
+	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_insertlang_1);
+	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_insertlang_2);
+	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_insertlang_3);
+	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_insertlang_4);
+	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_insertlang_5);
 	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_getdata_1);
 	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_getdata_2);
 	UNITTEST_DRIVER_REGIST(driver, test_tadfragment_cursor_getdata_3);

@@ -1,7 +1,7 @@
 /*
  * tadfragment.h
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -34,6 +34,7 @@
 
 #include    <coll/bytearray.h>
 #include    <coll/wordarray.h>
+#include    "tadlangcode.h"
 
 #ifndef __TADFRAGMENT_H__
 #define __TADFRAGMENT_H__
@@ -75,12 +76,14 @@ IMPORT W tadfragment_getsegmentlength(tadfragment_t *fragment);
 IMPORT W tadfragment_getbufferlength(tadfragment_t *fragment);
 IMPORT W tadfragment_pushback(tadfragment_t *fragment, UB *data, W len);
 IMPORT W tadfragment_popback(tadfragment_t *fragment);
+IMPORT VOID tadfragment_truncate(tadfragment_t *fragment, W size);
 
 IMPORT VOID tadfragment_cursor_initialize(tadfragment_cursor_t *cursor, tadfragment_t *fragment);
 IMPORT VOID tadfragment_cursor_finalize(tadfragment_cursor_t *cursor);
 IMPORT W tadfragment_cursor_move(tadfragment_cursor_t *cursor, W diff);
 IMPORT W tadfragment_cursor_erase(tadfragment_cursor_t *cursor, W len);
 IMPORT W tadfragment_cursor_insert(tadfragment_cursor_t *cursor, UB *data, W len);
+IMPORT W tadfragment_cursor_insertlang(tadfragment_cursor_t *cursor, tadlangcode *lang);
 IMPORT Bool tadfragment_cursor_isend(tadfragment_cursor_t *cursor);
 IMPORT W tadfragment_cursor_getdata(tadfragment_cursor_t *cursor, tadfragment_cursor_segment *p);
 
