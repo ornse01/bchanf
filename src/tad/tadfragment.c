@@ -1,7 +1,7 @@
 /*
  * tadfragment.c
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -404,7 +404,6 @@ EXPORT W tadfragment_cursor_insert(tadfragment_cursor_t *cursor, UB *data, W len
 	if (isend == False) {
 		err = wordarray_cursor_getW(&cursor->base, &offset);
 		if (err < 0) {
-			printf("BBB\n");
 			return err;
 		}
 	} else {
