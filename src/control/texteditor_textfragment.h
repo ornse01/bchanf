@@ -1,7 +1,7 @@
 /*
  * texteditor_textfragment.h
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -27,6 +27,8 @@
 #include    <basic.h>
 
 #include	<tad/tadfragment.h>
+#include	"texteditor_characterstate.h"
+#include	"texteditor_insertfilter.h"
 
 #ifndef __TEXTEDITOR_TEXTFRAGMENT_H__
 #define __TEXTEDITOR_TEXTFRAGMENT_H__
@@ -35,10 +37,37 @@
 /* Detail name: textfragment */
 struct texteditor_textfragment_t_ {
 	tadfragment_t base;
+	W *pos;
+	W pos_len;
 };
 typedef struct texteditor_textfragment_t_ texteditor_textfragment_t;
 
 IMPORT W texteditor_textfragment_initialize(texteditor_textfragment_t *fragment);
 IMPORT VOID texteditor_textfragment_finalize(texteditor_textfragment_t *fragment);
+IMPORT UB* texteditor_textfragment_getbuffer(texteditor_textfragment_t *fragment);
+IMPORT W texteditor_textfragment_getsegmentlength(texteditor_textfragment_t *fragment);
+IMPORT W texteditor_textfragment_getbufferlength(texteditor_textfragment_t *fragment);
+
+/* Functionality name: texteditor */
+/* Detail name: insertcontext */
+struct texteditor_insertcontext_t_ {
+	texteditor_textfragment_t *target;
+	tadfragment_cursor_t target_cursor;
+	struct {
+		tadfragment_t fragment;
+		tadfragment_cursor_t cursor;
+	} dest;
+	texteditor_characterstate_t state;
+	struct {
+		tadlangcode lang;
+		Bool is_hankaku;
+	} pos_state;
+	GID gid;
+};
+typedef struct texteditor_insertcontext_t_ texteditor_insertcontext_t;
+
+IMPORT W texteditor_insertcontext_initialize(texteditor_insertcontext_t *ctx, texteditor_textfragment_t *target, GID gid, W pos);
+IMPORT W texteditor_insertcontext_finalize(texteditor_insertcontext_t *ctx);
+IMPORT W texteditor_insertcontext_insert(texteditor_insertcontext_t *ctx, UB *data, W len);
 
 #endif
