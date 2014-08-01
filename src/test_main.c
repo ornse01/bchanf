@@ -38,6 +38,7 @@
 #include    <test_coding.h>
 #include    <test_tad.h>
 #include    <test_css.h>
+#include    <test_control.h>
 
 
 EXPORT	W	MAIN(MESSAGE *msg)
@@ -75,9 +76,14 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_tadlexer_le_main(driver);
 	test_traydata_iterator_main(driver);
 	test_tadfragment_main(driver);
+	test_tadlangcode_main(driver);
 
 	test_cssrendering_box_main(driver);
 	test_cssrendering_coordinate_main(driver);
+
+	test_texteditor_characterstate_main(driver);
+	test_texteditor_insertfilter_main(driver);
+	test_texteditor_textfragment_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);
