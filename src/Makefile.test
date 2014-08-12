@@ -88,7 +88,8 @@ SRC_TAD =	taditerator.c \
 		tadlexer_le.c \
 		traydata_iterator.c \
 		tadfragment.c \
-		tadlangcode.c
+		tadlangcode.c \
+		taddecoder.c
 
 SRC_TAD_TEST = 	test_taditerator.c \
 		test_tadstack.c \
@@ -96,7 +97,8 @@ SRC_TAD_TEST = 	test_taditerator.c \
 		test_tadlexer_le.c \
 		test_traydata_iterator.c \
 		test_tadfragment.c \
-		test_tadlangcode.c
+		test_tadlangcode.c \
+		test_taddecoder.c
 
 SRC_CSS =	cssrendering_box.c \
 		cssrendering_coordinate.c

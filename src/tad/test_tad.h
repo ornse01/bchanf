@@ -1,7 +1,7 @@
 /*
  * test_tad.h
  *
- * Copyright (c) 2012-2013 project bchan
+ * Copyright (c) 2012-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -37,5 +37,6 @@ IMPORT VOID test_tadlexer_le_main(unittest_driver_t *driver);
 IMPORT VOID test_traydata_iterator_main(unittest_driver_t *driver);
 IMPORT VOID test_tadfragment_main(unittest_driver_t *driver);
 IMPORT VOID test_tadlangcode_main(unittest_driver_t *driver);
+IMPORT VOID test_taddecoder_main(unittest_driver_t *driver);
 
 #endif

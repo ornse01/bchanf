@@ -1,7 +1,7 @@
 /*
  * test_main.c
  *
- * Copyright (c) 2012-2013 project bchan
+ * Copyright (c) 2012-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -77,6 +77,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_traydata_iterator_main(driver);
 	test_tadfragment_main(driver);
 	test_tadlangcode_main(driver);
+	test_taddecoder_main(driver);
 
 	test_cssrendering_box_main(driver);
 	test_cssrendering_coordinate_main(driver);
