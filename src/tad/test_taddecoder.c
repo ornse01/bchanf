@@ -34,8 +34,10 @@
 #include	<bstring.h>
 #include	<btron/dp.h>
 #include	<tad.h>
+#include	<tcode.h>
 
 #include	"tadsegment.h"
+#include	"tadlangcode.h"
 
 #include    <unittest_driver.h>
 
@@ -99,7 +101,162 @@ LOCAL UNITTEST_RESULT test_taddecoder_1()
 	return UNITTEST_RESULT_PASS;
 }
 
+typedef struct {
+	TC *data;
+	W len;
+} test_taddecoder_expected_t;
+
+typedef struct {
+	TC *src;
+	W src_len;
+	test_taddecoder_expected_t *expected;
+	W expected_len;
+} test_taddecoder_t;
+
+LOCAL UNITTEST_RESULT test_taddecoder_common(test_taddecoder_t *testdata)
+{
+	taddecoder_t iter;
+	tadsegment result;
+	Bool cont, ok;
+	test_taddecoder_expected_t *expected;
+	UNITTEST_RESULT ret = UNITTEST_RESULT_PASS;
+	W i = 0;
+
+	taddecoder_initialize(&iter, testdata->src, testdata->src_len);
+
+	for (i = 0;; i++) {
+		cont = taddecoder_next(&iter, &result);
+		if (cont == False) {
+			break;
+		}
+
+		if (i >= testdata->expected_len) {
+			continue;
+		}
+
+		expected = testdata->expected + i;
+
+		switch (result.type) {
+		case TADSEGMENT_TYPE_VARIABLE:
+			if (result.value.variable.rawlen != expected->len * sizeof(TC)) {
+				ret = UNITTEST_RESULT_FAIL;
+				printf("VARIABLE length failure: expected = %d, result = %d\n", expected->len * sizeof(TC), result.value.variable.rawlen);
+			} else if (memcmp(result.value.variable.raw, expected->data, result.value.variable.rawlen) != 0) {
+				ret = UNITTEST_RESULT_FAIL;
+				printf("VARIABLE data failure\n");
+				{
+					W j;
+					for (j = 0; j < expected->len; j++) {
+						printf("%02x, %02x\n", result.value.variable.raw[j], ((UB*)expected->data)[j]);
+					}
+				}
+			}
+			break;
+		case TADSEGMENT_TYPE_CHARACTOR:
+			if (expected->len != 1) {
+				ret = UNITTEST_RESULT_FAIL;
+				printf("CHARACTOR length failure: expected = %d, result = %d\n", sizeof(TC), expected->len * sizeof(TC));
+			} else if (memcmp(&result.value.ch, expected->data, sizeof(TC)) != 0) {
+				printf("CHARACTOR data failure: expected = %04x, result = %04x\n", result.value.ch, expected->data[0]);
+			}
+			break;
+		case TADSEGMENT_TYPE_LANGCODE:
+			ok = tadlangcodecmpTC(expected->data, expected->len, &result.value.lang);
+			if (ok == False) {
+				ret = UNITTEST_RESULT_FAIL;
+				printf("LANGCODE failure\n");
+			}
+			break;
+		default:
+			ret = UNITTEST_RESULT_FAIL;
+			printf("invalid tadsegment->type = %d\n", result.type);
+			break;
+		}
+	}
+
+	taddecoder_finalize(&iter);
+
+	if (i != testdata->expected_len) {
+		printf("iteration coun fail: expected = %d, result = %d\n", testdata->expected_len, i);
+		ret = UNITTEST_RESULT_FAIL;
+	}
+
+	return ret;
+}
+
+LOCAL UNITTEST_RESULT test_taddecoder_2()
+{
+	TC src[] = (TC[]){TK_A, TK_B, TK_C};
+	W src_len = sizeof(src) / sizeof(TC);
+	test_taddecoder_expected_t expected[] = {
+		{ (TC[]){TK_A}, 1 },
+		{ (TC[]){TK_B}, 1 },
+		{ (TC[]){TK_C}, 1 },
+	};
+	W expected_len = 3;
+	test_taddecoder_t testdata = {
+		src, src_len,
+		expected, expected_len
+	};
+	return test_taddecoder_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_taddecoder_3()
+{
+	TC src[] = (TC[]){TK_A, 0xFE21, TK_C};
+	W src_len = sizeof(src) / sizeof(TC);
+	test_taddecoder_expected_t expected[] = {
+		{ (TC[]){TK_A}, 1 },
+		{ (TC[]){0xFE21}, 1 },
+		{ (TC[]){TK_C}, 1 },
+	};
+	W expected_len = 3;
+	test_taddecoder_t testdata = {
+		src, src_len,
+		expected, expected_len
+	};
+	return test_taddecoder_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_taddecoder_4()
+{
+	TC src[] = (TC[]){TK_A, 0xFEFE, 0xFE21, TK_C};
+	W src_len = sizeof(src) / sizeof(TC);
+	test_taddecoder_expected_t expected[] = {
+		{ (TC[]){TK_A}, 1 },
+		{ (TC[]){0xFEFE, 0xFE21}, 2 },
+		{ (TC[]){TK_C}, 1 },
+	};
+	W expected_len = 3;
+	test_taddecoder_t testdata = {
+		src, src_len,
+		expected, expected_len
+	};
+	return test_taddecoder_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_taddecoder_5()
+{
+	TC src[] = (TC[]){TK_A, 0xFFA2, 0x0006, 0x0300, 0x0101, 0x0102, TK_C};
+	W src_len = sizeof(src) / sizeof(TC);
+	test_taddecoder_expected_t expected[] = {
+		{ (TC[]){TK_A}, 1 },
+		{ (TC[]){0xFFA2, 0x0006, 0x0300, 0x0101, 0x0102}, 5 },
+		{ (TC[]){TK_C}, 1 },
+	};
+	W expected_len = 3;
+	test_taddecoder_t testdata = {
+		src, src_len,
+		expected, expected_len
+	};
+	return test_taddecoder_common(&testdata);
+}
+
 EXPORT VOID test_taddecoder_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_taddecoder_1);
+	UNITTEST_DRIVER_REGIST(driver, test_taddecoder_2);
+	UNITTEST_DRIVER_REGIST(driver, test_taddecoder_3);
+	UNITTEST_DRIVER_REGIST(driver, test_taddecoder_4);
+	UNITTEST_DRIVER_REGIST(driver, test_taddecoder_5);
 }
