@@ -1,5 +1,5 @@
 /*
- * tadsegment.h
+ * tadsegment.c
  *
  * Copyright (c) 2014 project bchan
  *
@@ -24,33 +24,32 @@
  *
  */
 
-#include    <basic.h>
+#include "tadsegment.h"
 
-#include	"tadlangcode.h"
+#include	<basic.h>
+#include	<btron/dp.h>
+#include    <tad.h>
 
-#ifndef __TADSEGMENT_H__
-#define __TADSEGMENT_H__
+EXPORT W tadsegment_getvariable(tadsegment *segment, UB *segid, UW *seglen, UB **segdata)
+{
+	LTADSEG *seg;
+	TC *ch;
 
-struct tadsegment_ {
-	enum TADSEGMENT_TYPE {
-		TADSEGMENT_TYPE_VARIABLE,
-		TADSEGMENT_TYPE_CHARACTOR,
-		TADSEGMENT_TYPE_LANGCODE,
-	} type;
-	union {
-		struct {
-			UB *raw;
-			W rawlen;
-			UB segid;
-			UW seglen;
-			UB *segdata;
-		} variable;
-		TC ch;
-		tadlangcode lang;
-	} value;
-};
-typedef struct tadsegment_ tadsegment;
+	if (segment->type != TADSEGMENT_TYPE_VARIABLE) {
+		return -1; /* TODO */
+	}
 
-IMPORT W tadsegment_getvariable(tadsegment *segment, UB *segid, UW *seglen, UB **segdata);
+	ch = (TC*)segment->value.variable.raw;
 
-#endif
+	*segid = *ch & 0xFF;
+	seg = (LTADSEG*)ch;
+	if (seg->len == 0xffff) {
+		*seglen = seg->llen;
+		*segdata = ((UB*)seg) + 8;
+	} else {
+		*seglen = seg->len;
+		*segdata = ((UB*)seg) + 4;
+	}
+
+	return 0;
+}
