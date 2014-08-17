@@ -59,16 +59,11 @@ EXPORT Bool taddecoder_next(taddecoder_t *iterator, tadsegment *result)
 	if ((*ch & 0xFF80) == 0xFF80) {
 		result->type = TADSEGMENT_TYPE_VARIABLE;
 		result->value.variable.raw = (UB*)ch;
-		result->value.variable.segid = *ch & 0xFF;
 		seg0 = (LTADSEG*)ch;
 		if (seg0->len == 0xffff) {
 			rawlen_by_TC = 1 + seg0->llen / 2 + 3;
-			result->value.variable.seglen = seg0->llen;
-			result->value.variable.segdata = ((UB*)seg0) + 8;
 		} else {
 			rawlen_by_TC = 1 + seg0->len / 2 + 1;
-			result->value.variable.seglen = seg0->len;
-			result->value.variable.segdata = ((UB*)seg0) + 4;
 		}
 		iterator->index += rawlen_by_TC;
 		result->value.variable.rawlen = rawlen_by_TC * sizeof(TC);

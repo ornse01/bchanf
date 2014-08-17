@@ -41,9 +41,6 @@ struct tadsegment_ {
 		struct {
 			UB *raw;
 			W rawlen;
-			UB segid;
-			UW seglen;
-			UB *segdata;
 		} variable;
 		TC ch;
 		tadlangcode lang;
