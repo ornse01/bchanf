@@ -78,6 +78,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_tadfragment_main(driver);
 	test_tadlangcode_main(driver);
 	test_taddecoder_main(driver);
+	test_tadsegment_main(driver);
 
 	test_cssrendering_box_main(driver);
 	test_cssrendering_coordinate_main(driver);

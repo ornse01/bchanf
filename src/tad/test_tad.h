@@ -38,5 +38,6 @@ IMPORT VOID test_traydata_iterator_main(unittest_driver_t *driver);
 IMPORT VOID test_tadfragment_main(unittest_driver_t *driver);
 IMPORT VOID test_tadlangcode_main(unittest_driver_t *driver);
 IMPORT VOID test_taddecoder_main(unittest_driver_t *driver);
+IMPORT VOID test_tadsegment_main(unittest_driver_t *driver);
 
 #endif
