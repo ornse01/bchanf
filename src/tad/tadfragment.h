@@ -35,6 +35,7 @@
 #include    <coll/bytearray.h>
 #include    <coll/wordarray.h>
 #include    "tadlangcode.h"
+#include    "tadsegment.h"
 
 #ifndef __TADFRAGMENT_H__
 #define __TADFRAGMENT_H__
@@ -55,20 +56,6 @@ struct tadfragment_cursor_t_ {
 };
 typedef struct tadfragment_cursor_t_ tadfragment_cursor_t;
 
-/* Functionality name: tadfragment */
-/* Detail name: cursor */
-/* Data structure identifier: segment */
-struct tadfragment_cursor_segment_ {
-	enum TADFRAGMENT_CURSOR_SEGMENTTYPE {
-		TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE,
-		TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR,
-		TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE,
-	} type;
-	UB *p;
-	W len;
-};
-typedef struct tadfragment_cursor_segment_ tadfragment_cursor_segment;
-
 IMPORT W tadfragment_initialize(tadfragment_t *fragment);
 IMPORT VOID tadfragment_finalize(tadfragment_t *fragment);
 IMPORT UB* tadfragment_getbuffer(tadfragment_t *fragment);
@@ -84,7 +71,8 @@ IMPORT W tadfragment_cursor_move(tadfragment_cursor_t *cursor, W diff);
 IMPORT W tadfragment_cursor_erase(tadfragment_cursor_t *cursor, W len);
 IMPORT W tadfragment_cursor_insert(tadfragment_cursor_t *cursor, UB *data, W len);
 IMPORT W tadfragment_cursor_insertlang(tadfragment_cursor_t *cursor, tadlangcode *lang);
+IMPORT W tadfragment_cursor_insertsegment(tadfragment_cursor_t *cursor, tadsegment *segment);
 IMPORT Bool tadfragment_cursor_isend(tadfragment_cursor_t *cursor);
-IMPORT W tadfragment_cursor_getdata(tadfragment_cursor_t *cursor, tadfragment_cursor_segment *p);
+IMPORT W tadfragment_cursor_getdata(tadfragment_cursor_t *cursor, tadsegment *p);
 
 #endif

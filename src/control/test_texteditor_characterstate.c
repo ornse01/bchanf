@@ -1,7 +1,7 @@
 /*
  * test_texteditor_characterstate.c
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -37,7 +37,7 @@
 #include    <unittest_driver.h>
 
 typedef struct {
-	tadfragment_cursor_segment input;
+	tadsegment input;
 	struct {
 		TC *lang;
 		W lang_len;
@@ -109,85 +109,58 @@ LOCAL UNITTEST_RESULT test_texteditor_characterstate_common(test_texteditor_char
 LOCAL UNITTEST_RESULT test_texteditor_characterstate_1()
 {
 	test_texteditor_characterstate_t testdata[] = {
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB[]){0x21, 0xFE}, 2},
-			{(TC[]){0xFE21}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB[]){0x22, 0xFE}, 2},
-			{(TC[]){0xFE22}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB[]){0xFE, 0xFE, 0x21, 0xFE}, 4},
-			{(TC[]){0xFEFE, 0xFE21}, 2, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB[]){0xFE, 0xFE, 0x21, 0x00}, 4},
-			{(TC[]){0xFEFE, 0x0021}, 2, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB[]){0xFE, 0xFE, 0xFE, 0xFE, 0x21, 0xFE}, 6},
-			{(TC[]){0xFEFE, 0xFEFE, 0xFE21}, 3, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB[]){0xFE, 0xFE, 0xFE, 0xFE, 0x21, 0x00}, 6},
-			{(TC[]){0xFEFE, 0xFEFE, 0x0021}, 3, False}
-		}
+		{ {TADSEGMENT_TYPE_LANGCODE}, {(TC[]){0xFE21}, 1, False} },
+		{ {TADSEGMENT_TYPE_LANGCODE}, {(TC[]){0xFE22}, 1, False} },
+		{ {TADSEGMENT_TYPE_LANGCODE}, {(TC[]){0xFEFE, 0xFE21}, 2, False} },
+		{ {TADSEGMENT_TYPE_LANGCODE}, {(TC[]){0xFEFE, 0x0021}, 2, False} },
+		{ {TADSEGMENT_TYPE_LANGCODE}, {(TC[]){0xFEFE, 0xFEFE, 0xFE21}, 3, False} },
+		{ {TADSEGMENT_TYPE_LANGCODE}, {(TC[]){0xFEFE, 0xFEFE, 0x0021}, 3, False} },
 	};
+	TCtotadlangcode((TC[]){0xFE21}, 1, &testdata[0].input.value.lang);
+	TCtotadlangcode((TC[]){0xFE22}, 1, &testdata[1].input.value.lang);
+	TCtotadlangcode((TC[]){0xFEFE, 0xFE21}, 2, &testdata[2].input.value.lang);
+	TCtotadlangcode((TC[]){0xFEFE, 0x0021}, 2, &testdata[3].input.value.lang);
+	TCtotadlangcode((TC[]){0xFEFE, 0xFEFE, 0xFE21}, 3, &testdata[4].input.value.lang);
+	TCtotadlangcode((TC[]){0xFEFE, 0xFEFE, 0x0021}, 3, &testdata[5].input.value.lang);
 	return test_texteditor_characterstate_common(testdata, 6);
 }
 
 LOCAL UNITTEST_RESULT test_texteditor_characterstate_2()
 {
 	test_texteditor_characterstate_t testdata[] = {
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB[]){0x21, 0x21}, 2},
-			{(TC[]){0xFE21}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB[]){0x22, 0xFE}, 2},
-			{(TC[]){0xFE22}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB[]){0x21, 0x21}, 2},
-			{(TC[]){0xFE22}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB[]){0x21, 0xFE}, 2},
-			{(TC[]){0xFE21}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB[]){0x21, 0x21}, 2},
-			{(TC[]){0xFE21}, 1, False}
-		},
+		{ {TADSEGMENT_TYPE_CHARACTOR}, {(TC[]){0xFE21}, 1, False} },
+		{ {TADSEGMENT_TYPE_LANGCODE}, {(TC[]){0xFE22}, 1, False} },
+		{ {TADSEGMENT_TYPE_CHARACTOR}, {(TC[]){0xFE22}, 1, False} },
+		{ {TADSEGMENT_TYPE_LANGCODE}, {(TC[]){0xFE21}, 1, False} },
+		{ {TADSEGMENT_TYPE_CHARACTOR}, {(TC[]){0xFE21}, 1, False} },
 	};
+	testdata[0].input.value.ch = 0x2121;
+	TCtotadlangcode((TC[]){0xFE22}, 1, &testdata[1].input.value.lang);
+	testdata[2].input.value.ch = 0x2121;
+	TCtotadlangcode((TC[]){0xFE21}, 1, &testdata[3].input.value.lang);
+	testdata[4].input.value.ch = 0x2121;
 	return test_texteditor_characterstate_common(testdata, 5);
 }
 
 LOCAL UNITTEST_RESULT test_texteditor_characterstate_3()
 {
 	test_texteditor_characterstate_t testdata[] = {
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00}, 10},
-			{(TC[]){0xFE21}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x01}, 10},
-			{(TC[]){0xFE21}, 1, True}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00}, 10},
-			{(TC[]){0xFE21}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x01}, 10},
-			{(TC[]){0xFE21}, 1, True}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x01, 0x01}, 10},
-			{(TC[]){0xFE21}, 1, False}
-		},
+		{ {TADSEGMENT_TYPE_VARIABLE}, {(TC[]){0xFE21}, 1, False} },
+		{ {TADSEGMENT_TYPE_VARIABLE}, {(TC[]){0xFE21}, 1, True} },
+		{ {TADSEGMENT_TYPE_VARIABLE}, {(TC[]){0xFE21}, 1, False} },
+		{ {TADSEGMENT_TYPE_VARIABLE}, {(TC[]){0xFE21}, 1, True} },
+		{ {TADSEGMENT_TYPE_VARIABLE}, {(TC[]){0xFE21}, 1, False} },
 	};
+	testdata[0].input.value.variable.raw = (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00};
+	testdata[0].input.value.variable.rawlen = 10;
+	testdata[1].input.value.variable.raw = (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x01};
+	testdata[1].input.value.variable.rawlen = 10;
+	testdata[2].input.value.variable.raw = (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00};
+	testdata[2].input.value.variable.rawlen = 10;
+	testdata[3].input.value.variable.raw = (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x01};
+	testdata[3].input.value.variable.rawlen = 10;
+	testdata[4].input.value.variable.raw = (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x01, 0x01};
+	testdata[4].input.value.variable.rawlen = 10;
 	return test_texteditor_characterstate_common(testdata, 5);
 }
 
@@ -195,39 +168,25 @@ LOCAL UNITTEST_RESULT test_texteditor_characterstate_3()
 LOCAL UNITTEST_RESULT test_texteditor_characterstate_4()
 {
 	test_texteditor_characterstate_t testdata[] = {
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x01}, 10},
-			{(TC[]){0xFE21}, 1, True}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB[]){0x21, 0x21}, 2},
-			{(TC[]){0xFE21}, 1, True}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB[]){0x22, 0xFE}, 2},
-			{(TC[]){0xFE22}, 1, True}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB[]){0x21, 0x21}, 2},
-			{(TC[]){0xFE22}, 1, True}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00}, 10},
-			{(TC[]){0xFE22}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB[]){0x21, 0x21}, 2},
-			{(TC[]){0xFE22}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB[]){0x21, 0xFE}, 2},
-			{(TC[]){0xFE21}, 1, False}
-		},
-		{
-			{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB[]){0x21, 0x21}, 2},
-			{(TC[]){0xFE21}, 1, False}
-		},
+		{ {TADSEGMENT_TYPE_VARIABLE}, {(TC[]){0xFE21}, 1, True} },
+		{ {TADSEGMENT_TYPE_CHARACTOR}, {(TC[]){0xFE21}, 1, True} },
+		{ {TADSEGMENT_TYPE_LANGCODE}, {(TC[]){0xFE22}, 1, True} },
+		{ {TADSEGMENT_TYPE_CHARACTOR}, {(TC[]){0xFE22}, 1, True} },
+		{ {TADSEGMENT_TYPE_VARIABLE}, {(TC[]){0xFE22}, 1, False} },
+		{ {TADSEGMENT_TYPE_CHARACTOR}, {(TC[]){0xFE22}, 1, False} },
+		{ {TADSEGMENT_TYPE_LANGCODE}, {(TC[]){0xFE21}, 1, False} },
+		{ {TADSEGMENT_TYPE_CHARACTOR}, {(TC[]){0xFE21}, 1, False} },
 	};
+	testdata[0].input.value.variable.raw = (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x01};
+	testdata[0].input.value.variable.rawlen = 10;
+	testdata[1].input.value.ch = 0x2121;
+	TCtotadlangcode((TC[]){0xFE22}, 1, &testdata[2].input.value.lang);
+	testdata[3].input.value.ch = 0x2121;
+	testdata[4].input.value.variable.raw = (UB[]){0xA2, 0xFF, 0x06, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00};
+	testdata[4].input.value.variable.rawlen = 10;
+	testdata[5].input.value.ch = 0x2121;
+	TCtotadlangcode((TC[]){0xFE21}, 1, &testdata[6].input.value.lang);
+	testdata[7].input.value.ch = 0x2121;
 	return test_texteditor_characterstate_common(testdata, 8);
 }
 

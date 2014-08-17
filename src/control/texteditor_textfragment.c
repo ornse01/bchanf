@@ -29,6 +29,7 @@
 #include	<bstdio.h>
 
 #include	<tad/tadfragment.h>
+#include	<tad/tadsegment.h>
 #include	"texteditor_characterstate.h"
 #include	"texteditor_insertfilter.h"
 
@@ -70,7 +71,7 @@ EXPORT VOID texteditor_textfragment_finalize(texteditor_textfragment_t *fragment
 LOCAL W texteditor_insertcontext_bufferprepair(tadfragment_cursor_t *src, texteditor_characterstate_t *state, tadfragment_cursor_t *dest, W pos)
 {
 	W i, err;
-	tadfragment_cursor_segment segment;
+	tadsegment segment;
 
 	i = 0;
 	for (; i < pos;) {
@@ -80,11 +81,11 @@ LOCAL W texteditor_insertcontext_bufferprepair(tadfragment_cursor_t *src, texted
 		}
 		texteditor_charactorstate_input(state, &segment);
 
-		if (segment.type == TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR) {
+		if (segment.type == TADSEGMENT_TYPE_CHARACTOR) {
 			i++;
 		}
 
-		err = tadfragment_cursor_insert(dest, segment.p, segment.len);
+		err = tadfragment_cursor_insertsegment(dest, &segment);
 		if (err < 0) {
 			break;
 		}
@@ -106,7 +107,7 @@ LOCAL W texteditor_insertcontext_bufferappend(texteditor_characterstate_t *state
 {
 	texteditor_insertfilter_t filter;
 	texteditor_insertfilter_result filter_result;
-	tadfragment_cursor_segment segment;
+	tadsegment segment;
 	W err = 0;
 	Bool cont;
 
@@ -132,7 +133,7 @@ LOCAL W texteditor_insertcontext_bufferappend(texteditor_characterstate_t *state
 
 LOCAL W texteditor_insertcontext_bufferafterappend(texteditor_characterstate_t *state, tadfragment_cursor_t *src, tadfragment_cursor_t *dest)
 {
-	tadfragment_cursor_segment segment;
+	tadsegment segment;
 	W err = 0;
 	Bool is_end;
 
@@ -148,7 +149,7 @@ LOCAL W texteditor_insertcontext_bufferafterappend(texteditor_characterstate_t *
 		}
 		texteditor_charactorstate_input(state, &segment);
 
-		err = tadfragment_cursor_insert(dest, segment.p, segment.len);
+		err = tadfragment_cursor_insertsegment(dest, &segment);
 		if (err < 0) {
 			break;
 		}

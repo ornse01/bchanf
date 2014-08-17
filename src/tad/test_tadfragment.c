@@ -34,6 +34,7 @@
 #include	<tcode.h>
 
 #include "tadlangcode.h"
+#include "tadsegment.h"
 
 #include    <unittest_driver.h>
 
@@ -739,7 +740,13 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_insertlang_5()
 	return test_tadfragment_cursor_insertlang_common(&testdata);
 }
 
-LOCAL Bool test_tadfragment_common_verify_segment(tadfragment_cursor_segment *segment, tadfragment_cursor_segment *expected)
+typedef struct {
+	W type;
+	TC *data;
+	W len;
+} test_tadsegment_expected_t;
+
+LOCAL Bool test_tadfragment_common_verify_segment(tadsegment *segment, test_tadsegment_expected_t *expected)
 {
 	Bool result = True;
 
@@ -747,21 +754,40 @@ LOCAL Bool test_tadfragment_common_verify_segment(tadfragment_cursor_segment *se
 		printf("segment type fail: expected = %d, result = %d\n", expected->type, segment->type);
 		result = False;
 	}
-	if (segment->len != expected->len) {
-		printf("segment length fail: expected = %d, result = %d\n", expected->len, segment->len);
+	switch (segment->type) {
+	case TADSEGMENT_TYPE_VARIABLE:
+		if (segment->value.variable.rawlen != expected->len * sizeof(TC)) {
+			printf("segment length fail: expected = %d, result = %d\n", expected->len * sizeof(TC), segment->value.variable.rawlen);
+			result = False;
+		}
+		if (memcmp(segment->value.variable.raw, expected->data, segment->value.variable.rawlen) != 0) {
+			printf("segment data fail\n");
+			result = False;
+		}
+		break;
+	case TADSEGMENT_TYPE_CHARACTOR:
+		if (expected->len != 1) {
+			printf("charactor length fail\n");
+			result = False;
+		} else if (segment->value.ch != expected->data[0]) {
+			printf("charactor ch fail\n");
+			result = False;
+		}
+		break;
+	case TADSEGMENT_TYPE_LANGCODE:
+		result = tadlangcodecmpTC(expected->data, expected->len, &segment->value.lang);
+		break;
+	default:
 		result = False;
-	}
-	if (memcmp(segment->p, expected->p, segment->len) != 0) {
-		printf("segment data fail\n");
-		result = False;
+		break;
 	}
 
 	return result;
 }
 
-LOCAL Bool test_tadfragment_common_verify_segments(tadfragment_cursor_t *cursor, tadfragment_cursor_segment *expected, W expected_len)
+LOCAL Bool test_tadfragment_common_verify_segments(tadfragment_cursor_t *cursor, test_tadsegment_expected_t *expected, W expected_len)
 {
-	tadfragment_cursor_segment segment;
+	tadsegment segment;
 	W i, err;
 	Bool result = True, verify;
 
@@ -796,7 +822,7 @@ LOCAL Bool test_tadfragment_common_verify_segments(tadfragment_cursor_t *cursor,
 typedef struct {
 	TC *input;
 	W input_len;
-	tadfragment_cursor_segment *expected;
+	test_tadsegment_expected_t *expected;
 	W expected_len;
 } test_tadfragment_cursor_getdata_t;
 
@@ -837,10 +863,10 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_getdata_1()
 {
 	TC input[] = {TK_A, TK_B, TK_C};
 	W input_len = sizeof(input);
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_A}, 2},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_B}, 2},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_C}, 2},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_A}, 1},
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_B}, 1},
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_C}, 1},
 	};
 	W expected_len = 3;
 	test_tadfragment_cursor_getdata_t testdata = {
@@ -854,10 +880,10 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_getdata_2()
 {
 	TC input[] = {TK_A, 0xFF80, 0x0002, 0x0000, TK_C};
 	W input_len = sizeof(input);
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_A}, 2},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB*)(TC[]){0xFF80, 0x0002, 0x0000}, 6},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_C}, 2},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_A}, 1},
+		{TADSEGMENT_TYPE_VARIABLE, (TC[]){0xFF80, 0x0002, 0x0000}, 3},
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_C}, 1},
 	};
 	W expected_len = 3;
 	test_tadfragment_cursor_getdata_t testdata = {
@@ -871,10 +897,10 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_getdata_3()
 {
 	TC input[] = {TK_A, TK_B, 0xFE21};
 	W input_len = sizeof(input);
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_A}, 2},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_B}, 2},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB*)(TC[]){0xFE21}, 2},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_A}, 1},
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_B}, 1},
+		{TADSEGMENT_TYPE_LANGCODE, (TC[]){0xFE21}, 1},
 	};
 	W expected_len = 3;
 	test_tadfragment_cursor_getdata_t testdata = {
@@ -888,10 +914,10 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_getdata_4()
 {
 	TC input[] = {TK_A, 0xFEFE, 0xFE21, TK_C};
 	W input_len = sizeof(input);
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_A}, 2},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE, (UB*)(TC[]){0xFEFE, 0xFE21}, 4},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_C}, 2},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_A}, 1},
+		{TADSEGMENT_TYPE_LANGCODE, (TC[]){0xFEFE, 0xFE21}, 2},
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_C}, 1},
 	};
 	W expected_len = 3;
 	test_tadfragment_cursor_getdata_t testdata = {
@@ -907,8 +933,8 @@ typedef struct {
 	W erase_pos;
 	W erase_len;
 	Bool expected_pos_after_erase_is_end;
-	tadfragment_cursor_segment *expected_pos_after_erase;
-	tadfragment_cursor_segment *expected;
+	test_tadsegment_expected_t *expected_pos_after_erase;
+	test_tadsegment_expected_t *expected;
 	W expected_len;
 } test_tadfragment_cursor_erase_t;
 
@@ -916,7 +942,7 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_erase_common(test_tadfragment_curs
 {
 	tadfragment_t fragment;
 	tadfragment_cursor_t cursor;
-	tadfragment_cursor_segment segment;
+	tadsegment segment;
 	W err;
 	Bool verify;
 	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
@@ -975,16 +1001,16 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_erase_1()
 	TC input[] = {TK_A, 0xFF80, 0x0002, 0x0000, TK_C};
 	W input_len = sizeof(input);
 	Bool expected_pos_after_erase_is_end = False;
-	tadfragment_cursor_segment expected_pos_after_erase = {
-		TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE,
-		(UB*)(TC[]){0xFF80, 0x0002, 0x0000},
-		6
+	test_tadsegment_expected_t expected_pos_after_erase = {
+		TADSEGMENT_TYPE_VARIABLE,
+		(TC[]){0xFF80, 0x0002, 0x0000},
+		3
 	};
 	W erase_pos = 0;
 	W erase_len = 1;
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB*)(TC[]){0xFF80, 0x0002, 0x0000}, 6},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_C}, 2},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_VARIABLE, (TC[]){0xFF80, 0x0002, 0x0000}, 3},
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_C}, 1},
 	};
 	W expected_len = 2;
 	test_tadfragment_cursor_erase_t testdata = {
@@ -1003,13 +1029,13 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_erase_2()
 	W erase_pos = 0;
 	W erase_len = 2;
 	Bool expected_pos_after_erase_is_end = False;
-	tadfragment_cursor_segment expected_pos_after_erase = {
-		TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR,
-		(UB*)(TC[]){TK_C},
-		2
+	test_tadsegment_expected_t expected_pos_after_erase = {
+		TADSEGMENT_TYPE_CHARACTOR,
+		(TC[]){TK_C},
+		1
 	};
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_C}, 2},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_C}, 1},
 	};
 	W expected_len = 1;
 	test_tadfragment_cursor_erase_t testdata = {
@@ -1028,9 +1054,9 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_erase_3()
 	W erase_pos = 0;
 	W erase_len = 3;
 	Bool expected_pos_after_erase_is_end = True;
-	tadfragment_cursor_segment expected_pos_after_erase = {
+	test_tadsegment_expected_t expected_pos_after_erase = {
 	};
-	tadfragment_cursor_segment expected[] = {
+	test_tadsegment_expected_t expected[] = {
 	};
 	W expected_len = 0;
 	test_tadfragment_cursor_erase_t testdata = {
@@ -1049,9 +1075,9 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_erase_4()
 	W erase_pos = 0;
 	W erase_len = 4;
 	Bool expected_pos_after_erase_is_end = True;
-	tadfragment_cursor_segment expected_pos_after_erase = {
+	test_tadsegment_expected_t expected_pos_after_erase = {
 	};
-	tadfragment_cursor_segment expected[] = {
+	test_tadsegment_expected_t expected[] = {
 	};
 	W expected_len = 0;
 	test_tadfragment_cursor_erase_t testdata = {
@@ -1070,14 +1096,14 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_erase_5()
 	W erase_pos = 1;
 	W erase_len = 1;
 	Bool expected_pos_after_erase_is_end = False;
-	tadfragment_cursor_segment expected_pos_after_erase = {
-		TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR,
-		(UB*)(TC[]){TK_C},
-		2
+	test_tadsegment_expected_t expected_pos_after_erase = {
+		TADSEGMENT_TYPE_CHARACTOR,
+		(TC[]){TK_C},
+		1
 	};
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_A}, 2},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_C}, 2},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_A}, 1},
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_C}, 1},
 	};
 	W expected_len = 2;
 	test_tadfragment_cursor_erase_t testdata = {
@@ -1096,10 +1122,10 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_erase_6()
 	W erase_pos = 1;
 	W erase_len = 2;
 	Bool expected_pos_after_erase_is_end = True;
-	tadfragment_cursor_segment expected_pos_after_erase = {
+	test_tadsegment_expected_t expected_pos_after_erase = {
 	};
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_A}, 2},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_A}, 1},
 	};
 	W expected_len = 1;
 	test_tadfragment_cursor_erase_t testdata = {
@@ -1118,10 +1144,10 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_erase_7()
 	W erase_pos = 1;
 	W erase_len = 3;
 	Bool expected_pos_after_erase_is_end = True;
-	tadfragment_cursor_segment expected_pos_after_erase = {
+	test_tadsegment_expected_t expected_pos_after_erase = {
 	};
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_A}, 2},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_A}, 1},
 	};
 	W expected_len = 1;
 	test_tadfragment_cursor_erase_t testdata = {
@@ -1140,11 +1166,11 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_erase_8()
 	W erase_pos = 2;
 	W erase_len = 1;
 	Bool expected_pos_after_erase_is_end = True;
-	tadfragment_cursor_segment expected_pos_after_erase = {
+	test_tadsegment_expected_t expected_pos_after_erase = {
 	};
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_A}, 2},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB*)(TC[]){0xFF80, 0x0002, 0x0000}, 6},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_A}, 1},
+		{TADSEGMENT_TYPE_VARIABLE, (TC[]){0xFF80, 0x0002, 0x0000}, 3},
 	};
 	W expected_len = 2;
 	test_tadfragment_cursor_erase_t testdata = {
@@ -1163,11 +1189,11 @@ LOCAL UNITTEST_RESULT test_tadfragment_cursor_erase_9()
 	W erase_pos = 2;
 	W erase_len = 2;
 	Bool expected_pos_after_erase_is_end = True;
-	tadfragment_cursor_segment expected_pos_after_erase = {
+	test_tadsegment_expected_t expected_pos_after_erase = {
 	};
-	tadfragment_cursor_segment expected[] = {
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR, (UB*)(TC[]){TK_A}, 2},
-		{TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE, (UB*)(TC[]){0xFF80, 0x0002, 0x0000}, 6},
+	test_tadsegment_expected_t expected[] = {
+		{TADSEGMENT_TYPE_CHARACTOR, (TC[]){TK_A}, 1},
+		{TADSEGMENT_TYPE_VARIABLE, (TC[]){0xFF80, 0x0002, 0x0000}, 3},
 	};
 	W expected_len = 2;
 	test_tadfragment_cursor_erase_t testdata = {

@@ -34,6 +34,7 @@
 #include    <coll/wordarray.h>
 #include    "tadlexer_le.h"
 #include    "tadlangcode.h"
+#include    "tadsegment.h"
 
 #ifdef BCHAN_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -478,16 +479,30 @@ EXPORT W tadfragment_cursor_insertlang(tadfragment_cursor_t *cursor, tadlangcode
 	return err;
 }
 
+EXPORT W tadfragment_cursor_insertsegment(tadfragment_cursor_t *cursor, tadsegment *segment)
+{
+	switch (segment->type) {
+	case TADSEGMENT_TYPE_VARIABLE:
+		return tadfragment_cursor_insert(cursor, segment->value.variable.raw, segment->value.variable.rawlen);
+	case TADSEGMENT_TYPE_CHARACTOR:
+		return tadfragment_cursor_insert(cursor, (UB*)&segment->value.ch, sizeof(TC));
+	case TADSEGMENT_TYPE_LANGCODE:
+		return tadfragment_cursor_insertlang(cursor, &segment->value.lang);
+	}
+	return -1;
+}
+
 EXPORT Bool tadfragment_cursor_isend(tadfragment_cursor_t *cursor)
 {
 	return wordarray_cursor_isend(&cursor->base);
 }
 
-EXPORT W tadfragment_cursor_getdata(tadfragment_cursor_t *cursor, tadfragment_cursor_segment *p)
+EXPORT W tadfragment_cursor_getdata(tadfragment_cursor_t *cursor, tadsegment *p)
 {
 	Bool end;
-	W offset, offset_next, err;
+	W offset, offset_next, len, err;
 	UH ch;
+	TC *buffer;
 
 	end = tadfragment_cursor_isend(cursor);
 	if (end != False) {
@@ -503,16 +518,27 @@ EXPORT W tadfragment_cursor_getdata(tadfragment_cursor_t *cursor, tadfragment_cu
 		return err;
 	}
 
-	p->p = bytearray_getbuffer(&cursor->target->rawdata) + offset;
-	p->len = offset_next - offset;
+	buffer = (TC*)(bytearray_getbuffer(&cursor->target->rawdata) + offset);
+	len = (offset_next - offset) / sizeof(TC);
 
-	ch = *(UH*)p->p;
+	if (len < 1) {
+		return -1;
+	}
+
+	ch = buffer[0];
 	if ((ch & 0xFF80) == 0xFF80) {
-		p->type = TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE;
+		p->type = TADSEGMENT_TYPE_VARIABLE;
+		p->value.variable.raw = (UB*)buffer;
+		p->value.variable.rawlen = len * sizeof(TC);
 	} else if ((ch & 0xFE00) == 0xFE00) {
-		p->type = TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE;
+		err = TCtotadlangcode(buffer, len, &p->value.lang);
+		if (err < 0) {
+			return err;
+		}
+		p->type = TADSEGMENT_TYPE_LANGCODE;
 	} else {
-		p->type = TADFRAGMENT_CURSOR_SEGMENTTYPE_CHAR;
+		p->type = TADSEGMENT_TYPE_CHARACTOR;
+		p->value.ch = buffer[0];
 	}
 
 	return 0;

@@ -1,7 +1,7 @@
 /*
  * texteditor_characterstate.h
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -25,8 +25,10 @@
  */
 
 #include    <basic.h>
+#include	<btron/dp.h>
+#include    <tad.h>
 
-#include	<tad/tadfragment.h>
+#include	<tad/tadsegment.h>
 #include	<tad/tadlangcode.h>
 
 #ifndef __TEXTEDITOR_CHARACTERSTATE_H__
@@ -42,7 +44,7 @@ typedef struct texteditor_characterstate_t_ texteditor_characterstate_t;
 
 IMPORT VOID texteditor_characterstate_initialize(texteditor_characterstate_t *state);
 IMPORT VOID texteditor_characterstate_finalize(texteditor_characterstate_t *state);
-IMPORT W texteditor_charactorstate_input(texteditor_characterstate_t *state, tadfragment_cursor_segment *segment);
+IMPORT W texteditor_charactorstate_input(texteditor_characterstate_t *state, tadsegment *segment);
 IMPORT Bool texteditor_characterstate_ishankaku(texteditor_characterstate_t *state);
 IMPORT W texteditor_characterstate_getlang(texteditor_characterstate_t *state, TC *str, W len);
 IMPORT VOID texteditor_characterstate_getlangcode(texteditor_characterstate_t *state, tadlangcode *lang);

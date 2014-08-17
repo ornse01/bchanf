@@ -1,7 +1,7 @@
 /*
  * texteditor_characterstate.h
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -28,7 +28,7 @@
 
 #include	<bstdio.h>
 
-#include	<tad/tadfragment.h>
+#include	<tad/tadsegment.h>
 #include	<tad/tadlangcode.h>
 
 #ifdef BCHAN_CONFIG_DEBUG
@@ -39,32 +39,25 @@
 # define DP_ER(msg, err) /**/
 #endif
 
-EXPORT W texteditor_charactorstate_input(texteditor_characterstate_t *state, tadfragment_cursor_segment *segment)
+EXPORT W texteditor_charactorstate_input(texteditor_characterstate_t *state, tadsegment *segment)
 {
-	TC *str;
-	W len, err;
 	UB segid, subid;
 
-	if (segment->type == TADFRAGMENT_CURSOR_SEGMENTTYPE_VARIABLE) {
-		if (segment->len != 10) {
+	if (segment->type == TADSEGMENT_TYPE_VARIABLE) {
+		if (segment->value.variable.rawlen != 10) {
 			return 0;
 		}
-		segid = *(TC*)segment->p & 0xFF;
+		segid = *(TC*)segment->value.variable.raw & 0xFF;
 		if (segid != TS_TFONT) {
 			return 0;
 		}
-		subid = *(TC*)(segment->p + 4) >> 8;
+		subid = *(TC*)(segment->value.variable.raw + 4) >> 8;
 		if (subid != 3) {
 			return 0;
 		}
-		state->w_ratio = *(RATIO*)(segment->p + 8);
-	} else if (segment->type == TADFRAGMENT_CURSOR_SEGMENTTYPE_LANGCODE) {
-		str = (TC*)segment->p;
-		len = segment->len / sizeof(TC);
-		err = TCtotadlangcode(str, len, &state->lang);
-		if (err < 0) {
-			return err;
-		}
+		state->w_ratio = *(RATIO*)(segment->value.variable.raw + 8);
+	} else if (segment->type == TADSEGMENT_TYPE_LANGCODE) {
+		memcpy(&state->lang, &segment->value.lang, sizeof(tadlangcode));
 	}
 	return 0;
 }
