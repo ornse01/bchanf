@@ -49,5 +49,6 @@ struct tadsegment_ {
 typedef struct tadsegment_ tadsegment;
 
 IMPORT W tadsegment_getvariable(tadsegment *segment, UB *segid, UW *seglen, UB **segdata);
+IMPORT Bool tadsegment_isvalid(tadsegment *segment);
 
 #endif

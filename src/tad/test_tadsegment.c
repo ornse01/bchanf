@@ -128,10 +128,132 @@ LOCAL UNITTEST_RESULT test_tadsegment_4()
 	return UNITTEST_RESULT_FAIL;
 }
 
+LOCAL UNITTEST_RESULT test_tadsegment_isvalid_1()
+{
+	tadsegment segment;
+	Bool ok;
+
+	segment.type = TADSEGMENT_TYPE_VARIABLE;
+	segment.value.variable.raw = (UB*)(TC[]){ 0xFFA2, 0x0006, 0x0300, 0x0101, 0x0101 };
+	segment.value.variable.rawlen = 10;
+
+	ok = tadsegment_isvalid(&segment);
+	if (ok == False) {
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	return UNITTEST_RESULT_PASS;
+}
+
+LOCAL UNITTEST_RESULT test_tadsegment_isvalid_2()
+{
+	tadsegment segment;
+	Bool ok;
+
+	segment.type = TADSEGMENT_TYPE_VARIABLE;
+	segment.value.variable.raw = (UB*)(TC[]){ 0xFFE5, 0xFFFF, 0xFF00, 0x0001 };
+	segment.value.variable.rawlen = 0x1FF00 + 8;
+
+	ok = tadsegment_isvalid(&segment);
+	if (ok == False) {
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	return UNITTEST_RESULT_PASS;
+}
+
+LOCAL UNITTEST_RESULT test_tadsegment_isvalid_3()
+{
+	tadsegment segment;
+	Bool ok;
+
+	segment.type = TADSEGMENT_TYPE_CHARACTOR;
+	segment.value.ch = 0x2121;
+
+	ok = tadsegment_isvalid(&segment);
+	if (ok == False) {
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	return UNITTEST_RESULT_PASS;
+}
+
+LOCAL UNITTEST_RESULT test_tadsegment_isvalid_4()
+{
+	tadsegment segment;
+	Bool ok;
+
+	segment.type = TADSEGMENT_TYPE_LANGCODE;
+
+	ok = tadsegment_isvalid(&segment);
+	if (ok == False) {
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	return UNITTEST_RESULT_PASS;
+}
+
+LOCAL UNITTEST_RESULT test_tadsegment_isvalid_5()
+{
+	tadsegment segment;
+	Bool ok;
+
+	segment.type = TADSEGMENT_TYPE_VARIABLE;
+	segment.value.variable.raw = (UB*)(TC[]){ 0xFFA2, 0x0006, 0x0300, 0x0101, 0x0101 };
+	segment.value.variable.rawlen = 12;
+
+	ok = tadsegment_isvalid(&segment);
+	if (ok != False) {
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	return UNITTEST_RESULT_PASS;
+}
+
+LOCAL UNITTEST_RESULT test_tadsegment_isvalid_6()
+{
+	tadsegment segment;
+	Bool ok;
+
+	segment.type = TADSEGMENT_TYPE_VARIABLE;
+	segment.value.variable.raw = (UB*)(TC[]){ 0xFFE5, 0xFFFF, 0xFF00, 0x0001 };
+	segment.value.variable.rawlen = 0x1FF00 + 10;
+
+	ok = tadsegment_isvalid(&segment);
+	if (ok != False) {
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	return UNITTEST_RESULT_PASS;
+}
+
+LOCAL UNITTEST_RESULT test_tadsegment_isvalid_7()
+{
+	tadsegment segment;
+	Bool ok;
+
+	segment.type = TADSEGMENT_TYPE_CHARACTOR;
+	segment.value.ch = 0xFE21;
+
+	ok = tadsegment_isvalid(&segment);
+	if (ok != False) {
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	return UNITTEST_RESULT_PASS;
+}
+
 EXPORT VOID test_tadsegment_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_1);
 	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_2);
 	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_3);
 	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_4);
+	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_isvalid_1);
+	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_isvalid_2);
+	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_isvalid_3);
+	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_isvalid_4);
+	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_isvalid_5);
+	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_isvalid_6);
+	UNITTEST_DRIVER_REGIST(driver, test_tadsegment_isvalid_7);
 }

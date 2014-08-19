@@ -53,3 +53,31 @@ EXPORT W tadsegment_getvariable(tadsegment *segment, UB *segid, UW *seglen, UB *
 
 	return 0;
 }
+
+EXPORT Bool tadsegment_isvalid(tadsegment *segment)
+{
+	LTADSEG *seg;
+
+	switch (segment->type) {
+	case TADSEGMENT_TYPE_VARIABLE:
+		seg = (LTADSEG*)segment->value.variable.raw;
+		if (seg->len == 0xffff) {
+			if (segment->value.variable.rawlen != (seg->llen + 8)) {
+				return False;
+			}
+		} else {
+			if (segment->value.variable.rawlen != (seg->len + 4)) {
+				return False;
+			}
+		}
+		return True;
+	case TADSEGMENT_TYPE_CHARACTOR:
+		if ((segment->value.ch & 0xFF00) == 0xFE00) {
+			return False;
+		}
+		return True;
+	case TADSEGMENT_TYPE_LANGCODE:
+		return True;
+	}
+	return False;
+}
