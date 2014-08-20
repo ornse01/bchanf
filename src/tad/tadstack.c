@@ -30,6 +30,9 @@
 #include	<bstdio.h>
 #include	<tad.h>
 
+#include    "tadlangcode.h"
+#include    "tadsegment.h"
+
 EXPORT W tadstack_nestlevel(tadstack_t *stack)
 {
 	return stack->nestlevel;
