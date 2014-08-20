@@ -1,7 +1,7 @@
 /*
  * tadstack.h
  *
- * Copyright (c) 2012 project bchan
+ * Copyright (c) 2012-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -31,6 +31,9 @@
 #include    <basic.h>
 #include	<btron/dp.h>
 #include    <tad.h>
+
+#include	"tadsegment.h"
+#include	"tadlangcode.h"
 
 #ifndef __TADSTACK_H__
 #define __TADSTACK_H__
@@ -84,6 +87,7 @@ IMPORT VOID tadstack_initialize(tadstack_t *stack);
 IMPORT VOID tadstack_finalize(tadstack_t *stack);
 IMPORT TADSTACK_RESULT tadstack_inputcharactor(tadstack_t *stack, TC ch);
 IMPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *bin, W len);
+IMPORT TADSTACK_RESULT tadstack_inputsegment(tadstack_t *stack, tadsegment *segment);
 IMPORT W tadstack_nestlevel(tadstack_t *stack);
 IMPORT VOID tadstack_currentlang(tadstack_t *stack, TC **lang, W *len);
 IMPORT TADSTACK_DATATYPE tadstack_currentdata(tadstack_t *stack);

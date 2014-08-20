@@ -1,7 +1,7 @@
 /*
  * tadstack.c
  *
- * Copyright (c) 2012 project bchan
+ * Copyright (c) 2012-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -240,6 +240,25 @@ EXPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *b
 	}
 
 	return ret;
+}
+
+EXPORT TADSTACK_RESULT tadstack_inputsegment(tadstack_t *stack, tadsegment *segment)
+{
+	UB segid;
+	UB *segdata;
+	W seglen;
+
+	switch (segment->type) {
+	case TADSEGMENT_TYPE_VARIABLE:
+		tadsegment_getvariable(segment, &segid, &seglen, &segdata);
+		return tadstack_inputvsegment(stack, segid, segdata, seglen);
+	case TADSEGMENT_TYPE_CHARACTOR:
+		return tadstack_inputcharactor(stack, segment->value.ch);
+	case TADSEGMENT_TYPE_LANGCODE:
+		/* TODO */
+		return TADSTACK_RESULT_LANGUAGE_CHANGE;
+	}
+	return TADSTACK_RESULT_FORMAT_ERROR;
 }
 
 EXPORT VOID tadstack_initialize(tadstack_t *stack)

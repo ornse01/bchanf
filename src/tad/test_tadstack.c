@@ -1,7 +1,7 @@
 /*
  * test_tadstack.c
  *
- * Copyright (c) 2012 project bchan
+ * Copyright (c) 2012-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -34,6 +34,7 @@
 #include	<bstring.h>
 
 #include "taditerator.h"
+#include "taddecoder.h"
 
 #include    <unittest_driver.h>
 
@@ -111,7 +112,39 @@ LOCAL UNITTEST_RESULT test_tadstack_1()
 	return ok;
 }
 
+LOCAL UNITTEST_RESULT test_tadstack_2()
+{
+	tadstack_t stack;
+	taddecoder_t decoder;
+	tadsegment segment;
+	Bool cont;
+	TADSTACK_RESULT stk_result;
+	UNITTEST_RESULT ok = UNITTEST_RESULT_PASS;
+
+	tadstack_initialize(&stack);
+	taddecoder_initialize(&decoder, (TC*)test_tadstack_testdata01, sizeof(test_tadstack_testdata01)/sizeof(TC));
+
+	for (;;) {
+		cont = taddecoder_next(&decoder, &segment);
+		if (cont == False) {
+			break;
+		}
+			
+		stk_result = tadstack_inputsegment(&stack, &segment);
+		if (stk_result == TADSTACK_RESULT_FORMAT_ERROR) {
+			printf("format error\n");
+			ok = UNITTEST_RESULT_FAIL;
+		}
+	}
+
+	taddecoder_finalize(&decoder);
+	tadstack_finalize(&stack);
+
+	return ok;
+}
+
 EXPORT VOID test_tadstack_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_tadstack_1);
+	UNITTEST_DRIVER_REGIST(driver, test_tadstack_2);
 }
