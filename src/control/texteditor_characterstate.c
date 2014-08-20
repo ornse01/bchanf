@@ -1,5 +1,5 @@
 /*
- * texteditor_characterstate.h
+ * texteditor_characterstate.c
  *
  * Copyright (c) 2013-2014 project bchan
  *
