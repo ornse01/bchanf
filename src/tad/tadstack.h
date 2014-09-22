@@ -67,6 +67,7 @@ struct tadstack_t_ {
 		TADSTACK_STATE_FIG,
 	} state;
 	W nestlevel;
+	tadlangcode_parser_t langparser;
 	struct {
 		TADSTACK_DATATYPE type;
 		RECT view;
@@ -76,7 +77,7 @@ struct tadstack_t_ {
 		/* for text */
 		UH lang;
 		UH bgpat;
-		UH currentlang[1]; /* temporary length */
+		tadlangcode currentlang;
 		/* for fig */
 		W ratio;
 	} data[16];
@@ -89,11 +90,11 @@ IMPORT TADSTACK_RESULT tadstack_inputcharactor(tadstack_t *stack, TC ch);
 IMPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *bin, W len);
 IMPORT TADSTACK_RESULT tadstack_inputsegment(tadstack_t *stack, tadsegment *segment);
 IMPORT W tadstack_nestlevel(tadstack_t *stack);
-IMPORT VOID tadstack_currentlang(tadstack_t *stack, TC **lang, W *len);
-IMPORT TADSTACK_DATATYPE tadstack_currentdata(tadstack_t *stack);
-IMPORT RECT tadstack_currentview(tadstack_t *stack);
-IMPORT RECT tadstack_currentdraw(tadstack_t *stack);
-IMPORT UNITS tadstack_currenthunit(tadstack_t *stack);
-IMPORT UNITS tadstack_currentvunit(tadstack_t *stack);
+IMPORT W tadstack_currentlangcode(tadstack_t *stack, tadlangcode *langcode);
+IMPORT W tadstack_currentdata(tadstack_t *stack, TADSTACK_DATATYPE *type);
+IMPORT W tadstack_currentview(tadstack_t *stack, RECT *r);
+IMPORT W tadstack_currentdraw(tadstack_t *stack, RECT *r);
+IMPORT W tadstack_currenthunit(tadstack_t *stack, UNITS *units);
+IMPORT W tadstack_currentvunit(tadstack_t *stack, UNITS *units);
 
 #endif

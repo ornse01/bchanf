@@ -33,49 +33,86 @@
 #include    "tadlangcode.h"
 #include    "tadsegment.h"
 
+#ifdef BCHAN_CONFIG_DEBUG
+# define DP(arg) printf arg
+# define DP_ER(msg, err) printf("%s (%d/%x)\n", msg, err>>16, err)
+#else
+# define DP(arg) /**/
+# define DP_ER(msg, err) /**/
+#endif
+
+#if 0
+# define DP_STATE(state) printf("%s\n", state)
+#else
+# define DP_STATE(state) /**/
+#endif
+
 EXPORT W tadstack_nestlevel(tadstack_t *stack)
 {
 	return stack->nestlevel;
 }
 
-EXPORT VOID tadstack_currentlang(tadstack_t *stack, TC **lang, W *len)
+EXPORT W tadstack_currentlangcode(tadstack_t *stack, tadlangcode *langcode)
 {
-	if (stack->data[stack->nestlevel].type != TADSTACK_DATATYPE_TEXT) {
-		*lang = NULL;
-		*len = 0;
-		return;
+	if (stack->nestlevel < 0) {
+		return -1;
 	}
-	*lang = stack->data[stack->nestlevel].currentlang;
-	*len = 1;
+	if (stack->data[stack->nestlevel].type != TADSTACK_DATATYPE_TEXT) {
+		return -1;
+	}
+	*langcode = stack->data[stack->nestlevel].currentlang;
+	return 0;
 }
 
-EXPORT TADSTACK_DATATYPE tadstack_currentdata(tadstack_t *stack)
+EXPORT W tadstack_currentdata(tadstack_t *stack, TADSTACK_DATATYPE *type)
 {
-	return stack->data[stack->nestlevel].type;
+	if (stack->nestlevel < 0) {
+		return -1;
+	}
+	*type = stack->data[stack->nestlevel].type;
+	return 0;
 }
 
-EXPORT RECT tadstack_currentview(tadstack_t *stack)
+EXPORT W tadstack_currentview(tadstack_t *stack, RECT *r)
 {
-	return stack->data[stack->nestlevel].view;
+	if (stack->nestlevel < 0) {
+		return -1;
+	}
+	*r = stack->data[stack->nestlevel].view;
+	return 0;
 }
 
-EXPORT RECT tadstack_currentdraw(tadstack_t *stack)
+EXPORT W tadstack_currentdraw(tadstack_t *stack, RECT *r)
 {
-	return stack->data[stack->nestlevel].draw;
+	if (stack->nestlevel < 0) {
+		return -1;
+	}
+	*r = stack->data[stack->nestlevel].draw;
+	return 0;
 }
 
-EXPORT UNITS tadstack_currenthunit(tadstack_t *stack)
+EXPORT W tadstack_currenthunit(tadstack_t *stack, UNITS *units)
 {
-	return stack->data[stack->nestlevel].h_unit;
+	if (stack->nestlevel < 0) {
+		return -1;
+	}
+	*units = stack->data[stack->nestlevel].h_unit;
+	return 0;
 }
 
-EXPORT UNITS tadstack_currentvunit(tadstack_t *stack)
+EXPORT W tadstack_currentvunit(tadstack_t *stack, UNITS *units)
 {
-	return stack->data[stack->nestlevel].v_unit;
+	if (stack->nestlevel < 0) {
+		return -1;
+	}
+	*units = stack->data[stack->nestlevel].v_unit;
+	return 0;
 }
 
 LOCAL VOID tadstack_pushTEXTstack(tadstack_t *stack, RECT view, RECT draw, UNITS h_unit, UNITS v_unit, UH lang, UH bgpat)
 {
+	TC ch = lang | 0xFE00;
+
 	stack->nestlevel++;
 
 	stack->data[stack->nestlevel].type = TADSTACK_DATATYPE_TEXT;
@@ -85,7 +122,7 @@ LOCAL VOID tadstack_pushTEXTstack(tadstack_t *stack, RECT view, RECT draw, UNITS
 	stack->data[stack->nestlevel].v_unit = v_unit;
 	stack->data[stack->nestlevel].lang = lang;
 	stack->data[stack->nestlevel].bgpat = bgpat;
-	stack->data[stack->nestlevel].currentlang[0] = lang;
+	TCtotadlangcode(&ch, 1, &(stack->data[stack->nestlevel].currentlang));
 }
 
 LOCAL VOID tadstack_pushFIGstack(tadstack_t *stack, RECT view, RECT draw, UNITS h_unit, UNITS v_unit, W ratio)
@@ -108,35 +145,50 @@ LOCAL VOID tadstack_popstack(tadstack_t *stack)
 EXPORT TADSTACK_RESULT tadstack_inputcharactor(tadstack_t *stack, TC ch)
 {
 	TADSTACK_RESULT ret = TADSTACK_RESULT_OK;
+	TADLANGCODE_PARSER_RESULT parser_result;
 
 	switch (stack->state) {
 	case TADSTACK_STATE_START:
+		DP_STATE("START");
 		tadstack_pushTEXTstack(stack, (RECT){{0, 0, 0, 0}}, (RECT){{0, 0, 0, 0}}, 0, 0, 0x21, 0);
 		stack->state = TADSTACK_STATE_TEXT;
 		ret = TADSTACK_RESULT_PUSH_STACK;
 		break;
 	case TADSTACK_STATE_TEXT:
+		DP_STATE("TEXT");
 		if ((ch & 0xFE00) == 0xFE00) {
-			stack->data[stack->nestlevel].currentlang[0] = ch;
-			ret = TADSTACK_RESULT_LANGUAGE_CHANGE;
-			if (ch == 0xFEFE) {
+			tadlangcode_parser_initialize(&stack->langparser);
+			parser_result = tadlangcode_parser_inputchar(&stack->langparser, ch);
+			if (parser_result == TADLANGCODE_PARSER_RESULT_DETERMINED) {
+				tadlangcode_parser_getlangcode(&stack->langparser, &(stack->data[stack->nestlevel].currentlang));
+				tadlangcode_parser_finalize(&stack->langparser);
+				ret = TADSTACK_RESULT_LANGUAGE_CHANGE;
+			} else if (parser_result == TADLANGCODE_PARSER_RESULT_CONTINUE) {
+				ret = TADSTACK_RESULT_LANGUAGE_CHANGE;
 				stack->state = TADSTACK_STATE_TEXT_LANGCODE;
+			} else {
+				ret = TADSTACK_RESULT_FORMAT_ERROR;
 			}
 			break;
 		}
 		ret = TADSTACK_RESULT_OK;
 		break;
 	case TADSTACK_STATE_TEXT_LANGCODE:
-		if ((ch & 0xFE00) != 0xFE00) {
-			ret = TADSTACK_RESULT_FORMAT_ERROR;
-			break;
-		}
-		if (ch != 0xFEFE) {
+		DP_STATE("TEXT_LANGCODE");
+		parser_result = tadlangcode_parser_inputchar(&stack->langparser, ch);
+		if (parser_result == TADLANGCODE_PARSER_RESULT_DETERMINED) {
+			tadlangcode_parser_getlangcode(&stack->langparser, &(stack->data[stack->nestlevel].currentlang));
+			tadlangcode_parser_finalize(&stack->langparser);
 			stack->state = TADSTACK_STATE_TEXT;
+			ret = TADSTACK_RESULT_OK;
+		} else if (parser_result == TADLANGCODE_PARSER_RESULT_CONTINUE) {
+			ret = TADSTACK_RESULT_OK;
+		} else {
+			ret = TADSTACK_RESULT_FORMAT_ERROR;
 		}
-		ret = TADSTACK_RESULT_OK;
 		break;
 	case TADSTACK_STATE_FIG:
+		DP_STATE("FIG");
 		return TADSTACK_RESULT_FORMAT_ERROR;
 	}
 
@@ -177,10 +229,15 @@ EXPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *b
 
 	switch (stack->state) {
 	case TADSTACK_STATE_START:
+		DP_STATE("START");
 		if (segid == TS_TEXT) {
 			ret = tadstack_handle_textsegment(stack, bin, len);
 		} else if (segid == TS_FIG) {
 			ret = tadstack_handle_figsegment(stack, bin, len);
+		} else if ((TS_TPAGE <= segid)&&(segid <= TS_TAPPL)) {
+			tadstack_pushTEXTstack(stack, (RECT){{0, 0, 0, 0}}, (RECT){{0, 0, 0, 0}}, 0, 0, 0x21, 0);
+			stack->state = TADSTACK_STATE_TEXT;
+			ret = TADSTACK_RESULT_PUSH_STACK;
 		} else if ((TS_FPRIM <= segid)&&(segid <= TS_FAPPL)) {
 			tadstack_pushFIGstack(stack, (RECT){{0, 0, 0, 0}}, (RECT){{0, 0, 0, 0}}, 0, 0, 0);
 			stack->state = TADSTACK_STATE_FIG;
@@ -190,6 +247,7 @@ EXPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *b
 		}
 		break;
 	case TADSTACK_STATE_TEXT:
+		DP_STATE("TEXT");
 		if ((TS_FPRIM <= segid)&&(segid <= TS_FAPPL)) {
 			ret = TADSTACK_RESULT_FORMAT_ERROR;
 			break;
@@ -214,10 +272,12 @@ EXPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *b
 		ret = TADSTACK_RESULT_OK;
 		break;
 	case TADSTACK_STATE_TEXT_LANGCODE:
+		DP_STATE("TEXT_LANGCODE");
 		ret = TADSTACK_RESULT_FORMAT_ERROR;
 		break;
 	case TADSTACK_STATE_FIG:
-		if ((0xA0 <= segid)&&(segid <= 0xAF)) {
+		DP_STATE("FIG");
+		if ((TS_TPAGE <= segid)&&(segid <= TS_TAPPL)) {
 			ret = TADSTACK_RESULT_FORMAT_ERROR;
 			break;
 		}
@@ -245,6 +305,36 @@ EXPORT TADSTACK_RESULT tadstack_inputvsegment(tadstack_t *stack, UH segid, UB *b
 	return ret;
 }
 
+EXPORT TADSTACK_RESULT tadstack_inputlangcode(tadstack_t *stack, tadlangcode *langcode)
+{
+	TADSTACK_RESULT ret = TADSTACK_RESULT_OK;
+
+	switch (stack->state) {
+	case TADSTACK_STATE_START:
+		DP_STATE("START");
+		tadstack_pushTEXTstack(stack, (RECT){{0, 0, 0, 0}}, (RECT){{0, 0, 0, 0}}, 0, 0, 0x21, 0);
+		stack->state = TADSTACK_STATE_TEXT;
+		stack->data[stack->nestlevel].currentlang = *langcode;
+		ret = TADSTACK_RESULT_PUSH_STACK;
+		break;
+	case TADSTACK_STATE_TEXT:
+		DP_STATE("TEXT");
+		stack->data[stack->nestlevel].currentlang = *langcode;
+		ret = TADSTACK_RESULT_LANGUAGE_CHANGE;
+		break;
+	case TADSTACK_STATE_TEXT_LANGCODE:
+		DP_STATE("TEXT_LANGCODE");
+		ret = TADSTACK_RESULT_FORMAT_ERROR;
+		break;
+	case TADSTACK_STATE_FIG:
+		DP_STATE("FIG");
+		ret = TADSTACK_RESULT_FORMAT_ERROR;
+		break;
+	}
+
+	return ret;
+}
+
 EXPORT TADSTACK_RESULT tadstack_inputsegment(tadstack_t *stack, tadsegment *segment)
 {
 	UB segid;
@@ -258,8 +348,7 @@ EXPORT TADSTACK_RESULT tadstack_inputsegment(tadstack_t *stack, tadsegment *segm
 	case TADSEGMENT_TYPE_CHARACTOR:
 		return tadstack_inputcharactor(stack, segment->value.ch);
 	case TADSEGMENT_TYPE_LANGCODE:
-		/* TODO */
-		return TADSTACK_RESULT_LANGUAGE_CHANGE;
+		return tadstack_inputlangcode(stack, &segment->value.lang);
 	}
 	return TADSTACK_RESULT_FORMAT_ERROR;
 }

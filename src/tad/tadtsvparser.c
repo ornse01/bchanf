@@ -1,7 +1,7 @@
 /*
  * tadtsvparser.c
  *
- * Copyright (c) 2012 project bchan
+ * Copyright (c) 2012-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -32,6 +32,7 @@
 #include	<tcode.h>
 
 #include    "tadstack.h"
+#include    "tadlangcode.h"
 
 #ifdef BCHAN_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -52,8 +53,9 @@ EXPORT TADTSVPARSER_RESULT tadtsvparser_inputcharactor(tadtsvparser_t *parser, T
 	TADTSVPARSER_RESULT ret = TADTSVPARSER_RESULT_IGNORE_SEGMENT;
 	TADSTACK_RESULT stk_result;
 	TADSTACK_DATATYPE type;
-	TC *lang;
-	W lang_len;
+	tadlangcode lang;
+	Bool is_system;
+	W err;
 
 	stk_result = tadstack_inputcharactor(&parser->tadstack, ch);
 	if (stk_result == TADSTACK_RESULT_FORMAT_ERROR) {
@@ -65,8 +67,8 @@ EXPORT TADTSVPARSER_RESULT tadtsvparser_inputcharactor(tadtsvparser_t *parser, T
 	case TADTSVPARSER_STATE_START:
 		DP_STATE("START inputcharactor");
 		if (stk_result == TADSTACK_RESULT_PUSH_STACK) {
-			type = tadstack_currentdata(&parser->tadstack);
-			if (type == TADSTACK_DATATYPE_TEXT) {
+			err = tadstack_currentdata(&parser->tadstack, &type);
+			if (!(err < 0) && (type == TADSTACK_DATATYPE_TEXT)) {
 				parser->state = TADTSVPARSER_STATE_READING_VALUE;
 			} else {
 				ret = TADTSVPARSER_RESULT_FORMAT_ERROR;
@@ -84,9 +86,9 @@ EXPORT TADTSVPARSER_RESULT tadtsvparser_inputcharactor(tadtsvparser_t *parser, T
 			ret = TADTSVPARSER_RESULT_FIELD;
 			break;
 		}
-		tadstack_currentlang(&parser->tadstack, &lang, &lang_len);
-		//printf("lang %04x, %d, ch = %04x\n", lang[0], lang_len, ch);
-		if ((lang_len == 1)&&((lang[0] & 0xFF) == 0x21)) {
+		tadstack_currentlangcode(&parser->tadstack, &lang);
+		is_system = tadlangcodecmpTC((TC[]){0xFE21}, 1, &lang);
+		if (is_system != False) {
 			if (ch == TK_TAB) {
 				ret = TADTSVPARSER_RESULT_FIELD_END;
 			} else if (ch == TK_NL) {
@@ -113,7 +115,7 @@ EXPORT TADTSVPARSER_RESULT tadtsvparser_inputvsegment(tadtsvparser_t *parser, UH
 	TADTSVPARSER_RESULT ret = TADTSVPARSER_RESULT_IGNORE_SEGMENT;
 	TADSTACK_RESULT stk_result;
 	TADSTACK_DATATYPE type;
-	W nest;
+	W nest, err;
 
 	stk_result = tadstack_inputvsegment(&parser->tadstack, segid, bin, len);
 	if (stk_result == TADSTACK_RESULT_FORMAT_ERROR) {
@@ -124,8 +126,8 @@ EXPORT TADTSVPARSER_RESULT tadtsvparser_inputvsegment(tadtsvparser_t *parser, UH
 	case TADTSVPARSER_STATE_START:
 		DP_STATE("START inputvsegment");
 		if (stk_result == TADSTACK_RESULT_PUSH_STACK) {
-			type = tadstack_currentdata(&parser->tadstack);
-			if (type == TADSTACK_DATATYPE_TEXT) {
+			err = tadstack_currentdata(&parser->tadstack, &type);
+			if (!(err < 0) && (type == TADSTACK_DATATYPE_TEXT)) {
 				parser->state = TADTSVPARSER_STATE_READING_VALUE;
 			} else {
 				ret = TADTSVPARSER_RESULT_FORMAT_ERROR;
@@ -174,6 +176,7 @@ EXPORT TADTSVPARSER_RESULT tadtsvparser_inputendofdata(tadtsvparser_t *parser)
 	case TADTSVPARSER_STATE_READING_VALUE_NESTED_SEGMENT:
 		return TADTSVPARSER_RESULT_RECORD_END;
 	}
+	return TADTSVPARSER_RESULT_FORMAT_ERROR;
 }
 
 EXPORT VOID tadtsvparser_initialize(tadtsvparser_t *parser)

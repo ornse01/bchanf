@@ -143,8 +143,322 @@ LOCAL UNITTEST_RESULT test_tadstack_2()
 	return ok;
 }
 
+LOCAL UNITTEST_RESULT test_tadstack_3()
+{
+	tadstack_t stack;
+	tadlangcode langcode;
+	TADSTACK_DATATYPE type;
+	RECT r;
+	UNITS units;
+	W err;
+	UNITTEST_RESULT ok = UNITTEST_RESULT_PASS;
+
+	tadstack_initialize(&stack);
+
+	err = tadstack_nestlevel(&stack);
+	if (err >= 0) {
+		printf("tadstack_nestlevel: %d\n", err);
+		ok = UNITTEST_RESULT_FAIL;
+	}
+	err = tadstack_currentlangcode(&stack, &langcode);
+	if (err >= 0) {
+		printf("tadstack_currentlangcode: %d\n", err);
+		ok = UNITTEST_RESULT_FAIL;
+	}
+	err = tadstack_currentdata(&stack, &type);
+	if (err >= 0) {
+		printf("tadstack_currentdata: %d\n", err);
+		ok = UNITTEST_RESULT_FAIL;
+	}
+	err = tadstack_currentview(&stack, &r);
+	if (err >= 0) {
+		printf("tadstack_currentview: %d\n", err);
+		ok = UNITTEST_RESULT_FAIL;
+	}
+	err = tadstack_currentdraw(&stack, &r);
+	if (err >= 0) {
+		printf("tadstack_currentdraw: %d\n", err);
+		ok = UNITTEST_RESULT_FAIL;
+	}
+	err = tadstack_currenthunit(&stack, &units);
+	if (err >= 0) {
+		printf("tadstack_currenthunit: %d\n", err);
+		ok = UNITTEST_RESULT_FAIL;
+	}
+	err = tadstack_currentvunit(&stack, &units);
+	if (err >= 0) {
+		printf("tadstack_currentvunit: %d\n", err);
+		ok = UNITTEST_RESULT_FAIL;
+	}
+
+	tadstack_finalize(&stack);
+
+	return ok;
+}
+
+typedef struct {
+	W nestlevel;
+	TADSTACK_DATATYPE type;
+	TC *langcode;
+	W langlen;
+	RECT view;
+	RECT draw;
+	UNITS hunit;
+	UNITS vunit;
+} test_tadstack_validate_status_t;
+
+LOCAL Bool test_tadstack_validate_status(tadstack_t *stack, test_tadstack_validate_status_t *expected)
+{
+	tadlangcode langcode;
+	TADSTACK_DATATYPE type;
+	RECT r;
+	UNITS units;
+	W err;
+	Bool ok = True, cmp;
+
+	err = tadstack_nestlevel(stack);
+	if (err < 0) {
+		printf("tadstack_nestlevel error: %d\n", err);
+		ok = False;
+	}
+	if (expected->nestlevel != err) {
+		printf("tadstack_nestlevel: %d\n", err);
+		ok = False;
+	}
+	err = tadstack_currentdata(stack, &type);
+	if (err < 0) {
+		printf("tadstack_currentdata error: %d\n", err);
+		ok = False;
+	}
+	if (expected->type != type) {
+		printf("tadstack_currentdata: expected = %d, result = %d\n", expected->type, type);
+		ok = False;
+	}
+	if (expected->type == TADSTACK_DATATYPE_TEXT) {
+		err = tadstack_currentlangcode(stack, &langcode);
+		if (err < 0) {
+			printf("tadstack_currentlangcode error: %d\n", err);
+			ok = False;
+		}
+		cmp = tadlangcodecmpTC(expected->langcode, expected->langlen, &langcode);
+		if (cmp == False) {
+			printf("tadstack_currentlangcode: Fail\n");
+			ok = False;
+		}
+	}
+	err = tadstack_currentview(stack, &r);
+	if (err < 0) {
+		printf("tadstack_currentview error: %d\n", err);
+		ok = False;
+	}
+	if (memcmp(&expected->view, &r, sizeof(RECT)) != 0) {
+		printf("tadstack_currentview: Fail\n");
+		ok = False;
+	}
+	err = tadstack_currentdraw(stack, &r);
+	if (err < 0) {
+		printf("tadstack_currentdraw error: %d\n", err);
+		ok = False;
+	}
+	if (memcmp(&expected->draw, &r, sizeof(RECT)) != 0) {
+		printf("tadstack_currentdraw: Fail\n");
+		ok = False;
+	}
+	err = tadstack_currenthunit(stack, &units);
+	if (err < 0) {
+		printf("tadstack_currenthunit error: %d\n", err);
+		ok = False;
+	}
+	if (expected->hunit != units) {
+		printf("tadstack_currenthunit Fail: expected = %04x, result = %04x\n", expected->hunit, units);
+		ok = False;
+	}
+	err = tadstack_currentvunit(stack, &units);
+	if (err < 0) {
+		printf("tadstack_currentvunit error: %d\n", err);
+		ok = False;
+	}
+	if (expected->vunit != units) {
+		printf("tadstack_currentvunit Fail: expected = %04x, result = %04x\n", expected->vunit, units);
+		ok = False;
+	}
+
+	return ok;
+}
+
+LOCAL UNITTEST_RESULT test_tadstack_4()
+{
+	tadstack_t stack;
+	tadsegment segment;
+	TADSTACK_RESULT stk_result;
+	test_tadstack_validate_status_t expected;
+	UB textsegraw[] = {
+		0xe1, 0xff, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x88, 0xff, 0x88, 0xff,
+		0x21, 0x00, 0x00, 0x00
+	};
+	Bool cmp;
+	UNITTEST_RESULT ok = UNITTEST_RESULT_PASS;
+
+	tadstack_initialize(&stack);
+
+	segment.type = TADSEGMENT_TYPE_VARIABLE;
+	segment.value.variable.raw = textsegraw;
+	segment.value.variable.rawlen = sizeof(textsegraw);
+
+	stk_result = tadstack_inputsegment(&stack, &segment);
+	if (stk_result != TADSTACK_RESULT_PUSH_STACK) {
+		ok = UNITTEST_RESULT_FAIL;
+	}
+
+	expected.nestlevel = 0;
+	expected.type = TADSTACK_DATATYPE_TEXT;
+	expected.langcode = (TC[]){0xFE21};
+	expected.langlen = 1;
+	expected.view = (RECT){{0,0,0,0}};
+	expected.draw = (RECT){{0,0,0,0}};
+	expected.hunit = 0xff88;
+	expected.vunit = 0xff88;
+	cmp = test_tadstack_validate_status(&stack, &expected);
+	if (cmp == False) {
+		ok = UNITTEST_RESULT_FAIL;
+	}
+
+	tadstack_finalize(&stack);
+
+	return ok;
+}
+
+LOCAL UNITTEST_RESULT test_tadstack_5()
+{
+	tadstack_t stack;
+	tadsegment segment;
+	TADSTACK_RESULT stk_result;
+	test_tadstack_validate_status_t expected;
+	UB figsegraw[] = {
+		0xe3, 0xff, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x88, 0xff, 0x88, 0xff,
+		0x00, 0x00, 0x00, 0x00
+	};
+	Bool cmp;
+	UNITTEST_RESULT ok = UNITTEST_RESULT_PASS;
+
+	tadstack_initialize(&stack);
+
+	segment.type = TADSEGMENT_TYPE_VARIABLE;
+	segment.value.variable.raw = figsegraw;
+	segment.value.variable.rawlen = sizeof(figsegraw);
+
+	stk_result = tadstack_inputsegment(&stack, &segment);
+	if (stk_result != TADSTACK_RESULT_PUSH_STACK) {
+		ok = UNITTEST_RESULT_FAIL;
+	}
+
+	expected.nestlevel = 0;
+	expected.type = TADSTACK_DATATYPE_FIG;
+	expected.langcode = NULL;
+	expected.langlen = 0;
+	expected.view = (RECT){{0,0,0,0}};
+	expected.draw = (RECT){{0,0,0,0}};
+	expected.hunit = 0xff88;
+	expected.vunit = 0xff88;
+	cmp = test_tadstack_validate_status(&stack, &expected);
+	if (cmp == False) {
+		ok = UNITTEST_RESULT_FAIL;
+	}
+
+	tadstack_finalize(&stack);
+
+	return ok;
+}
+
+LOCAL UNITTEST_RESULT test_tadstack_6()
+{
+	tadstack_t stack;
+	tadsegment segment;
+	TADSTACK_RESULT stk_result;
+	test_tadstack_validate_status_t expected;
+	Bool cmp;
+	UNITTEST_RESULT ok = UNITTEST_RESULT_PASS;
+
+	tadstack_initialize(&stack);
+
+	segment.type = TADSEGMENT_TYPE_CHARACTOR;
+	segment.value.ch = 0x2422;
+
+	stk_result = tadstack_inputsegment(&stack, &segment);
+	if (stk_result != TADSTACK_RESULT_PUSH_STACK) {
+		ok = UNITTEST_RESULT_FAIL;
+	}
+
+	expected.nestlevel = 0;
+	expected.type = TADSTACK_DATATYPE_TEXT;
+	expected.langcode = (TC[]){0xFE21};
+	expected.langlen = 1;
+	expected.view = (RECT){{0,0,0,0}};
+	expected.draw = (RECT){{0,0,0,0}};
+	expected.hunit = 0;
+	expected.vunit = 0;
+	cmp = test_tadstack_validate_status(&stack, &expected);
+	if (cmp == False) {
+		ok = UNITTEST_RESULT_FAIL;
+	}
+
+	tadstack_finalize(&stack);
+
+	return ok;
+}
+
+LOCAL UNITTEST_RESULT test_tadstack_7()
+{
+	tadstack_t stack;
+	tadsegment segment;
+	TADSTACK_RESULT stk_result;
+	test_tadstack_validate_status_t expected;
+	UB textsegraw[] = {
+		0xa2, 0xff, 0x06, 0x00, 0x00, 0x03, 0x01, 0x01, 0x01, 0x01
+	};
+	Bool cmp;
+	UNITTEST_RESULT ok = UNITTEST_RESULT_PASS;
+
+	tadstack_initialize(&stack);
+
+	segment.type = TADSEGMENT_TYPE_VARIABLE;
+	segment.value.variable.raw = textsegraw;
+	segment.value.variable.rawlen = sizeof(textsegraw);
+
+	stk_result = tadstack_inputsegment(&stack, &segment);
+	if (stk_result != TADSTACK_RESULT_PUSH_STACK) {
+		ok = UNITTEST_RESULT_FAIL;
+	}
+
+	expected.nestlevel = 0;
+	expected.type = TADSTACK_DATATYPE_TEXT;
+	expected.langcode = (TC[]){0xFE21};
+	expected.langlen = 1;
+	expected.view = (RECT){{0,0,0,0}};
+	expected.draw = (RECT){{0,0,0,0}};
+	expected.hunit = 0;
+	expected.vunit = 0;
+	cmp = test_tadstack_validate_status(&stack, &expected);
+	if (cmp == False) {
+		ok = UNITTEST_RESULT_FAIL;
+	}
+
+	tadstack_finalize(&stack);
+
+	return ok;
+}
+
 EXPORT VOID test_tadstack_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_tadstack_1);
 	UNITTEST_DRIVER_REGIST(driver, test_tadstack_2);
+	UNITTEST_DRIVER_REGIST(driver, test_tadstack_3);
+	UNITTEST_DRIVER_REGIST(driver, test_tadstack_4);
+	UNITTEST_DRIVER_REGIST(driver, test_tadstack_5);
+	UNITTEST_DRIVER_REGIST(driver, test_tadstack_6);
+	UNITTEST_DRIVER_REGIST(driver, test_tadstack_7);
 }

@@ -47,7 +47,7 @@
 
 LOCAL Bool texteditor_insertfilter_stackfilter(texteditor_insertfilter_t *filter, taditerator_result *result)
 {
-	W nestlevel;
+	W nestlevel, err;
 	TADSTACK_DATATYPE type;
 
 	for (;;) {
@@ -63,10 +63,10 @@ LOCAL Bool texteditor_insertfilter_stackfilter(texteditor_insertfilter_t *filter
 		}
 
 		nestlevel = tadstack_nestlevel(&filter->tadstack);
-		if (nestlevel > 0) {
+		if (nestlevel != 0) {
 			continue;
 		}
-		type = tadstack_currentdata(&filter->tadstack);
+		err = tadstack_currentdata(&filter->tadstack, &type);
 		if (type != TADSTACK_DATATYPE_TEXT) {
 			continue;
 		}
