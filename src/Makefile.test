@@ -110,11 +110,13 @@ SRC_CSS_TEST =	test_cssrendering_box.c \
 
 SRC_CONTROL =	texteditor_textfragment.c \
 	    	texteditor_characterstate.c \
-		texteditor_insertfilter.c
+		texteditor_insertfilter.c \
+		texteditor_stackfilter.c
 
 SRC_CONTROL_TEST =	test_texteditor_textfragment.c \
 		 	test_texteditor_characterstate.c \
-			test_texteditor_insertfilter.c
+			test_texteditor_insertfilter.c \
+			test_texteditor_stackfilter.c
 
 SRC =	test_main.c $(SRC_UNITTEST) $(SRC_HTTP) $(SRC_HTTP_TEST) $(SRC_PARSE) $(SRC_PARSE_TEST) $(SRC_COLL) $(SRC_COLL_TEST) $(SRC_CODING) $(SRC_CODING_TEST) $(SRC_TAD) $(SRC_TAD_TEST) $(SRC_CSS) $(SRC_CSS_TEST) $(SRC_CONTROL) $(SRC_CONTROL_TEST)
 

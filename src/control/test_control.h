@@ -1,7 +1,7 @@
 /*
  * test_control.h
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -31,6 +31,7 @@
 #define __TEST_CONTROL_H__
 
 IMPORT VOID test_texteditor_characterstate_main(unittest_driver_t *driver);
+IMPORT VOID test_texteditor_stackfilter_main(unittest_driver_t *driver);
 IMPORT VOID test_texteditor_insertfilter_main(unittest_driver_t *driver);
 IMPORT VOID test_texteditor_textfragment_main(unittest_driver_t *driver);
 

@@ -84,6 +84,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_cssrendering_coordinate_main(driver);
 
 	test_texteditor_characterstate_main(driver);
+	test_texteditor_stackfilter_main(driver);
 	test_texteditor_insertfilter_main(driver);
 	test_texteditor_textfragment_main(driver);
 
