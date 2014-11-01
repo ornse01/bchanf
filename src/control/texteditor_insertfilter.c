@@ -27,9 +27,12 @@
 #include	"texteditor_insertfilter.h"
 
 #include	<bstdio.h>
+#include	<bassert.h>
 
 #include	<tad/taditerator.h>
 #include	<tad/tadstack.h>
+
+#include	"texteditor_stackfilter.h"
 
 #ifdef BCHAN_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -44,155 +47,6 @@
 #else
 #define DP_STATE(s) /**/
 #endif
-
-LOCAL Bool texteditor_insertfilter_stackfilter(texteditor_insertfilter_t *filter, taditerator_result *result)
-{
-	W nestlevel, err;
-	TADSTACK_DATATYPE type;
-
-	for (;;) {
-		taditerator_next2(&filter->iterator, result);
-		if (result->type == TADITERATOR_RESULTTYPE_END) {
-			break;
-		}
-
-		if (result->type == TADITERATOR_RESULTTYPE_CHARCTOR) {
-			tadstack_inputcharactor(&filter->tadstack, result->segment);
-		} else if (result->type == TADITERATOR_RESULTTYPE_SEGMENT) {
-			tadstack_inputvsegment(&filter->tadstack, result->segment, result->data, result->segsize);
-		}
-
-		nestlevel = tadstack_nestlevel(&filter->tadstack);
-		if (nestlevel != 0) {
-			continue;
-		}
-		err = tadstack_currentdata(&filter->tadstack, &type);
-		if (type != TADSTACK_DATATYPE_TEXT) {
-			continue;
-		}
-
-		return True;
-	}
-
-	return False;
-}
-
-struct texteditor_insertfilter_innerresult_ {
-	enum {
-		INNERRESULT_VARIABLE,
-		INNERRESULT_STRING,
-		INNERRESULT_LANGCODE,
-	} type;
-	UB *data;
-	W len;
-	struct {
-		UB segid;
-		UW len;
-		UB *data;
-	} variable;
-};
-typedef struct texteditor_insertfilter_innerresult_ texteditor_insertfilter_innerresult;
-
-LOCAL Bool texteditor_insertfilter_langcode(texteditor_insertfilter_t *filter, texteditor_insertfilter_innerresult *result)
-{
-	taditerator_result iter_result;
-	Bool reading_lang = False, cont;
-	TC *lang_start = NULL;
-
-	for (;;) {
-		cont = texteditor_insertfilter_stackfilter(filter, &iter_result);
-		if (cont == False) {
-			break;
-		}
-
-		if (reading_lang != False) {
-			if (iter_result.type != TADITERATOR_RESULTTYPE_CHARCTOR) {
-				/* format error */
-				break;
-			}
-			if (lang_start == NULL) {
-				break;
-			}
-			if (iter_result.segment == 0xFEFE) {
-				continue;
-			}
-			result->type = INNERRESULT_LANGCODE;
-			result->data = (UB*)lang_start;
-			result->len = (iter_result.pos - lang_start + 1) * sizeof(TC);
-			TCtotadlangcode((TC*)result->data, result->len / sizeof(TC), &filter->current.lang);
-			reading_lang = False;
-			lang_start = NULL;
-		}
-
-		if (iter_result.type == TADITERATOR_RESULTTYPE_CHARCTOR) {
-			if ((iter_result.segment & 0xFF00) == 0xFE00) {
-				if (iter_result.segment == 0xFEFE) {
-					reading_lang = True;
-					lang_start = iter_result.pos;
-				} else {
-					result->type = INNERRESULT_LANGCODE;
-					result->data = (UB*)iter_result.pos;
-					result->len = sizeof(TC);
-					TCtotadlangcode((TC*)result->data, result->len / sizeof(TC), &filter->current.lang);
-					return True;
-				}
-			} else {
-				result->type = INNERRESULT_STRING;
-				result->data = (UB*)iter_result.pos;
-				result->len = sizeof(TC);
-				return True;
-			}
-		} else if (iter_result.type == TADITERATOR_RESULTTYPE_SEGMENT) {
-			result->type = INNERRESULT_VARIABLE;
-			result->data = (UB*)iter_result.pos;
-			if (iter_result.vseg.l->len == 0xFFFF) {
-				result->len = 2 + 2 + 4 + iter_result.vseg.l->llen;
-			} else {
-				result->len = 2 + 2 + iter_result.vseg.l->len;
-			}
-			result->variable.segid = iter_result.segment & 0xFF;
-			result->variable.len = iter_result.segsize;
-			result->variable.data = iter_result.data;
-			return True;
-		}
-	}
-
-	return False;
-}
-
-LOCAL Bool texteditor_insertfilter_chratio(texteditor_insertfilter_t *filter, texteditor_insertfilter_innerresult *result)
-{
-	Bool cont;
-	UB subid;
-
-	for (;;) {
-		cont = texteditor_insertfilter_langcode(filter, result);
-		if (cont == False) {
-			break;
-		}
-
-		if (result->type != INNERRESULT_VARIABLE) {
-			return True;
-		}
-
-		if (result->variable.segid != TS_TFONT) {
-			continue;
-		}
-		if (result->variable.len < 6) {
-			continue;
-		}
-		subid = *(UH*)result->variable.data >> 8;
-		if (subid != 3) {
-			continue;
-		}
-
-		filter->current.w_ratio = *((UH*)result->variable.data + 5);
-
-		return True;
-	}
-
-	return False;
-}
 
 /* */
 
@@ -219,196 +73,205 @@ LOCAL Bool texteditor_insertfilter_w_ratio_isSystemScript(tadlangcode *lang)
 
 /* */
 
-LOCAL TC texteditor_insertfilter_systemlangcode[] = { 0xFE21 };
-#define TEXTEDITOR_INSERTFILTER_SYSTEMLANGCODE_LENGTH 1
-
 LOCAL TC textediter_insertfilter_zenkakufusen[] = { 0xFFA2, 0x0006, 0x0300, 0x0101, 0x0101 };
 LOCAL TC textediter_insertfilter_hankakufusen[] = { 0xFFA2, 0x0006, 0x0300, 0x0101, 0x0102 };
 #define TEXTEDITOR_INSERTFILTER_FUSEN_LENGTH 5
 
-LOCAL VOID texteditor_insertfilter_setresult_systemlangcode(texteditor_insertfilter_result *result)
+LOCAL VOID texteditor_insertfilter_pushback_segment(texteditor_insertfilter_t *filter, tadsegment *segment)
 {
-	result->data = (UB*)texteditor_insertfilter_systemlangcode;
-	result->len = TEXTEDITOR_INSERTFILTER_SYSTEMLANGCODE_LENGTH * sizeof(TC);
+	assert(filter->result_buffer.used < TEXTEDITOR_INSERTFILTER_RESULT_BUFFER_LEN);
+	filter->result_buffer.segs[filter->result_buffer.used] = *segment;
+	filter->result_buffer.used++;
 }
 
-LOCAL VOID texteditor_insertfilter_setresult_firstlangcode(texteditor_insertfilter_t *filter, texteditor_insertfilter_result *result)
+LOCAL VOID texteditor_insertfilter_pushback_zenkakufusen(texteditor_insertfilter_t *filter)
 {
-	result->len = tadlangcodetoTC(&filter->first.lang, filter->buffer, TEXTEDITOR_INSERTFILTER_TEXTBUFFER_SIZE) * sizeof(TC);
-	result->data = (UB*)filter->buffer;
+	tadsegment segment;
+	segment.type = TADSEGMENT_TYPE_VARIABLE;
+	segment.value.variable.raw = (UB*)textediter_insertfilter_zenkakufusen;
+	segment.value.variable.rawlen = TEXTEDITOR_INSERTFILTER_FUSEN_LENGTH * sizeof(TC);
+	texteditor_insertfilter_pushback_segment(filter, &segment);
 }
 
-LOCAL VOID texteditor_insertfilter_setresult_zenkakufusen(texteditor_insertfilter_result *result)
+LOCAL VOID texteditor_insertfilter_pushback_hankakufusen(texteditor_insertfilter_t *filter)
 {
-	result->data = (UB*)textediter_insertfilter_zenkakufusen;
-	result->len = TEXTEDITOR_INSERTFILTER_FUSEN_LENGTH * sizeof(TC);
+	tadsegment segment;
+	segment.type = TADSEGMENT_TYPE_VARIABLE;
+	segment.value.variable.raw = (UB*)textediter_insertfilter_hankakufusen;
+	segment.value.variable.rawlen = TEXTEDITOR_INSERTFILTER_FUSEN_LENGTH * sizeof(TC);
+	texteditor_insertfilter_pushback_segment(filter, &segment);
 }
 
-LOCAL VOID texteditor_insertfilter_setresult_hankakufusen(texteditor_insertfilter_result *result)
+LOCAL VOID texteditor_insertfilter_pushback_systemlangcode(texteditor_insertfilter_t *filter)
 {
-	result->data = (UB*)textediter_insertfilter_hankakufusen;
-	result->len = TEXTEDITOR_INSERTFILTER_FUSEN_LENGTH * sizeof(TC);
+	tadsegment segment;
+	segment.type = TADSEGMENT_TYPE_LANGCODE;
+	segment.value.lang = (tadlangcode){0, 0x21};
+	texteditor_insertfilter_pushback_segment(filter, &segment);
 }
 
-/* */
-
-LOCAL Bool texteditor_insertfilter_next_terminate(texteditor_insertfilter_t *filter, texteditor_insertfilter_result *result)
+LOCAL VOID texteditor_insertfilter_pushback_firstlangcode(texteditor_insertfilter_t *filter)
 {
-	Bool ok, zen;
-
-	if (filter->first.w_ratio != filter->current.w_ratio) {
-		filter->state = TEXTEDITOR_INSTERTFILTER_STATE_LAST_LANGCODE;
-		zen = texteditor_insertfilter_w_ratio_isZenkaku(filter->first.w_ratio);
-		if (zen == False) {
-			texteditor_insertfilter_setresult_hankakufusen(result);
-		} else {
-			texteditor_insertfilter_setresult_zenkakufusen(result);
-		}
-		return True;
-	}
-	ok = tadlangcodecmp(&filter->first.lang, &filter->current.lang);
-	if (ok == False) {
-		filter->state = TEXTEDITOR_INSTERTFILTER_STATE_LAST;
-		texteditor_insertfilter_setresult_firstlangcode(filter, result);
-		return True;
-	}
-
-	return False;
+	tadsegment segment;
+	segment.type = TADSEGMENT_TYPE_LANGCODE;
+	segment.value.lang = filter->first.lang;
+	texteditor_insertfilter_pushback_segment(filter, &segment);
 }
 
-LOCAL Bool texteditor_insertfilter_next_state_start(texteditor_insertfilter_t *filter, texteditor_insertfilter_result *result)
+LOCAL W texteditor_insertfilter_put_filtering(texteditor_insertfilter_t *filter, tadsegment *segment)
 {
-	texteditor_insertfilter_innerresult inner_result;
-	Bool cont, ok;
-
-	ok = texteditor_insertfilter_w_ratio_isZenkaku(filter->first.w_ratio);
-	if (ok == False) {
-		filter->state = TEXTEDITOR_INSTERTFILTER_STATE_FIRST_LANGCODE;
-		texteditor_insertfilter_setresult_zenkakufusen(result);
-		return True;
-	}
-	ok = texteditor_insertfilter_w_ratio_isSystemScript(&filter->first.lang);
-	if (ok == False) {
-		filter->state = TEXTEDITOR_INSTERTFILTER_STATE_RUNNING;
-		texteditor_insertfilter_setresult_systemlangcode(result);
-		return True;
-	}
-
-	cont = texteditor_insertfilter_chratio(filter, &inner_result);
-	if (cont == False) {
-		return texteditor_insertfilter_next_terminate(filter, result);
-	}
-
-	filter->state = TEXTEDITOR_INSTERTFILTER_STATE_RUNNING;
-	result->data = inner_result.data;
-	result->len = inner_result.len;
-
-	return True;
-}
-
-LOCAL Bool texteditor_insertfilter_next_state_langcode(texteditor_insertfilter_t *filter, texteditor_insertfilter_result *result)
-{
-	texteditor_insertfilter_innerresult inner_result;
-	Bool cont, ok;
-
-	ok = texteditor_insertfilter_w_ratio_isSystemScript(&filter->first.lang);
-	if (ok == False) {
-		filter->state = TEXTEDITOR_INSTERTFILTER_STATE_RUNNING;
-		texteditor_insertfilter_setresult_systemlangcode(result);
-		return True;
-	}
-
-	cont = texteditor_insertfilter_chratio(filter, &inner_result);
-	if (cont == False) {
-		return texteditor_insertfilter_next_terminate(filter, result);
-	}
-
-	filter->state = TEXTEDITOR_INSTERTFILTER_STATE_RUNNING;
-	result->data = inner_result.data;
-	result->len = inner_result.len;
-
-	return True;
-}
-
-LOCAL Bool texteditor_insertfilter_next_state_running(texteditor_insertfilter_t *filter, texteditor_insertfilter_result *result)
-{
-	texteditor_insertfilter_innerresult inner_result;
+	W ret;
 	Bool cont;
+	tadsegment *result;
+	UB segid, subid, *segdata;
+	UW seglen;
 
-	cont = texteditor_insertfilter_chratio(filter, &inner_result);
-	if (cont == False) {
-		return texteditor_insertfilter_next_terminate(filter, result);
+	ret = texteditor_stackfilter_setinput(&filter->stack, segment);
+	if (ret == TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_FORMAT_ERROR) {
+		return TEXTEDITOR_INSERTFILTER_PUT_RESULT_FORMAT_ERROR;
+	}
+	for(;;) {
+		cont = texteditor_stackfilter_getoutput(&filter->stack, &result);
+		if (cont == False) {
+			break;
+		}
+
+		if (result->type == TADSEGMENT_TYPE_VARIABLE) {
+			tadsegment_getvariable(result, &segid, &seglen, &segdata);
+			if (segid != TS_TFONT) {
+				continue;
+			}
+			if (seglen < 6) {
+				continue;
+			}
+			subid = *(UH*)segdata >> 8;
+			if (subid != 3) {
+				continue;
+			}
+
+			filter->current.w_ratio = *((UH*)segdata + 5);
+		} else if (result->type == TADSEGMENT_TYPE_LANGCODE) {
+			filter->current.lang = result->value.lang;
+		}
+
+		texteditor_insertfilter_pushback_segment(filter, result);
 	}
 
-	filter->state = TEXTEDITOR_INSTERTFILTER_STATE_RUNNING;
-	result->data = inner_result.data;
-	result->len = inner_result.len;
-
-	return True;
+	return TEXTEDITOR_INSERTFILTER_PUT_RESULT_OK;
 }
 
-LOCAL Bool texteditor_insertfilter_next_state_last_langcode(texteditor_insertfilter_t *filter, texteditor_insertfilter_result *result)
+LOCAL W texteditor_insertfilter_put_state_start(texteditor_insertfilter_t *filter, tadsegment *segment, texteditor_insertfilterresult_t **result)
 {
 	Bool ok;
 
-	ok = tadlangcodecmp(&filter->first.lang, &filter->current.lang);
+	ok = texteditor_insertfilter_w_ratio_isZenkaku(filter->first.w_ratio);
 	if (ok == False) {
-		filter->state = TEXTEDITOR_INSTERTFILTER_STATE_LAST;
-		texteditor_insertfilter_setresult_firstlangcode(filter, result);
-		return True;
+		texteditor_insertfilter_pushback_zenkakufusen(filter);
+	}
+	ok = texteditor_insertfilter_w_ratio_isSystemScript(&filter->first.lang);
+	if (ok == False) {
+		texteditor_insertfilter_pushback_systemlangcode(filter);
 	}
 
-	return False;
+	*result = &filter->result;
+
+	filter->state = TEXTEDITOR_INSERTFILTER_STATE_RUNNING;
+
+	return texteditor_insertfilter_put_filtering(filter, segment);
 }
 
-LOCAL Bool texteditor_insertfilter_next_state_last(texteditor_insertfilter_t *filter, texteditor_insertfilter_result *result)
+LOCAL W texteditor_insertfilter_put_state_running(texteditor_insertfilter_t *filter, tadsegment *segment, texteditor_insertfilterresult_t **result)
 {
-	return False;
+	filter->result_buffer.used = 0;
+	filter->result_buffer.consumed = 0;
+
+	*result = &filter->result;
+
+	return texteditor_insertfilter_put_filtering(filter, segment);
 }
 
-EXPORT Bool texteditor_insertfilter_next(texteditor_insertfilter_t *filter, texteditor_insertfilter_result *result)
+EXPORT W texteditor_insertfilter_put(texteditor_insertfilter_t *filter, tadsegment *segment, texteditor_insertfilterresult_t **result)
 {
-	Bool cont = False;
+	switch (filter->state) {
+	case TEXTEDITOR_INSERTFILTER_STATE_START:
+		DP_STATE("put:STATE_START");
+		return texteditor_insertfilter_put_state_start(filter, segment, result);
+	case TEXTEDITOR_INSERTFILTER_STATE_RUNNING:
+		DP_STATE("put:STATE_RUNNING");
+		return texteditor_insertfilter_put_state_running(filter, segment, result);
+	case TEXTEDITOR_INSERTFILTER_STATE_END:
+		DP_STATE("put:STATE_END");
+		return TEXTEDITOR_INSERTFILTER_PUT_RESULT_FORMAT_ERROR;
+	}
+	return TEXTEDITOR_INSERTFILTER_PUT_RESULT_FORMAT_ERROR;
+}
+
+EXPORT VOID texteditor_insertfilter_endinput(texteditor_insertfilter_t *filter, texteditor_insertfilterresult_t **result)
+{
+	Bool ok, zen;
+
+	filter->result_buffer.used = 0;
+	filter->result_buffer.consumed = 0;
+	*result = &filter->result;
 
 	switch (filter->state) {
-	case TEXTEDITOR_INSTERTFILTER_STATE_START:
-		DP_STATE("STATE_START");
-		cont = texteditor_insertfilter_next_state_start(filter, result);
+	case TEXTEDITOR_INSERTFILTER_STATE_START:
+		DP_STATE("end:STATE_START");
 		break;
-	case TEXTEDITOR_INSTERTFILTER_STATE_FIRST_LANGCODE:
-		DP_STATE("STATE_FIRST_LANGCODE");
-		cont = texteditor_insertfilter_next_state_langcode(filter, result);
+	case TEXTEDITOR_INSERTFILTER_STATE_RUNNING:
+		DP_STATE("end:STATE_RUNNING");
+		if (filter->first.w_ratio != filter->current.w_ratio) {
+			zen = texteditor_insertfilter_w_ratio_isZenkaku(filter->first.w_ratio);
+			if (zen == False) {
+				texteditor_insertfilter_pushback_hankakufusen(filter);
+			} else {
+				texteditor_insertfilter_pushback_zenkakufusen(filter);
+			}
+		}
+		ok = tadlangcodecmp(&filter->first.lang, &filter->current.lang);
+		if (ok == False) {
+			texteditor_insertfilter_pushback_firstlangcode(filter);
+		}
 		break;
-	case TEXTEDITOR_INSTERTFILTER_STATE_RUNNING:
-		DP_STATE("STATE_RUNNING");
-		cont = texteditor_insertfilter_next_state_running(filter, result);
-		break;
-	case TEXTEDITOR_INSTERTFILTER_STATE_LAST_LANGCODE:
-		DP_STATE("STATE_LAST_LANGCODE");
-		cont = texteditor_insertfilter_next_state_last_langcode(filter, result);
-		break;
-	case TEXTEDITOR_INSTERTFILTER_STATE_LAST:
-		DP_STATE("STATE_LAST");
-		cont = texteditor_insertfilter_next_state_last(filter, result);
+	case TEXTEDITOR_INSERTFILTER_STATE_END:
+		DP_STATE("end:STATE_END");
 		break;
 	}
-
-	return cont;
 }
 
-EXPORT VOID texteditor_insertfilter_initialize(texteditor_insertfilter_t *filter, tadlangcode *lang, RATIO w_ratio, UB *data, W len)
+EXPORT Bool texteditor_insertfilterresult_next(texteditor_insertfilterresult_t *result, tadsegment **segment)
 {
-	filter->state = TEXTEDITOR_INSTERTFILTER_STATE_START;
+	texteditor_insertfilter_t *filter = result->filter;
+
+	if (filter->result_buffer.consumed >= filter->result_buffer.used) {
+		return False;
+	}
+
+	*segment = filter->result_buffer.segs + filter->result_buffer.consumed;
+	filter->result_buffer.consumed++;
+
+	if (filter->result_buffer.consumed >= filter->result_buffer.used) {
+		filter->result_buffer.used = 0;
+		filter->result_buffer.consumed = 0;
+	}
+
+	return True;
+}
+
+EXPORT VOID texteditor_insertfilter_initialize(texteditor_insertfilter_t *filter, tadlangcode *lang, RATIO w_ratio)
+{
+	texteditor_stackfilter_initialize(&filter->stack);
+	filter->state = TEXTEDITOR_INSERTFILTER_STATE_START;
 	filter->first.lang = *lang;
 	filter->first.w_ratio = w_ratio;
 	filter->current.lang = (tadlangcode){0, 0x21};
 	filter->current.w_ratio = 0x0101;
-	tadstack_initialize(&filter->tadstack);
-	taditerator_initialize(&filter->iterator, (TC*)data, len / sizeof(TC));
+	filter->result_buffer.used = 0;
+	filter->result_buffer.consumed = 0;
+	filter->result.filter = filter;
 }
 
 EXPORT VOID texteditor_insertfilter_finalize(texteditor_insertfilter_t *filter)
 {
-	taditerator_finalize(&filter->iterator);
-	tadstack_finalize(&filter->tadstack);
+	texteditor_stackfilter_finalize(&filter->stack);
 }

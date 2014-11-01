@@ -36,6 +36,7 @@
 #include	<tcode.h>
 
 #include    <tad/tadlangcode.h>
+#include    <tad/taddecoder.h>
 
 #include    <unittest_driver.h>
 
@@ -44,38 +45,93 @@ typedef struct {
 	W len;
 } test_texteditor_insertfilter_expected;
 
+LOCAL Bool test_texteditor_insertfilter_cmpsegment(test_texteditor_insertfilter_expected *expected, tadsegment *result)
+{
+	Bool ok = True;
+
+	switch (result->type) {
+	case TADSEGMENT_TYPE_VARIABLE:
+		if (result->value.variable.rawlen != expected->len) {
+			printf("VAR: return length failure: expected = %d, result = %d\n", expected->len, result->value.variable.rawlen);
+			ok = False;
+		} else if (memcmp(result->value.variable.raw, expected->data, expected->len) != 0) {
+			printf("VAR: return data failure\n");
+			ok = False;
+		}
+		return ok;
+	case TADSEGMENT_TYPE_CHARACTOR:
+		if (expected->len != sizeof(TC)) {
+			printf("CH: return length failure: expected = %d\n", expected->len);
+			ok = False;
+		} else if (memcmp((UB*)&result->value.ch, expected->data, expected->len) != 0) {
+			printf("CH: return data failure: expected = %04x, result = %04x\n", *(TC*)expected->data, result->value.ch);
+			ok = False;
+		}
+		return ok;
+	case TADSEGMENT_TYPE_LANGCODE:
+		ok = tadlangcodecmpTC((TC*)expected->data, expected->len/sizeof(TC), &result->value.lang);
+		if (ok == False) {
+			printf("LANG: langcode faiure\n");
+		}
+		return ok;
+	}
+	return False;
+}
+
 LOCAL UNITTEST_RESULT test_texteditor_insertfilter_common(tadlangcode lang, RATIO w_ratio, UB *data, W len, test_texteditor_insertfilter_expected *expected, W expected_len)
 {
 	texteditor_insertfilter_t filter;
-	texteditor_insertfilter_result result;
-	Bool cont;
-	W i;
+	texteditor_insertfilterresult_t *result;
+	taddecoder_t decoder;
+	tadsegment segment, *filterd;
+	Bool cont, ok;
+	W i, err;
 	UNITTEST_RESULT ret = UNITTEST_RESULT_PASS;
 
-	texteditor_insertfilter_initialize(&filter, &lang, w_ratio, data, len);
+	texteditor_insertfilter_initialize(&filter, &lang, w_ratio);
 
-	for (i = 0;; i++) {
-		cont = texteditor_insertfilter_next(&filter, &result);
+	taddecoder_initialize(&decoder, (TC*)data, len/sizeof(TC));
+
+	for (i = 0;;) {
+		cont = taddecoder_next(&decoder, &segment);
 		if (cont == False) {
 			break;
 		}
-		if (i >= expected_len) {
-			continue;
-		}
-		if (result.len != expected[i].len) {
-			printf("return length failure[%d]: expected = %d, result = %d\n", i, expected[i].len, result.len);
+		err = texteditor_insertfilter_put(&filter, &segment, &result);
+		if (err < 0) {
 			ret = UNITTEST_RESULT_FAIL;
-			continue;
+			break;
 		}
-		if (memcmp(result.data, expected[i].data, result.len) != 0) {
-			printf("return data failure[%d]\n", i);
+		for (;; i++) {
+			cont = texteditor_insertfilterresult_next(result, &filterd);
+			if (cont == False) {
+				break;
+			}
+			ok = test_texteditor_insertfilter_cmpsegment(expected + i, filterd);
+			if (ok == False) {
+				printf("segment[%d] fail\n", i);
+				ret = UNITTEST_RESULT_FAIL;
+			}
+		}
+	}
+	texteditor_insertfilter_endinput(&filter, &result);
+	for (;; i++) {
+		cont = texteditor_insertfilterresult_next(result, &filterd);
+		if (cont == False) {
+			break;
+		}
+		ok = test_texteditor_insertfilter_cmpsegment(expected + i, filterd);
+		if (ok == False) {
 			ret = UNITTEST_RESULT_FAIL;
 		}
 	}
+
 	if (i != expected_len) {
 		printf("iteration number failure: expected = %d, result = %d\n", expected_len, i);
 		ret = UNITTEST_RESULT_FAIL;
 	}
+
+	taddecoder_finalize(&decoder);
 
 	texteditor_insertfilter_finalize(&filter);
 

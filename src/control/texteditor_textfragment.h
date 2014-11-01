@@ -62,12 +62,13 @@ struct texteditor_insertcontext_t_ {
 		tadlangcode lang;
 		Bool is_hankaku;
 	} pos_state;
+	texteditor_insertfilter_t filter;
 	GID gid;
 };
 typedef struct texteditor_insertcontext_t_ texteditor_insertcontext_t;
 
 IMPORT W texteditor_insertcontext_initialize(texteditor_insertcontext_t *ctx, texteditor_textfragment_t *target, GID gid, W pos);
 IMPORT W texteditor_insertcontext_finalize(texteditor_insertcontext_t *ctx);
-IMPORT W texteditor_insertcontext_insert(texteditor_insertcontext_t *ctx, UB *data, W len);
+IMPORT W texteditor_insertcontext_insert(texteditor_insertcontext_t *ctx, tadsegment *segment);
 
 #endif

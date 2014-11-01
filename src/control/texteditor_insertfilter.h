@@ -29,21 +29,23 @@
 #include	<tad/tadstack.h>
 #include	<tad/taditerator.h>
 #include	<tad/tadlangcode.h>
+#include	"texteditor_stackfilter.h"
 
 #ifndef __TEXTEDITOR_INSERTFILTER_H__
 #define __TEXTEDITOR_INSERTFILTER_H__
 
-#define TEXTEDITOR_INSERTFILTER_TEXTBUFFER_SIZE 10
+typedef struct texteditor_insertfilter_t_ texteditor_insertfilter_t;
+typedef struct texteditor_insertfilterresult_t_ texteditor_insertfilterresult_t;
 
-/* Functionality name: texteditor */
-/* Detail name: insertfilter */
+struct texteditor_insertfilterresult_t_ {
+	texteditor_insertfilter_t *filter;
+};
 struct texteditor_insertfilter_t_ {
+	texteditor_stackfilter_t stack;
 	enum {
-		TEXTEDITOR_INSTERTFILTER_STATE_START,
-		TEXTEDITOR_INSTERTFILTER_STATE_FIRST_LANGCODE,
-		TEXTEDITOR_INSTERTFILTER_STATE_RUNNING,
-		TEXTEDITOR_INSTERTFILTER_STATE_LAST_LANGCODE,
-		TEXTEDITOR_INSTERTFILTER_STATE_LAST,
+		TEXTEDITOR_INSERTFILTER_STATE_START,
+		TEXTEDITOR_INSERTFILTER_STATE_RUNNING,
+		TEXTEDITOR_INSERTFILTER_STATE_END,
 	} state;
 	struct {
 		tadlangcode lang;
@@ -53,24 +55,21 @@ struct texteditor_insertfilter_t_ {
 		tadlangcode lang;
 		RATIO w_ratio;
 	} current;
-	tadstack_t tadstack;
-	taditerator_t iterator;
-	TC buffer[TEXTEDITOR_INSERTFILTER_TEXTBUFFER_SIZE];
+	struct {
+#define TEXTEDITOR_INSERTFILTER_RESULT_BUFFER_LEN (3)
+		tadsegment segs[TEXTEDITOR_INSERTFILTER_RESULT_BUFFER_LEN];
+		W used;
+		W consumed;
+	} result_buffer;
+	texteditor_insertfilterresult_t result;
 };
-typedef struct texteditor_insertfilter_t_ texteditor_insertfilter_t;
 
-/* Functionality name: texteditor */
-/* Detail name: insertfilter */
-/* Data structure identifier: result */
-struct texteditor_insertfilter_result_ {
-	UB *data;
-	W len;
-};
-typedef struct texteditor_insertfilter_result_ texteditor_insertfilter_result;
-
-IMPORT VOID texteditor_insertfilter_initialize(texteditor_insertfilter_t *filter, tadlangcode *lang, RATIO w_ratio, UB *data, W len);
+IMPORT VOID texteditor_insertfilter_initialize(texteditor_insertfilter_t *filter, tadlangcode *lang, RATIO w_ratio);
 IMPORT VOID texteditor_insertfilter_finalize(texteditor_insertfilter_t *filter);
-
-IMPORT Bool texteditor_insertfilter_next(texteditor_insertfilter_t *filter, texteditor_insertfilter_result *result);
+IMPORT W texteditor_insertfilter_put(texteditor_insertfilter_t *filter, tadsegment *segment, texteditor_insertfilterresult_t **result);
+#define TEXTEDITOR_INSERTFILTER_PUT_RESULT_OK (0)
+#define TEXTEDITOR_INSERTFILTER_PUT_RESULT_FORMAT_ERROR (-1)
+IMPORT VOID texteditor_insertfilter_endinput(texteditor_insertfilter_t *filter, texteditor_insertfilterresult_t **result);
+IMPORT Bool texteditor_insertfilterresult_next(texteditor_insertfilterresult_t *filter, tadsegment **segment);
 
 #endif

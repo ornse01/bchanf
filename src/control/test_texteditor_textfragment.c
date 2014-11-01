@@ -34,6 +34,8 @@
 #include	<bstring.h>
 #include	<tcode.h>
 
+#include    <tad/taddecoder.h>
+
 #include    <unittest_driver.h>
 
 LOCAL UNITTEST_RESULT test_texteditor_textfragment_1()
@@ -64,6 +66,33 @@ typedef struct {
 	W expected_segment_num;
 } test_texteditor_insertcontext_t;
 
+LOCAL W test_texteditor_textfragment_inserttestdata(texteditor_insertcontext_t *context, test_data_t *testdata)
+{
+	taddecoder_t decoder;
+	tadsegment segment;
+	Bool cont;
+	W err = 0;
+
+	taddecoder_initialize(&decoder, testdata->data, testdata->len / sizeof(TC));
+
+	for (;;) {
+		cont = taddecoder_next(&decoder, &segment);
+		if (cont == False) {
+			break;
+		}
+
+		err = texteditor_insertcontext_insert(context, &segment);
+		if (err < 0) {
+			printf("texteditor_insertcontext_insert error\n");
+			break;
+		}
+	}
+
+	taddecoder_finalize(&decoder);
+
+	return err;
+}
+
 LOCAL W test_texteditor_textfragment_initialvalue(texteditor_textfragment_t *fragment, test_data_t *original)
 {
 	texteditor_insertcontext_t context;
@@ -75,9 +104,8 @@ LOCAL W test_texteditor_textfragment_initialvalue(texteditor_textfragment_t *fra
 		return err;
 	}
 
-	err = texteditor_insertcontext_insert(&context, (UB*)original->data, original->len);
+	err = test_texteditor_textfragment_inserttestdata(&context, original);
 	if (err < 0) {
-		printf("texteditor_insertcontext_insert error\n");
 		texteditor_insertcontext_finalize(&context);
 		return err;
 	}
@@ -110,7 +138,7 @@ LOCAL UNITTEST_RESULT test_texteditor_insertcontext_common(test_texteditor_inser
 		result = UNITTEST_RESULT_FAIL;
 	} else {
 		for (i = 0; i < testdata->insert_len; i++) {
-			err = texteditor_insertcontext_insert(&context, (UB*)testdata->insert[i].data, testdata->insert[i].len);
+			err = test_texteditor_textfragment_inserttestdata(&context, testdata->insert + i);
 			if (err < 0) {
 				printf("tadfragment_cursor_insert error\n");
 				result = UNITTEST_RESULT_FAIL;

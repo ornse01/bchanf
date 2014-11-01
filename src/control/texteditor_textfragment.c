@@ -103,30 +103,26 @@ LOCAL W texteditor_insertcontext_bufferprepair(tadfragment_cursor_t *src, texted
 	return 0;
 }
 
-LOCAL W texteditor_insertcontext_bufferappend(texteditor_characterstate_t *state, tadlangcode *lang, Bool is_hankaku, UB *insert_data, W insert_len, tadfragment_cursor_t *dest)
+LOCAL W texteditor_insertcontext_bufferappend(texteditor_characterstate_t *state, texteditor_insertfilterresult_t *result, tadfragment_cursor_t *dest)
 {
-	texteditor_insertfilter_t filter;
-	texteditor_insertfilter_result filter_result;
-	tadsegment segment;
+	tadsegment *segment;
 	W err = 0;
 	Bool cont;
 
-	texteditor_insertfilter_initialize(&filter, lang, (is_hankaku != False) ? 0x0102 : 0x0101, insert_data, insert_len);
 	for (;;) {
-		cont = texteditor_insertfilter_next(&filter, &filter_result);
+		cont = texteditor_insertfilterresult_next(result, &segment);
 		if (cont == False) {
 			break;
 		}
 
-		err = tadfragment_cursor_insert(dest, filter_result.data, filter_result.len);
+		err = tadfragment_cursor_insertsegment(dest, segment);
 		if (err < 0) {
 			break;
 		}
 
-		tadfragment_cursor_getdata(dest, &segment);
-		texteditor_charactorstate_input(state, &segment);
+		tadfragment_cursor_getdata(dest, segment);
+		texteditor_charactorstate_input(state, segment);
 	}
-	texteditor_insertfilter_finalize(&filter);
 
 	return err;
 }
@@ -163,15 +159,11 @@ LOCAL W texteditor_insertcontext_bufferafterappend(texteditor_characterstate_t *
 	return err;
 }
 
-EXPORT W texteditor_insertcontext_insert(texteditor_insertcontext_t *ctx, UB *data, W len)
+EXPORT W texteditor_insertcontext_insert(texteditor_insertcontext_t *ctx, tadsegment *segment)
 {
-	tadlangcode lang;
-	Bool is_hankaku;
-
-	is_hankaku = texteditor_characterstate_ishankaku(&ctx->state);
-	texteditor_characterstate_getlangcode(&ctx->state, &lang);
-
-	return texteditor_insertcontext_bufferappend(&ctx->state, &lang, is_hankaku, data, len, &ctx->dest.cursor);
+	texteditor_insertfilterresult_t *result;
+	texteditor_insertfilter_put(&ctx->filter, segment, &result);
+	return texteditor_insertcontext_bufferappend(&ctx->state, result, &ctx->dest.cursor);
 }
 
 EXPORT W texteditor_insertcontext_initialize(texteditor_insertcontext_t *ctx, texteditor_textfragment_t *target, GID gid, W pos)
@@ -198,6 +190,8 @@ EXPORT W texteditor_insertcontext_initialize(texteditor_insertcontext_t *ctx, te
 	ctx->pos_state.is_hankaku = texteditor_characterstate_ishankaku(&ctx->state);
 	texteditor_characterstate_getlangcode(&ctx->state, &ctx->pos_state.lang);
 
+	texteditor_insertfilter_initialize(&ctx->filter, &ctx->pos_state.lang, (ctx->pos_state.is_hankaku != False) ? 0x0102 : 0x0101);
+
 	return 0;
 
 error_prepair:
@@ -214,6 +208,15 @@ EXPORT W texteditor_insertcontext_finalize(texteditor_insertcontext_t *ctx)
 {
 	W len, err = 0;
 	UB *data;
+	texteditor_insertfilterresult_t *result;
+
+	texteditor_insertfilter_endinput(&ctx->filter, &result);
+	err = texteditor_insertcontext_bufferappend(&ctx->state, result, &ctx->dest.cursor);
+	if (err < 0) {
+		tadfragment_cursor_finalize(&ctx->dest.cursor);
+		tadfragment_cursor_finalize(&ctx->target_cursor);
+		goto finalize;
+	}
 
 	err = texteditor_insertcontext_bufferafterappend(&ctx->state, &ctx->target_cursor, &ctx->dest.cursor);
 	if (err < 0) {
@@ -232,6 +235,7 @@ EXPORT W texteditor_insertcontext_finalize(texteditor_insertcontext_t *ctx)
 
 finalize:
 
+	texteditor_insertfilter_finalize(&ctx->filter);
 	texteditor_characterstate_finalize(&ctx->state);
 	tadfragment_finalize(&ctx->dest.fragment);
 
