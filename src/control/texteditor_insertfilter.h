@@ -37,9 +37,14 @@
 typedef struct texteditor_insertfilter_t_ texteditor_insertfilter_t;
 typedef struct texteditor_insertfilterresult_t_ texteditor_insertfilterresult_t;
 
+/* Functionality name: texteditor */
+/* Detail name: insertfilterresult */
 struct texteditor_insertfilterresult_t_ {
 	texteditor_insertfilter_t *filter;
 };
+
+/* Functionality name: texteditor */
+/* Detail name: insertfilter */
 struct texteditor_insertfilter_t_ {
 	texteditor_stackfilter_t stack;
 	enum {
