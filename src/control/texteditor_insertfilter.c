@@ -125,13 +125,14 @@ LOCAL W texteditor_insertfilter_put_filtering(texteditor_insertfilter_t *filter,
 	tadsegment *result;
 	UB segid, subid, *segdata;
 	UW seglen;
+	texteditor_stackfilterresult_t *stack_result;
 
-	ret = texteditor_stackfilter_setinput(&filter->stack, segment);
-	if (ret == TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_FORMAT_ERROR) {
+	ret = texteditor_stackfilter_put(&filter->stack, segment, &stack_result);
+	if (ret == TEXTEDITOR_STACKFILTER_PUT_RESULT_FORMAT_ERROR) {
 		return TEXTEDITOR_INSERTFILTER_PUT_RESULT_FORMAT_ERROR;
 	}
 	for(;;) {
-		cont = texteditor_stackfilter_getoutput(&filter->stack, &result);
+		cont = texteditor_stackfilterresult_next(stack_result, &result);
 		if (cont == False) {
 			break;
 		}

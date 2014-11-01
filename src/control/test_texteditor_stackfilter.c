@@ -50,6 +50,7 @@ typedef struct {
 LOCAL UNITTEST_RESULT test_texteditor_stackfilter_common(test_texteditor_stackfilter_testdata_t *testdata)
 {
 	texteditor_stackfilter_t filter;
+	texteditor_stackfilterresult_t *filter_result;
 	taddecoder_t decoder;
 	tadsegment segment, *filterd;
 	tadfragment_t fragment;
@@ -74,28 +75,18 @@ LOCAL UNITTEST_RESULT test_texteditor_stackfilter_common(test_texteditor_stackfi
 		if (cont == False) {
 			break;
 		}
-		input_result = texteditor_stackfilter_setinput(&filter, &segment);
-		if (input_result == TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_FULL) {
-			for (;;) {
-				cont = texteditor_stackfilter_getoutput(&filter, &filterd);
-				if (cont == False) {
-					break;
-				}
-				tadfragment_cursor_insertsegment(&cursor, filterd);
-			}
-			input_result = texteditor_stackfilter_setinput(&filter, &segment);
-		}
-		if (input_result != TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_OK) {
+		input_result = texteditor_stackfilter_put(&filter, &segment, &filter_result);
+		if (input_result != TEXTEDITOR_STACKFILTER_PUT_RESULT_OK) {
 			result = UNITTEST_RESULT_FAIL;
 			break;
 		}
-	}
-	for (;;) {
-		cont = texteditor_stackfilter_getoutput(&filter, &filterd);
-		if (cont == False) {
-			break;
+		for (;;) {
+			cont = texteditor_stackfilterresult_next(filter_result, &filterd);
+			if (cont == False) {
+				break;
+			}
+			tadfragment_cursor_insertsegment(&cursor, filterd);
 		}
-		tadfragment_cursor_insertsegment(&cursor, filterd);
 	}
 	tadfragment_cursor_finalize(&cursor);
 

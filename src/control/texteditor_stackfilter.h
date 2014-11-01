@@ -33,6 +33,15 @@
 #define __TEXTEDITOR_STACKFILTER_H__
 
 /* Functionality name: texteditor */
+/* Detail name: stackfilterresult */
+struct texteditor_stackfilterresult_t_ {
+	tadsegment segs[1];
+	W used;
+	W consumed;
+};
+typedef struct texteditor_stackfilterresult_t_ texteditor_stackfilterresult_t;
+
+/* Functionality name: texteditor */
 /* Detail name: stackfilter */
 struct texteditor_stackfilter_t_ {
 	enum {
@@ -40,20 +49,15 @@ struct texteditor_stackfilter_t_ {
 		TEXTEDITOR_STACKFILTER_STATE_HAS_RESULT,
 	} state;
 	tadstack_t tadstack;
-	struct {
-		tadsegment segs[1];
-		W used;
-		W consumed;
-	} result_buffer;
+	texteditor_stackfilterresult_t result_buffer;
 };
 typedef struct texteditor_stackfilter_t_ texteditor_stackfilter_t;
 
 IMPORT VOID texteditor_stackfilter_initialize(texteditor_stackfilter_t *filter);
 IMPORT VOID texteditor_stackfilter_finalize(texteditor_stackfilter_t *filter);
-IMPORT W texteditor_stackfilter_setinput(texteditor_stackfilter_t *filter, tadsegment *segment);
-#define TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_OK (0)
-#define TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_FULL (1)
-#define TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_FORMAT_ERROR (-1)
-IMPORT Bool texteditor_stackfilter_getoutput(texteditor_stackfilter_t *filter, tadsegment **segment);
+IMPORT W texteditor_stackfilter_put(texteditor_stackfilter_t *filter, tadsegment *segment, texteditor_stackfilterresult_t **result);
+#define TEXTEDITOR_STACKFILTER_PUT_RESULT_OK (0)
+#define TEXTEDITOR_STACKFILTER_PUT_RESULT_FORMAT_ERROR (-1)
+IMPORT Bool texteditor_stackfilterresult_next(texteditor_stackfilterresult_t *filter, tadsegment **segment);
 
 #endif

@@ -39,34 +39,30 @@
 # define DP_ER(msg, err) /**/
 #endif
 
-IMPORT W texteditor_stackfilter_setinput(texteditor_stackfilter_t *filter, tadsegment *segment)
+IMPORT W texteditor_stackfilter_put(texteditor_stackfilter_t *filter, tadsegment *segment, texteditor_stackfilterresult_t **result)
 {
 	W nestlevel, err;
 	TADSTACK_DATATYPE type;
-	TADSTACK_RESULT result;
+	TADSTACK_RESULT stack_result;
 
-	if (filter->state == TEXTEDITOR_STACKFILTER_STATE_HAS_RESULT) {
-		return TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_FULL;
-	}
-
-	result = tadstack_inputsegment(&filter->tadstack, segment);
+	stack_result = tadstack_inputsegment(&filter->tadstack, segment);
 
 	nestlevel = tadstack_nestlevel(&filter->tadstack);
 	if (nestlevel < 0) {
-		return TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_FORMAT_ERROR;
+		return TEXTEDITOR_STACKFILTER_PUT_RESULT_FORMAT_ERROR;
 	}
 	if (nestlevel > 0) {
-		return TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_OK;
+		return TEXTEDITOR_STACKFILTER_PUT_RESULT_OK;
 	}
-	if (result == TADSTACK_RESULT_POP_STACK) {
-		return TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_OK;
+	if (stack_result == TADSTACK_RESULT_POP_STACK) {
+		return TEXTEDITOR_STACKFILTER_PUT_RESULT_OK;
 	}
 	err = tadstack_currentdata(&filter->tadstack, &type);
 	if (err < 0) {
-		return TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_FORMAT_ERROR;
+		return TEXTEDITOR_STACKFILTER_PUT_RESULT_FORMAT_ERROR;
 	}
 	if (type != TADSTACK_DATATYPE_TEXT) {
-		return TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_OK;
+		return TEXTEDITOR_STACKFILTER_PUT_RESULT_OK;
 	}
 
 	filter->state = TEXTEDITOR_STACKFILTER_STATE_HAS_RESULT;
@@ -74,23 +70,19 @@ IMPORT W texteditor_stackfilter_setinput(texteditor_stackfilter_t *filter, tadse
 	filter->result_buffer.used = 1;
 	filter->result_buffer.consumed = 0;
 
-	return TEXTEDITOR_STACKFILTER_SETINPUT_RESULT_OK;
+	*result = &filter->result_buffer;
+
+	return TEXTEDITOR_STACKFILTER_PUT_RESULT_OK;
 }
 
-IMPORT Bool texteditor_stackfilter_getoutput(texteditor_stackfilter_t *filter, tadsegment **segment)
+EXPORT Bool texteditor_stackfilterresult_next(texteditor_stackfilterresult_t *result, tadsegment **segment)
 {
-	if (filter->state == TEXTEDITOR_STACKFILTER_STATE_WAIT_INPUT) {
+	if (result->consumed >= result->used) {
 		return False;
 	}
 
-	*segment = filter->result_buffer.segs + filter->result_buffer.consumed;
-	filter->result_buffer.consumed++;
-
-	if (filter->result_buffer.consumed >= filter->result_buffer.used) {
-		filter->result_buffer.used = 0;
-		filter->result_buffer.consumed = 0;
-		filter->state = TEXTEDITOR_STACKFILTER_STATE_WAIT_INPUT;
-	}
+	*segment = result->segs + result->consumed;
+	result->consumed++;
 
 	return True;
 }
