@@ -47,6 +47,7 @@ IMPORT VOID texteditor_textfragment_finalize(texteditor_textfragment_t *fragment
 IMPORT UB* texteditor_textfragment_getbuffer(texteditor_textfragment_t *fragment);
 IMPORT W texteditor_textfragment_getsegmentlength(texteditor_textfragment_t *fragment);
 IMPORT W texteditor_textfragment_getbufferlength(texteditor_textfragment_t *fragment);
+IMPORT W texteditor_textfragment_getcharlength(texteditor_textfragment_t *fragment);
 
 /* Functionality name: texteditor */
 /* Detail name: insertcontext */

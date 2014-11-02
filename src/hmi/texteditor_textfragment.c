@@ -56,6 +56,35 @@ EXPORT W texteditor_textfragment_getbufferlength(texteditor_textfragment_t *frag
 	return tadfragment_getbufferlength(&fragment->base);
 }
 
+EXPORT W texteditor_textfragment_getcharlength(texteditor_textfragment_t *fragment)
+{
+	tadfragment_cursor_t cursor;
+	tadsegment segment;
+	W i = 0, err;
+
+	tadfragment_cursor_initialize(&cursor, &fragment->base);
+
+	for (;;) {
+		err = tadfragment_cursor_getdata(&cursor, &segment);
+		if (err < 0) {
+			break;
+		}
+
+		if (segment.type == TADSEGMENT_TYPE_CHARACTOR) {
+			i++;
+		}
+
+		err = tadfragment_cursor_move(&cursor, 1);
+		if (err < 0) {
+			break;
+		}
+	}
+
+	tadfragment_cursor_finalize(&cursor);
+
+	return i;
+}
+
 EXPORT W texteditor_textfragment_initialize(texteditor_textfragment_t *fragment)
 {
 	return tadfragment_initialize(&fragment->base);

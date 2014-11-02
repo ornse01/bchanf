@@ -501,6 +501,96 @@ LOCAL UNITTEST_RESULT test_texteditor_insertcontext_13()
 	return test_texteditor_insertcontext_common(&testdata);
 }
 
+/* */
+
+typedef struct {
+	test_data_t src;
+	W expected;
+} test_texteditor_charlength_t;
+
+LOCAL UNITTEST_RESULT test_texteditor_charlength_common(test_texteditor_charlength_t *testdata)
+{
+	texteditor_textfragment_t fragment;
+	W len, err;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+
+	err = texteditor_textfragment_initialize(&fragment);
+	if (err < 0) {
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	err = test_texteditor_textfragment_initialvalue(&fragment, &testdata->src);
+	if (err < 0) {
+		printf("texteditor value initialize error\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	len = texteditor_textfragment_getcharlength(&fragment);
+	if (len != testdata->expected) {
+		printf("length error: expected = %d, result = %d\n", testdata->expected, len);
+	}
+
+	texteditor_textfragment_finalize(&fragment);
+
+	return result;
+}
+
+LOCAL UNITTEST_RESULT test_texteditor_charlength_1()
+{
+	test_data_t src = {
+		(TC[]){TK_A, TK_B, TK_C},
+		6
+	};
+	W expected = 3;
+	test_texteditor_charlength_t testdata = {
+		src,
+		expected
+	};
+	return test_texteditor_charlength_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_texteditor_charlength_2()
+{
+	test_data_t src = {
+		(TC[]){0xFE22, TK_D, TK_E, 0xFE21, TK_A, TK_B, TK_C},
+		14
+	};
+	W expected = 5;
+	test_texteditor_charlength_t testdata = {
+		src,
+		expected
+	};
+	return test_texteditor_charlength_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_texteditor_charlength_3()
+{
+	test_data_t src = {
+		(TC[]){0xFFA2, 0x0006, 0x0300, 0x0101, 0x0102, TK_D, TK_E},
+		14
+	};
+	W expected = 2;
+	test_texteditor_charlength_t testdata = {
+		src,
+		expected
+	};
+	return test_texteditor_charlength_common(&testdata);
+}
+
+LOCAL UNITTEST_RESULT test_texteditor_charlength_4()
+{
+	test_data_t src = {
+		NULL,
+		0
+	};
+	W expected = 0;
+	test_texteditor_charlength_t testdata = {
+		src,
+		expected
+	};
+	return test_texteditor_charlength_common(&testdata);
+}
+
 EXPORT VOID test_texteditor_textfragment_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_texteditor_textfragment_1);
@@ -517,4 +607,8 @@ EXPORT VOID test_texteditor_textfragment_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_texteditor_insertcontext_11);
 	UNITTEST_DRIVER_REGIST(driver, test_texteditor_insertcontext_12);
 	UNITTEST_DRIVER_REGIST(driver, test_texteditor_insertcontext_13);
+	UNITTEST_DRIVER_REGIST(driver, test_texteditor_charlength_1);
+	UNITTEST_DRIVER_REGIST(driver, test_texteditor_charlength_2);
+	UNITTEST_DRIVER_REGIST(driver, test_texteditor_charlength_3);
+	UNITTEST_DRIVER_REGIST(driver, test_texteditor_charlength_4);
 }
