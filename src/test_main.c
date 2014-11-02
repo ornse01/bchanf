@@ -38,8 +38,7 @@
 #include    <test_coding.h>
 #include    <test_tad.h>
 #include    <test_css.h>
-#include    <test_control.h>
-
+#include    <test_hmi.h>
 
 EXPORT	W	MAIN(MESSAGE *msg)
 {

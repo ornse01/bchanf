@@ -24,7 +24,7 @@
  *
  */
 
-#include "test_control.h"
+#include "test_hmi.h"
 
 #include "texteditor_textfragment.h"
 

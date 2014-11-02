@@ -1,5 +1,5 @@
 /*
- * test_control.h
+ * test_hmi.h
  *
  * Copyright (c) 2013-2014 project bchan
  *
@@ -27,8 +27,8 @@
 #include	<basic.h>
 #include    <unittest_driver.h>
 
-#ifndef __TEST_CONTROL_H__
-#define __TEST_CONTROL_H__
+#ifndef __TEST_HMI_H__
+#define __TEST_HMI_H__
 
 IMPORT VOID test_texteditor_characterstate_main(unittest_driver_t *driver);
 IMPORT VOID test_texteditor_stackfilter_main(unittest_driver_t *driver);
