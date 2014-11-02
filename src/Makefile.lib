@@ -70,7 +70,11 @@ SRC_TAD =	taditerator.c \
 		traydata_iterator.c \
 		tadfragment.c
 
-SRC_HMI =	hmi_windowscroll.c
+SRC_HMI =	hmi_windowscroll.c \
+		texteditor_textfragment.c \
+	    	texteditor_characterstate.c \
+		texteditor_insertfilter.c \
+		texteditor_stackfilter.c
 
 SRC_CSS =	cssrendering_box.c \
 		cssrendering_coordinate.c
