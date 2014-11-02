@@ -68,7 +68,10 @@ SRC_TAD =	taditerator.c \
 		tadtsvparser.c \
 		tadlexer_le.c \
 		traydata_iterator.c \
-		tadfragment.c
+		tadfragment.c \
+		tadlangcode.c \
+		taddecoder.c \
+		tadsegment.c
 
 SRC_HMI =	hmi_windowscroll.c \
 		texteditor_textfragment.c \
