@@ -1,7 +1,7 @@
 /*
  * treebase.h
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -46,6 +46,7 @@ typedef struct treebase_node_t_ treebase_node_t;
 IMPORT VOID treebase_node_initialize(treebase_node_t *node);
 IMPORT VOID treebase_node_finalize(treebase_node_t *node);
 IMPORT VOID treebase_node_appendchild(treebase_node_t *node, treebase_node_t *child);
+IMPORT W treebase_node_insertbefore(treebase_node_t *node, treebase_node_t *child, treebase_node_t *ref);
 IMPORT VOID treebase_node_remove(treebase_node_t *node);
 IMPORT treebase_node_t* treebase_node_getparent(treebase_node_t *node);
 IMPORT treebase_node_t* treebase_node_getnextsibling(treebase_node_t *node);

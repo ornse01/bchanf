@@ -1,7 +1,7 @@
 /*
  * test_treebase.c
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -309,6 +309,75 @@ LOCAL UNITTEST_RESULT test_treebase_node_6()
 	return ret;
 }
 
+LOCAL UNITTEST_RESULT test_treebase_node_7()
+{
+	treebase_node_t node0, node1, node2, node3;
+	test_treebase_node_expected_t expected;
+	Bool ok;
+	UNITTEST_RESULT ret = UNITTEST_RESULT_PASS;
+
+	treebase_node_initialize(&node0);
+	treebase_node_initialize(&node1);
+	treebase_node_initialize(&node2);
+	treebase_node_initialize(&node3);
+
+	treebase_node_insertbefore(&node0, &node1, NULL);
+	treebase_node_insertbefore(&node0, &node2, NULL);
+	treebase_node_insertbefore(&node0, &node3, &node2);
+
+	/**/
+	expected.parent = NULL;
+	expected.next = NULL;
+	expected.prev = NULL;
+	expected.first = &node1;
+	expected.last = &node2;
+	expected.has_child = True;
+	ok = test_treebase_node_commoncheck(&node0, &expected, "node0");
+	if (ok == False) {
+		ret = UNITTEST_RESULT_FAIL;
+	}
+	/**/
+	expected.parent = &node0;
+	expected.next = &node3;
+	expected.prev = NULL;
+	expected.first = NULL;
+	expected.last = NULL;
+	expected.has_child = False;
+	ok = test_treebase_node_commoncheck(&node1, &expected, "node1");
+	if (ok == False) {
+		ret = UNITTEST_RESULT_FAIL;
+	}
+	/**/
+	expected.parent = &node0;
+	expected.next = NULL;
+	expected.prev = &node3;
+	expected.first = NULL;
+	expected.last = NULL;
+	expected.has_child = False;
+	ok = test_treebase_node_commoncheck(&node2, &expected, "node2");
+	if (ok == False) {
+		ret = UNITTEST_RESULT_FAIL;
+	}
+	/**/
+	expected.parent = &node0;
+	expected.next = &node2;
+	expected.prev = &node1;
+	expected.first = NULL;
+	expected.last = NULL;
+	expected.has_child = False;
+	ok = test_treebase_node_commoncheck(&node3, &expected, "node3");
+	if (ok == False) {
+		ret = UNITTEST_RESULT_FAIL;
+	}
+
+	treebase_node_finalize(&node3);
+	treebase_node_finalize(&node2);
+	treebase_node_finalize(&node1);
+	treebase_node_finalize(&node0);
+
+	return ret;
+}
+
 /* treebase_preordertraversal_t */
 
 typedef struct {
@@ -408,5 +477,6 @@ EXPORT VOID test_treebase_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_treebase_node_4);
 	UNITTEST_DRIVER_REGIST(driver, test_treebase_node_5);
 	UNITTEST_DRIVER_REGIST(driver, test_treebase_node_6);
+	UNITTEST_DRIVER_REGIST(driver, test_treebase_node_7);
 	UNITTEST_DRIVER_REGIST(driver, test_treebase_preordertraversal_1);
 }

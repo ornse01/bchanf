@@ -1,7 +1,7 @@
 /*
  * treebase.c
  *
- * Copyright (c) 2013 project bchan
+ * Copyright (c) 2013-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -41,6 +41,22 @@ EXPORT VOID treebase_node_appendchild(treebase_node_t *node, treebase_node_t *ch
 		QueInsert(&child->sibling, &node->firstchild->sibling);
 	}
 	child->parent = node;
+}
+
+EXPORT W treebase_node_insertbefore(treebase_node_t *node, treebase_node_t *child, treebase_node_t *ref)
+{
+	if (ref == NULL) {
+		treebase_node_appendchild(node, child);
+		return 0;
+	}
+	if (ref->parent != node) {
+		return -1; /* TODO */
+	}
+
+	QueInsert(&child->sibling, &ref->sibling);
+	child->parent = node;
+
+	return 0;
 }
 
 EXPORT VOID treebase_node_remove(treebase_node_t *node)
@@ -128,6 +144,7 @@ EXPORT VOID treebase_node_initialize(treebase_node_t *node)
 
 EXPORT VOID treebase_node_finalize(treebase_node_t *node)
 {
+	treebase_node_remove(node);
 }
 
 
