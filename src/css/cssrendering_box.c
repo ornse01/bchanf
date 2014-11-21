@@ -53,6 +53,39 @@ LOCAL VOID cssrendering_basebox_appendchild(cssrendering_basebox_t *box, cssrend
 	treebase_node_appendchild(&box->base, &child->base);
 }
 
+LOCAL W cssrendering_basebox_insertbefore(cssrendering_basebox_t *box, cssrendering_basebox_t *child, cssrendering_basebox_t *ref)
+{
+	return treebase_node_insertbefore(&box->base, &child->base, (ref != NULL) ? &ref->base : NULL);
+}
+
+LOCAL cssrendering_basebox_t* cssrendering_basebox_getparent(cssrendering_basebox_t *box)
+{
+	return (cssrendering_basebox_t*)treebase_node_getparent(&box->base);
+}
+
+LOCAL W cssrendering_basebox_removechild(cssrendering_basebox_t *box, cssrendering_basebox_t *child)
+{
+	cssrendering_basebox_t *parent;
+
+	parent = cssrendering_basebox_getparent(child);
+	if (parent != box) {
+		return -1; /* TODO */
+	}
+	treebase_node_remove(&child->base);
+
+	return 0;
+}
+
+LOCAL cssrendering_basebox_t* cssrendering_basebox_getfirstchild(cssrendering_basebox_t *box)
+{
+	return (cssrendering_basebox_t*)treebase_node_getfirstchild(&box->base);
+}
+
+LOCAL cssrendering_basebox_t* cssrendering_basebox_getnextsibling(cssrendering_basebox_t *box)
+{
+	return (cssrendering_basebox_t*)treebase_node_getnextsibling(&box->base);
+}
+
 LOCAL VOID cssrendering_basebox_setuserdata(cssrendering_basebox_t *box, VP data)
 {
 	box->userdata = data;
@@ -76,6 +109,11 @@ LOCAL VOID cssrendering_basebox_finalize(cssrendering_basebox_t *box)
 
 /* cssrendering_linebox */
 
+EXPORT cssrendering_linebox_t* cssrendering_linebox_getnextsibling(cssrendering_linebox_t *box)
+{
+	return (cssrendering_linebox_t*)cssrendering_basebox_getnextsibling(&box->base);
+}
+
 EXPORT VOID cssrendering_linebox_setuserdata(cssrendering_linebox_t *box, VP data)
 {
 	cssrendering_basebox_setuserdata(&box->base, data);
@@ -96,6 +134,21 @@ EXPORT VOID cssrendering_linebox_finalize(cssrendering_linebox_t *box)
 EXPORT VOID cssrendering_anonymousbox_appendchild(cssrendering_anonymousbox_t *box, cssrendering_linebox_t *child)
 {
 	cssrendering_basebox_appendchild(&box->base, &child->base);
+}
+
+EXPORT W cssrendering_anonymousbox_insertbefore(cssrendering_anonymousbox_t *box, cssrendering_linebox_t *child, cssrendering_linebox_t *ref)
+{
+	return cssrendering_basebox_insertbefore(&box->base, &child->base, (ref != NULL) ? &ref->base : NULL);
+}
+
+EXPORT W cssrendering_anonymousbox_removechild(cssrendering_anonymousbox_t *box, cssrendering_linebox_t *child)
+{
+	return cssrendering_basebox_removechild(&box->base, &child->base);
+}
+
+EXPORT cssrendering_linebox_t* cssrendering_anonymousbox_getfirstchild(cssrendering_anonymousbox_t *box)
+{
+	return (cssrendering_linebox_t*)cssrendering_basebox_getfirstchild(&box->base);
 }
 
 EXPORT VOID cssrendering_anonymousbox_setuserdata(cssrendering_anonymousbox_t *box, VP data)

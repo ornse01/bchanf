@@ -143,11 +143,15 @@ typedef struct cssrendering_hittraversal_result_ cssrendering_hittraversal_resul
 
 IMPORT VOID cssrendering_linebox_initialize(cssrendering_linebox_t *box);
 IMPORT VOID cssrendering_linebox_finalize(cssrendering_linebox_t *box);
+IMPORT cssrendering_linebox_t* cssrendering_linebox_getnextsibling(cssrendering_linebox_t *box);
 IMPORT VOID cssrendering_linebox_setuserdata(cssrendering_linebox_t *box, VP data);
 
 IMPORT VOID cssrendering_anonymousbox_initialize(cssrendering_anonymousbox_t *box);
 IMPORT VOID cssrendering_anonymousbox_finalize(cssrendering_anonymousbox_t *box);
 IMPORT VOID cssrendering_anonymousbox_appendchild(cssrendering_anonymousbox_t *box, cssrendering_linebox_t *child);
+IMPORT W cssrendering_anonymousbox_insertbefore(cssrendering_anonymousbox_t *box, cssrendering_linebox_t *child, cssrendering_linebox_t *ref);
+IMPORT W cssrendering_anonymousbox_removechild(cssrendering_anonymousbox_t *box, cssrendering_linebox_t *child);
+IMPORT cssrendering_linebox_t* cssrendering_anonymousbox_getfirstchild(cssrendering_anonymousbox_t *box);
 IMPORT VOID cssrendering_anonymousbox_setuserdata(cssrendering_anonymousbox_t *box, VP data);
 
 IMPORT VOID cssrendering_blockbox_initialize(cssrendering_blockbox_t *box);
