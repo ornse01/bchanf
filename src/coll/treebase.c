@@ -53,6 +53,9 @@ EXPORT W treebase_node_insertbefore(treebase_node_t *node, treebase_node_t *chil
 		return -1; /* TODO */
 	}
 
+	if (node->firstchild == ref) {
+		node->firstchild = child;
+	}
 	QueInsert(&child->sibling, &ref->sibling);
 	child->parent = node;
 
