@@ -537,6 +537,46 @@ LOCAL UNITTEST_RESULT test_treebase_preordertraversal_1()
 	return ret;
 }
 
+LOCAL UNITTEST_RESULT test_treebase_preordertraversal_2()
+{
+	treebase_node_t node0, node1, node2, node3, node4;
+	test_treebase_preordertraversal_expected_t expected[] = {
+		{ True, &node0, TREEBASE_TRAVERSAL_DIRECTION_DOWN },
+		{ True, &node1, TREEBASE_TRAVERSAL_DIRECTION_DOWN },
+		{ True, &node2, TREEBASE_TRAVERSAL_DIRECTION_DOWN },
+		{ True, &node3, TREEBASE_TRAVERSAL_DIRECTION_DOWN },
+		{ True, &node3, TREEBASE_TRAVERSAL_DIRECTION_UP },
+		{ True, &node4, TREEBASE_TRAVERSAL_DIRECTION_DOWN },
+		{ True, &node4, TREEBASE_TRAVERSAL_DIRECTION_UP },
+		{ True, &node2, TREEBASE_TRAVERSAL_DIRECTION_UP },
+		{ True, &node1, TREEBASE_TRAVERSAL_DIRECTION_UP },
+		{ True, &node0, TREEBASE_TRAVERSAL_DIRECTION_UP },
+	};
+	W expected_len = sizeof(expected) / sizeof(test_treebase_preordertraversal_expected_t);
+	UNITTEST_RESULT ret;
+
+	treebase_node_initialize(&node0);
+	treebase_node_initialize(&node1);
+	treebase_node_initialize(&node2);
+	treebase_node_initialize(&node3);
+	treebase_node_initialize(&node4);
+
+	treebase_node_appendchild(&node0, &node1);
+	treebase_node_appendchild(&node1, &node2);
+	treebase_node_appendchild(&node2, &node3);
+	treebase_node_appendchild(&node2, &node4);
+
+	ret = test_treebase_preordertraversal_common(&node0, expected, expected_len);
+
+	treebase_node_finalize(&node4);
+	treebase_node_finalize(&node3);
+	treebase_node_finalize(&node2);
+	treebase_node_finalize(&node1);
+	treebase_node_finalize(&node0);
+
+	return ret;
+}
+
 
 EXPORT VOID test_treebase_main(unittest_driver_t *driver)
 {
@@ -549,4 +589,5 @@ EXPORT VOID test_treebase_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_treebase_node_7);
 	UNITTEST_DRIVER_REGIST(driver, test_treebase_node_8);
 	UNITTEST_DRIVER_REGIST(driver, test_treebase_preordertraversal_1);
+	UNITTEST_DRIVER_REGIST(driver, test_treebase_preordertraversal_2);
 }
