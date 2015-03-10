@@ -1,7 +1,8 @@
+# -*- coding: euc-jp -*-
 #
 # hmi_generator.rb
 #
-# Copyright (c) 2012 project bchan
+# Copyright (c) 2012-2014 project bchan
 #
 # This software is provided 'as-is', without any express or implied
 # warranty. In no event will the authors be held liable for any damages
@@ -25,12 +26,11 @@
 
 require 'yaml'
 require 'erb'
-require 'jcode'
 
 def conv_euc_to_TCArray(str)
   ret = Array.new();
-  str.each_char do |x|
-    i = x.length - 1;
+  str.encode("EUC-JP").each_char do |x|
+    i = x.bytesize - 1;
     val = 0;
     x.each_byte do |ch|
       val += ch << (8 * i);
@@ -2849,9 +2849,7 @@ def generate_source(filename, data)
 
 end
 
-$KCODE = "EUC"
-
-yaml = YAML.load_file(ARGV[0]);
+yaml = YAML.load(File.read(ARGV[0], encoding: 'EUC-JP:UTF-8'));
 data = HMIData.new(yaml);
 
 fname_header = yaml["generator"]["output_header"]

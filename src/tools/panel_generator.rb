@@ -1,3 +1,4 @@
+# -*- coding: euc-jp -*-
 #
 # panel_generator.rb
 #
@@ -25,12 +26,11 @@
 
 require 'yaml'
 require 'erb'
-require 'jcode'
 
 def conv_euc_to_TCArray(str)
   ret = Array.new();
-  str.each_char do |x|
-    i = x.length - 1;
+  str.encode("EUC-JP").each_char do |x|
+    i = x.bytesize - 1;
     val = 0;
     x.each_byte do |ch|
       val += ch << (8 * i);
@@ -547,9 +547,7 @@ def generate_source(filename, data)
   fd.close
 end 
 
-$KCODE = "EUC"
-
-yaml = YAML.load_file(ARGV[0]);
+yaml = YAML.load(File.read(ARGV[0], encoding: 'EUC-JP:UTF-8'));
 data = PanelData.new(yaml);
 
 fname_header = yaml["generator"]["output_header"]
