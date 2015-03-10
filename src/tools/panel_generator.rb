@@ -2,7 +2,7 @@
 #
 # panel_generator.rb
 #
-# Copyright (c) 2012 project bchan
+# Copyright (c) 2012-2015 project bchan
 #
 # This software is provided 'as-is', without any express or implied
 # warranty. In no event will the authors be held liable for any damages
