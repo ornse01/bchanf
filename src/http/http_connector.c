@@ -1,7 +1,7 @@
 /*
  * http_connector.c
  *
- * Copyright (c) 2012-2014 project bchan
+ * Copyright (c) 2012-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -129,6 +129,7 @@ LOCAL W http_reqentry_initialize(http_reqentry_t *entry, UB *host, W host_len, U
 	W err;
 	B buf[HBUFLEN];
 	HOSTENT ent;
+	struct in_addr addr;
 	struct sockaddr_in *addr_in;
 
 	entry->host = malloc(sizeof(UB)*(host_len+1));
@@ -140,14 +141,18 @@ LOCAL W http_reqentry_initialize(http_reqentry_t *entry, UB *host, W host_len, U
 	entry->host[host_len] = '\0';
 	entry->host_len = host_len;
 
-	err = so_gethostbyname(entry->host, &ent, buf);
-	if (err < 0) {
-		goto error_gethostbyname;
+	err = inet_aton(host, &addr);
+	if (err == 0) {
+		err = so_gethostbyname(entry->host, &ent, buf);
+		if (err < 0) {
+			goto error_gethostbyname;
+		}
+		addr.s_addr = *(unsigned int *)(ent.h_addr_list[0]);
 	}
 	addr_in = (struct sockaddr_in *)&(entry->addr);
 	addr_in->sin_family = AF_INET;
 	addr_in->sin_port = htons( port );
-	addr_in->sin_addr.s_addr = *(unsigned int *)(ent.h_addr_list[0]);
+	addr_in->sin_addr = addr;
 
 	entry->aborted_by_user = False;
 	entry->status = WAITING_TRANSPORT;
