@@ -89,11 +89,14 @@ EXPORT Bool htmlform_urlencoder_next(htmlform_urlencoder_t *encoder, UB **str, W
 	switch (encoder->state) {
 	case HTMLFORM_URLENCODER_STATE_NAME:
 		DP_STATE("NAME");
-		htmlform_urlencoder_convert(encoder, field->name[encoder->src_pos], str, len);
-		encoder->src_pos++;
 		if (encoder->src_pos == field->name_len) {
 			encoder->state = HTMLFORM_URLENCODER_STATE_EQUAL;
+			*str = encoder->buf;
+			*len = 0;
+			return True;
 		}
+		htmlform_urlencoder_convert(encoder, field->name[encoder->src_pos], str, len);
+		encoder->src_pos++;
 		return True;
 	case HTMLFORM_URLENCODER_STATE_EQUAL:
 		DP_STATE("EQUAL");
@@ -104,12 +107,15 @@ EXPORT Bool htmlform_urlencoder_next(htmlform_urlencoder_t *encoder, UB **str, W
 		return True;
 	case HTMLFORM_URLENCODER_STATE_VALUE:
 		DP_STATE("VALUE");
-		htmlform_urlencoder_convert(encoder, field->value[encoder->src_pos], str, len);
-		encoder->src_pos++;
 		if (encoder->src_pos == field->value_len) {
 			encoder->state = HTMLFORM_URLENCODER_STATE_AMP;
 			encoder->field_index++;
+			*str = encoder->buf;
+			*len = 0;
+			return True;
 		}
+		htmlform_urlencoder_convert(encoder, field->value[encoder->src_pos], str, len);
+		encoder->src_pos++;
 		return True;
 	case HTMLFORM_URLENCODER_STATE_AMP:
 		DP_STATE("AMP");

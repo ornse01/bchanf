@@ -64,6 +64,9 @@ LOCAL UNITTEST_RESULT test_htmlform_urlencoder_common(urlencoder_testdata_t *tes
 		if (cont == False) {
 			break;
 		}
+		if (len == 0) {
+			continue;
+		}
 		result = realloc(result, result_len + len + 1);
 		if (result == NULL) {
 			ret = UNITTEST_RESULT_FAIL;
@@ -149,10 +152,26 @@ LOCAL UNITTEST_RESULT test_htmlform_urlencoder_4()
 	return test_htmlform_urlencoder_common(&testdata);
 }
 
+LOCAL UNITTEST_RESULT test_htmlform_urlencoder_5()
+{
+	htmlform_field src[] = {
+		(htmlform_field){"aaa", 3, "", 0},
+		(htmlform_field){"cc", 2, "", 0},
+	};
+	W src_len = 2;
+	UB expected[] = "aaa=&cc=";
+	W expected_len = strlen(expected);
+	urlencoder_testdata_t testdata = {
+		src, src_len, expected, expected_len
+	};
+	return test_htmlform_urlencoder_common(&testdata);
+}
+
 EXPORT VOID test_htmlform_urlencoder_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_htmlform_urlencoder_1);
 	UNITTEST_DRIVER_REGIST(driver, test_htmlform_urlencoder_2);
 	UNITTEST_DRIVER_REGIST(driver, test_htmlform_urlencoder_3);
 	UNITTEST_DRIVER_REGIST(driver, test_htmlform_urlencoder_4);
+	UNITTEST_DRIVER_REGIST(driver, test_htmlform_urlencoder_5);
 }
