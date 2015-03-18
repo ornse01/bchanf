@@ -61,7 +61,8 @@ SRC_COLL =	idtocb.c \
 		wordarray.c
 
 SRC_CODING = 	base64encoder.c \
-		base64decoder.c
+		base64decoder.c \
+		htmlform_urlencoder.c
 
 SRC_TAD =	taditerator.c \
 		tadstack.c \
