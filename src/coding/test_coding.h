@@ -1,7 +1,7 @@
 /*
  * test_coding.h
  *
- * Copyright (c) 2012 project bchan
+ * Copyright (c) 2012-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -32,5 +32,6 @@
 
 IMPORT VOID test_base64encoder_main(unittest_driver_t *driver);
 IMPORT VOID test_base64decoder_main(unittest_driver_t *driver);
+IMPORT VOID test_htmlform_urlencoder_main(unittest_driver_t *driver);
 
 #endif

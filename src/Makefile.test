@@ -77,10 +77,12 @@ SRC_COLL_TEST =	test_idtocb.c \
 		test_wordarray.c
 
 SRC_CODING = 	base64encoder.c \
-		base64decoder.c
+		base64decoder.c \
+		htmlform_urlencoder.c
 
 SRC_CODING_TEST =	test_base64encoder.c \
-			test_base64decoder.c
+			test_base64decoder.c \
+			test_htmlform_urlencoder.c
 
 SRC_TAD =	taditerator.c \
 		tadstack.c \
